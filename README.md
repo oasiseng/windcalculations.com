@@ -1,7 +1,4 @@
 # windcalculations.com
-<<<<<<< HEAD
-Suite of wind calculations for structural engineering web apps.
-=======
 
 Engineering workspace for WindCalculations.com and related apps.
 
