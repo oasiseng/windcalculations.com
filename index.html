@@ -1,0 +1,1490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WindCalculations Super Calculator (ASCE 7)</title>
+  <meta name="description" content="Public static client-side wind parameter calculator for ASCE 7-16/7-22 velocity pressure qz and net design pressures.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #f2f7f8;
+      --bg-2: #dfeff3;
+      --ink: #0f1f2b;
+      --ink-soft: #3d5568;
+      --panel: #ffffff;
+      --line: #c8d8df;
+      --brand: #0f7a8a;
+      --brand-deep: #075866;
+      --accent: #d2691e;
+      --ok: #146c43;
+      --error: #b42318;
+      --shadow: 0 18px 40px rgba(10, 28, 43, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(15, 122, 138, 0.13), transparent 40%),
+        radial-gradient(circle at 88% 10%, rgba(210, 105, 30, 0.14), transparent 36%),
+        linear-gradient(140deg, var(--bg-1), var(--bg-2));
+      font-family: "Public Sans", "Trebuchet MS", "Tahoma", sans-serif;
+      line-height: 1.4;
+    }
+
+    .shell {
+      width: min(1220px, 94vw);
+      margin: 28px auto 56px;
+    }
+
+    .hero {
+      padding: 28px 30px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(120deg, #0f7a8a, #11535f 55%, #8c3f14 120%);
+      color: #f8fcff;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      margin-bottom: 18px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: auto -90px -110px auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+      z-index: -1;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-bottom: 10px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 10px;
+      font-family: "Space Grotesk", "Public Sans", sans-serif;
+      letter-spacing: -0.01em;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 90ch;
+      color: #def5f8;
+    }
+
+    .embed-banner {
+      display: none;
+      margin-bottom: 14px;
+      border: 1px solid #91b6c0;
+      background: #eff7fa;
+      color: #0f4753;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 0.92rem;
+    }
+
+    .layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    fieldset {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin: 0 0 14px;
+      background: #fbfdfe;
+    }
+
+    legend {
+      padding: 0 8px;
+      font-weight: 700;
+      color: #1a4155;
+      font-size: 0.92rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.93rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid #a8c0cb;
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    button:focus {
+      outline: 3px solid rgba(15, 122, 138, 0.24);
+      outline-offset: 1px;
+      border-color: var(--brand);
+    }
+
+    input[aria-invalid="true"],
+    select[aria-invalid="true"] {
+      border-color: var(--error);
+      background: #fff7f6;
+    }
+
+    input:disabled,
+    select:disabled {
+      background: #f4f7fa;
+      color: #5f7381;
+      cursor: not-allowed;
+    }
+
+    .field-error {
+      min-height: 1rem;
+      font-size: 0.8rem;
+      color: var(--error);
+      margin: 0;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-deep);
+    }
+
+    .btn-secondary {
+      background: #f0f6f8;
+      border-color: #adcad4;
+      color: #194556;
+    }
+
+    .btn-secondary:hover {
+      background: #e5f0f4;
+    }
+
+    .status-box {
+      border: 1px solid #f0d27e;
+      background: #fff8e5;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      color: #684512;
+      margin-bottom: 12px;
+    }
+
+    .status-box.ok {
+      border-color: #84d0a7;
+      background: #ecf9f1;
+      color: #0f5a35;
+    }
+
+    .status-box h3 {
+      margin-bottom: 6px;
+      font-size: 0.96rem;
+    }
+
+    .status-box ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .kpi .item {
+      border: 1px solid #cde0e7;
+      background: #f8fcfd;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+    }
+
+    .kpi .label {
+      font-size: 0.8rem;
+      color: #3b5f70;
+      margin-bottom: 3px;
+    }
+
+    .kpi .value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d3445;
+    }
+
+    .subgrid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th,
+    td {
+      border: 1px solid #cfe0e7;
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #edf6f9;
+      color: #18495a;
+      font-weight: 700;
+    }
+
+    .formula {
+      background: #f6fafb;
+      border: 1px solid #d3e4ea;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 0.87rem;
+      overflow-x: auto;
+    }
+
+    .formula code {
+      white-space: nowrap;
+      color: #153948;
+      font-family: "Courier New", monospace;
+    }
+
+    .disclaimer {
+      border-left: 4px solid var(--accent);
+      background: #fff9f2;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-weight: 700;
+      color: #6b360f;
+    }
+
+    .citation {
+      border-left: 4px solid #0f7a8a;
+      background: #f0f9fb;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #184958;
+    }
+
+    .meta {
+      color: #445f6e;
+      font-size: 0.86rem;
+      margin-bottom: 8px;
+    }
+
+    .method-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      padding-left: 0;
+      margin: 8px 0 0;
+      list-style: none;
+    }
+
+    .method-links a {
+      color: #075e6d;
+      font-weight: 600;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 2px;
+    }
+
+    .embed-tools textarea {
+      min-height: 85px;
+      resize: vertical;
+      font-family: "Courier New", monospace;
+      font-size: 0.84rem;
+    }
+
+    .cta {
+      border: 1px solid #b5d2db;
+      background: linear-gradient(150deg, #f4fbfd, #f8f3eb);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .cta a {
+      color: #0a6272;
+      font-weight: 700;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .calc-note {
+      margin-top: 10px;
+      font-size: 0.84rem;
+      color: #4a6676;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    body.embed-mode .hero,
+    body.embed-mode .embed-tools {
+      display: none;
+    }
+
+    body.embed-mode .embed-banner {
+      display: block;
+    }
+
+    @media (min-width: 680px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .row-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .subgrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 1020px) {
+      .layout {
+        grid-template-columns: minmax(380px, 1fr) minmax(420px, 1fr);
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero" aria-labelledby="app-title">
+      <span class="eyebrow">WindCalculations.com</span>
+      <h1 id="app-title">Super Wind Parameter Calculator</h1>
+      <p>
+        Public ASCE 7 reference calculator for velocity pressure (qz) and net design pressures (p)
+        for rooftop HVAC and low-rise components and cladding use cases.
+      </p>
+    </section>
+
+    <div class="embed-banner" id="embed-banner">
+      Embedded mode is active. This compact layout is optimized for iframe usage.
+    </div>
+
+    <div class="layout">
+      <section class="card" aria-labelledby="input-heading">
+        <h2 id="input-heading">Inputs</h2>
+        <p class="meta">All calculations run in your browser. No backend calls are used.</p>
+
+        <div id="error-summary" class="status-box hidden" role="status" aria-live="polite"></div>
+
+        <form id="wind-form" novalidate>
+          <fieldset>
+            <legend>Code Edition and Site Parameters</legend>
+            <div class="grid">
+              <div class="field">
+                <label for="edition">ASCE Edition</label>
+                <select id="edition" name="edition" aria-describedby="err-edition">
+                  <option value="7-16">ASCE 7-16</option>
+                  <option value="7-22">ASCE 7-22</option>
+                </select>
+                <p class="field-error" id="err-edition"></p>
+              </div>
+
+              <div class="field">
+                <label for="risk-category">Risk Category</label>
+                <select id="risk-category" name="risk-category" aria-describedby="err-risk-category">
+                  <option value="I">I</option>
+                  <option value="II" selected>II</option>
+                  <option value="III">III</option>
+                  <option value="IV">IV</option>
+                </select>
+                <p class="field-error" id="err-risk-category"></p>
+              </div>
+
+              <div class="field">
+                <label for="basic-speed">Basic Wind Speed V (mph)</label>
+                <input id="basic-speed" name="basic-speed" type="number" inputmode="decimal" step="1" min="1" value="140" aria-describedby="err-basic-speed">
+                <p class="field-error" id="err-basic-speed"></p>
+              </div>
+
+              <div class="field">
+                <label for="exposure">Exposure Category</label>
+                <select id="exposure" name="exposure" aria-describedby="err-exposure">
+                  <option value="B">B</option>
+                  <option value="C" selected>C</option>
+                  <option value="D">D</option>
+                </select>
+                <p class="field-error" id="err-exposure"></p>
+              </div>
+
+              <div class="field">
+                <label for="mean-roof-height">Mean Roof Height h (ft)</label>
+                <input id="mean-roof-height" name="mean-roof-height" type="number" inputmode="decimal" step="0.1" min="1" value="30" aria-describedby="err-mean-roof-height">
+                <p class="field-error" id="err-mean-roof-height"></p>
+              </div>
+
+              <div class="field">
+                <label for="qz-height">Exposure Height z for qz (ft)</label>
+                <input id="qz-height" name="qz-height" type="number" inputmode="decimal" step="0.1" min="1" value="30" aria-describedby="err-qz-height">
+                <p class="field-error" id="err-qz-height"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Factors and Pressure Coefficients</legend>
+            <div class="grid">
+              <div class="field">
+                <label for="gust-factor">Gust Effect Factor G</label>
+                <input id="gust-factor" name="gust-factor" type="number" inputmode="decimal" step="0.01" value="0.85" aria-describedby="err-gust-factor">
+                <p class="hint">Default 0.85</p>
+                <p class="field-error" id="err-gust-factor"></p>
+              </div>
+
+              <div class="field">
+                <label for="kzt">Topographic Factor Kzt</label>
+                <input id="kzt" name="kzt" type="number" inputmode="decimal" step="0.01" value="1.00" aria-describedby="err-kzt">
+                <p class="hint">Optional, default 1.00</p>
+                <p class="field-error" id="err-kzt"></p>
+              </div>
+
+              <div class="field">
+                <label for="ke">Ground Elevation Factor Ke</label>
+                <input id="ke" name="ke" type="number" inputmode="decimal" step="0.01" value="1.00" aria-describedby="err-ke">
+                <p class="hint">Optional, default 1.00</p>
+                <p class="field-error" id="err-ke"></p>
+              </div>
+
+              <div class="field">
+                <label for="kd-mode">Directionality Factor Kd Mode</label>
+                <select id="kd-mode" name="kd-mode" aria-describedby="err-kd-mode">
+                  <option value="auto" selected>Auto (C&C/HVAC default 0.85)</option>
+                  <option value="manual">Manual override</option>
+                </select>
+                <p class="field-error" id="err-kd-mode"></p>
+              </div>
+
+              <div class="field">
+                <label for="kd-manual">Manual Kd</label>
+                <input id="kd-manual" name="kd-manual" type="number" inputmode="decimal" step="0.01" value="0.85" disabled aria-describedby="err-kd-manual">
+                <p class="field-error" id="err-kd-manual"></p>
+              </div>
+
+              <div class="field">
+                <label for="gcp-preset">GCp Preset</label>
+                <select id="gcp-preset" name="gcp-preset" aria-describedby="err-gcp-preset"></select>
+                <p class="field-error" id="err-gcp-preset"></p>
+              </div>
+
+              <div class="field">
+                <label for="gcp">External Pressure Coefficient GCp</label>
+                <input id="gcp" name="gcp" type="number" inputmode="decimal" step="0.01" value="-0.90" aria-describedby="err-gcp">
+                <p class="field-error" id="err-gcp"></p>
+              </div>
+
+              <div class="field">
+                <label for="gcpi-mode">GCpi Input Mode</label>
+                <select id="gcpi-mode" name="gcpi-mode" aria-describedby="err-gcpi-mode">
+                  <option value="standard" selected>Standard values by enclosure</option>
+                  <option value="manual">Manual single value</option>
+                </select>
+                <p class="field-error" id="err-gcpi-mode"></p>
+              </div>
+
+              <div class="field">
+                <label for="enclosure-class">Enclosure Class (standard GCpi)</label>
+                <select id="enclosure-class" name="enclosure-class" aria-describedby="err-enclosure-class">
+                  <option value="enclosed" selected>Enclosed (+/-0.18)</option>
+                  <option value="partially_enclosed">Partially enclosed (+/-0.55)</option>
+                  <option value="open">Open (0.00)</option>
+                </select>
+                <p class="field-error" id="err-enclosure-class"></p>
+              </div>
+
+              <div class="field">
+                <label for="gcpi-manual">Manual GCpi</label>
+                <input id="gcpi-manual" name="gcpi-manual" type="number" inputmode="decimal" step="0.01" value="0.18" disabled aria-describedby="err-gcpi-manual">
+                <p class="field-error" id="err-gcpi-manual"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Calculate Wind Pressures</button>
+            <button class="btn btn-secondary" type="button" id="reset-btn">Reset Defaults</button>
+          </div>
+        </form>
+
+        <section class="embed-tools" aria-labelledby="embed-heading">
+          <h3 id="embed-heading">Embed Snippet</h3>
+          <p class="meta">Use this iframe code to embed the calculator on another page.</p>
+          <textarea id="embed-code" readonly></textarea>
+          <div class="actions">
+            <button class="btn btn-secondary" type="button" id="copy-embed">Copy Embed Code</button>
+            <span id="copy-status" class="meta" aria-live="polite"></span>
+          </div>
+        </section>
+      </section>
+
+      <section class="card" aria-labelledby="result-heading">
+        <h2 id="result-heading">Results</h2>
+        <div id="result-announcer" class="sr-only" aria-live="polite"></div>
+
+        <div id="result-placeholder" class="status-box">
+          <h3>No calculation yet</h3>
+          Fill in the form and select <strong>Calculate Wind Pressures</strong>.
+        </div>
+
+        <div id="result-content" class="hidden">
+          <div class="kpi">
+            <div class="item">
+              <div class="label">Velocity Pressure qz</div>
+              <div class="value" id="qz-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Internal Velocity Pressure qi</div>
+              <div class="value" id="qi-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Net Pressure Envelope (min)</div>
+              <div class="value" id="p-min-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Net Pressure Envelope (max)</div>
+              <div class="value" id="p-max-value">-</div>
+            </div>
+          </div>
+
+          <div class="subgrid">
+            <div>
+              <h3>Intermediate Factors</h3>
+              <table aria-label="Intermediate factors table">
+                <tbody id="factor-table-body"></tbody>
+              </table>
+            </div>
+            <div>
+              <h3>Net Pressure Cases</h3>
+              <table aria-label="Net pressure cases table">
+                <thead>
+                  <tr>
+                    <th>GCpi case</th>
+                    <th>p = qz * G * GCp - qi * GCpi (psf)</th>
+                  </tr>
+                </thead>
+                <tbody id="case-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <h3>Formulas With Substituted Values</h3>
+          <div id="formula-block"></div>
+
+          <p class="calc-note" id="edition-note"></p>
+        </div>
+
+        <h3>Methodology and References</h3>
+        <p class="meta">
+          Core wind equations are implemented in-browser for transparency and review.
+        </p>
+        <ul class="method-links">
+          <li><a href="https://windcalculations.com/wind-tools-and-resources/" target="_blank" rel="noopener noreferrer">Methodology page</a></li>
+          <li><a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">WindCalculations.com</a></li>
+        </ul>
+
+        <p class="citation">
+          ASCE 7-16 / ASCE 7-22 wind pressure formulas implemented (client-side reference tool).
+        </p>
+
+        <p class="disclaimer">
+          For informational use only; consult a licensed engineer for final design.
+        </p>
+
+        <div class="cta">
+          Need stamped design support? Request a professional review at
+          <a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">windcalculations.com</a>.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ASCE 7-16/7-22 exposure parameters used in Kz profile expression.
+      // Refer to Chapter 26 velocity pressure exposure coefficient framework.
+      var EXPOSURE_CONSTANTS = {
+        B: { alpha: 7.0, zg: 1200 },
+        C: { alpha: 9.5, zg: 900 },
+        D: { alpha: 11.5, zg: 700 }
+      };
+
+      // Project-specific v1 policy for risk category multipliers.
+      var RISK_IMPORTANCE = {
+        I: 0.87,
+        II: 1.0,
+        III: 1.15,
+        IV: 1.15
+      };
+
+      var PRESETS = [
+        { id: "custom", label: "Custom manual GCp", gcp: null, kd: 0.85 },
+        { id: "wall_zone4_pos", label: "Wall Zone 4 (positive) GCp = +0.8", gcp: 0.8, kd: 0.85 },
+        { id: "wall_zone4_neg", label: "Wall Zone 4 (negative) GCp = -1.1", gcp: -1.1, kd: 0.85 },
+        { id: "wall_zone5_pos", label: "Wall Zone 5 (positive) GCp = +0.8", gcp: 0.8, kd: 0.85 },
+        { id: "wall_zone5_neg", label: "Wall Zone 5 (negative) GCp = -1.4", gcp: -1.4, kd: 0.85 },
+        { id: "roof_zone1_neg", label: "Roof Zone 1 (negative) GCp = -0.9", gcp: -0.9, kd: 0.85 },
+        { id: "roof_zone2_neg", label: "Roof Zone 2 (negative) GCp = -1.3", gcp: -1.3, kd: 0.85 },
+        { id: "roof_zone3_neg", label: "Roof Zone 3 (negative) GCp = -1.9", gcp: -1.9, kd: 0.85 },
+        { id: "hvac_generic_neg", label: "HVAC generic suction baseline GCp = -1.2", gcp: -1.2, kd: 0.85 }
+      ];
+
+      var GCPI_STANDARD_CASES = {
+        enclosed: [0.18, -0.18],
+        partially_enclosed: [0.55, -0.55],
+        open: [0.0]
+      };
+
+      var DEFAULTS = {
+        edition: "7-16",
+        risk: "II",
+        V: 140,
+        exposure: "C",
+        h: 30,
+        z: 30,
+        G: 0.85,
+        Kzt: 1.0,
+        Ke: 1.0,
+        kdMode: "auto",
+        kdManual: 0.85,
+        gcpPreset: "roof_zone1_neg",
+        gcp: -0.9,
+        gcpiMode: "standard",
+        enclosure: "enclosed",
+        gcpiManual: 0.18
+      };
+
+      var FIELD_TO_ERROR = {
+        edition: "err-edition",
+        risk: "err-risk-category",
+        V: "err-basic-speed",
+        exposure: "err-exposure",
+        h: "err-mean-roof-height",
+        z: "err-qz-height",
+        G: "err-gust-factor",
+        Kzt: "err-kzt",
+        Ke: "err-ke",
+        kdMode: "err-kd-mode",
+        kdManual: "err-kd-manual",
+        gcpPreset: "err-gcp-preset",
+        gcp: "err-gcp",
+        gcpiMode: "err-gcpi-mode",
+        enclosure: "err-enclosure-class",
+        gcpiManual: "err-gcpi-manual"
+      };
+
+      var form = document.getElementById("wind-form");
+      var editionEl = document.getElementById("edition");
+      var riskEl = document.getElementById("risk-category");
+      var speedEl = document.getElementById("basic-speed");
+      var exposureEl = document.getElementById("exposure");
+      var meanRoofEl = document.getElementById("mean-roof-height");
+      var qzHeightEl = document.getElementById("qz-height");
+      var gustEl = document.getElementById("gust-factor");
+      var kztEl = document.getElementById("kzt");
+      var keEl = document.getElementById("ke");
+      var kdModeEl = document.getElementById("kd-mode");
+      var kdManualEl = document.getElementById("kd-manual");
+      var gcpPresetEl = document.getElementById("gcp-preset");
+      var gcpEl = document.getElementById("gcp");
+      var gcpiModeEl = document.getElementById("gcpi-mode");
+      var enclosureEl = document.getElementById("enclosure-class");
+      var gcpiManualEl = document.getElementById("gcpi-manual");
+      var errorSummaryEl = document.getElementById("error-summary");
+      var resultPlaceholderEl = document.getElementById("result-placeholder");
+      var resultContentEl = document.getElementById("result-content");
+      var resultAnnouncerEl = document.getElementById("result-announcer");
+      var factorTableBodyEl = document.getElementById("factor-table-body");
+      var caseTableBodyEl = document.getElementById("case-table-body");
+      var formulaBlockEl = document.getElementById("formula-block");
+      var qzValueEl = document.getElementById("qz-value");
+      var qiValueEl = document.getElementById("qi-value");
+      var pMinValueEl = document.getElementById("p-min-value");
+      var pMaxValueEl = document.getElementById("p-max-value");
+      var editionNoteEl = document.getElementById("edition-note");
+      var embedCodeEl = document.getElementById("embed-code");
+      var copyEmbedBtnEl = document.getElementById("copy-embed");
+      var copyStatusEl = document.getElementById("copy-status");
+      var resetBtnEl = document.getElementById("reset-btn");
+
+      init();
+
+      function init() {
+        populatePresetOptions();
+        applyDefaults();
+        applyQueryParams();
+        updateKdState();
+        updateGcpiState();
+        updateEmbedSnippet();
+        attachEvents();
+        calculateAndRender();
+      }
+
+      function attachEvents() {
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          calculateAndRender();
+        });
+
+        kdModeEl.addEventListener("change", updateKdState);
+        gcpiModeEl.addEventListener("change", updateGcpiState);
+
+        gcpPresetEl.addEventListener("change", function () {
+          var preset = findPreset(gcpPresetEl.value);
+          if (preset && typeof preset.gcp === "number") {
+            gcpEl.value = toFixedString(preset.gcp, 2);
+          }
+          if (kdModeEl.value === "auto" && preset && typeof preset.kd === "number") {
+            kdManualEl.value = toFixedString(preset.kd, 2);
+          }
+        });
+
+        resetBtnEl.addEventListener("click", function () {
+          applyDefaults();
+          updateKdState();
+          updateGcpiState();
+          clearErrors();
+          calculateAndRender();
+        });
+
+        copyEmbedBtnEl.addEventListener("click", copyEmbedCode);
+
+        form.addEventListener("input", function () {
+          if (!errorSummaryEl.classList.contains("hidden")) {
+            calculateAndRender();
+          }
+        });
+      }
+
+      function applyDefaults() {
+        editionEl.value = DEFAULTS.edition;
+        riskEl.value = DEFAULTS.risk;
+        speedEl.value = String(DEFAULTS.V);
+        exposureEl.value = DEFAULTS.exposure;
+        meanRoofEl.value = String(DEFAULTS.h);
+        qzHeightEl.value = String(DEFAULTS.z);
+        gustEl.value = toFixedString(DEFAULTS.G, 2);
+        kztEl.value = toFixedString(DEFAULTS.Kzt, 2);
+        keEl.value = toFixedString(DEFAULTS.Ke, 2);
+        kdModeEl.value = DEFAULTS.kdMode;
+        kdManualEl.value = toFixedString(DEFAULTS.kdManual, 2);
+        gcpPresetEl.value = DEFAULTS.gcpPreset;
+        gcpEl.value = toFixedString(DEFAULTS.gcp, 2);
+        gcpiModeEl.value = DEFAULTS.gcpiMode;
+        enclosureEl.value = DEFAULTS.enclosure;
+        gcpiManualEl.value = toFixedString(DEFAULTS.gcpiManual, 2);
+      }
+
+      function applyQueryParams() {
+        var params = new URLSearchParams(window.location.search);
+        var embedMode = params.get("embed") === "1";
+        if (embedMode) {
+          document.body.classList.add("embed-mode");
+        }
+
+        var editionParam = params.get("edition");
+        if (editionParam === "7-16" || editionParam === "7-22") {
+          editionEl.value = editionParam;
+        }
+
+        var presetParam = params.get("preset");
+        if (presetParam && findPreset(presetParam)) {
+          gcpPresetEl.value = presetParam;
+          var preset = findPreset(presetParam);
+          if (preset && typeof preset.gcp === "number") {
+            gcpEl.value = toFixedString(preset.gcp, 2);
+          }
+        }
+      }
+
+      function updateEmbedSnippet() {
+        var baseUrl = "https://windcalculations.com/super-calculator";
+        embedCodeEl.value =
+          '<iframe src="' +
+          baseUrl +
+          '?embed=1" width="100%" height="900" style="border:0;" loading="lazy"></iframe>';
+      }
+
+      function populatePresetOptions() {
+        var optionsHtml = PRESETS.map(function (preset) {
+          return '<option value="' + escapeHtml(preset.id) + '">' + escapeHtml(preset.label) + "</option>";
+        }).join("");
+        gcpPresetEl.innerHTML = optionsHtml;
+      }
+
+      function updateKdState() {
+        var isManual = kdModeEl.value === "manual";
+        kdManualEl.disabled = !isManual;
+      }
+
+      function updateGcpiState() {
+        var isManual = gcpiModeEl.value === "manual";
+        gcpiManualEl.disabled = !isManual;
+        enclosureEl.disabled = isManual;
+      }
+
+      function calculateAndRender() {
+        clearErrors();
+        var inputs = collectInputs();
+        var validation = validateInputs(inputs);
+        if (!validation.ok) {
+          renderErrors(validation.errors);
+          renderNoResult();
+          return;
+        }
+
+        var results = computeResults(inputs);
+        renderResults(inputs, results);
+      }
+
+      function collectInputs() {
+        return {
+          edition: editionEl.value,
+          risk: riskEl.value,
+          V_mph: parseNumber(speedEl.value),
+          exposure: exposureEl.value,
+          h_ft: parseNumber(meanRoofEl.value),
+          z_ft: parseNumber(qzHeightEl.value),
+          G: parseNumber(gustEl.value),
+          Kzt: parseNumber(kztEl.value),
+          Ke: parseNumber(keEl.value),
+          kdMode: kdModeEl.value,
+          Kd_manual: parseNumber(kdManualEl.value),
+          gcpPresetId: gcpPresetEl.value,
+          GCp: parseNumber(gcpEl.value),
+          GCpiMode: gcpiModeEl.value,
+          enclosureClass: enclosureEl.value,
+          GCpi_manual: parseNumber(gcpiManualEl.value)
+        };
+      }
+
+      function validateInputs(inputs) {
+        var errors = [];
+
+        if (!(inputs.edition === "7-16" || inputs.edition === "7-22")) {
+          pushError(errors, "edition", "Choose either ASCE 7-16 or ASCE 7-22.");
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(RISK_IMPORTANCE, inputs.risk)) {
+          pushError(errors, "risk", "Risk Category must be I, II, III, or IV.");
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(EXPOSURE_CONSTANTS, inputs.exposure)) {
+          pushError(errors, "exposure", "Exposure Category must be B, C, or D.");
+        }
+
+        if (!isFinitePositive(inputs.V_mph)) {
+          pushError(errors, "V", "Basic wind speed V must be a positive number.");
+        }
+
+        if (!isFinitePositive(inputs.z_ft)) {
+          pushError(errors, "z", "Exposure height z must be a positive number.");
+        }
+
+        if (!isFinitePositive(inputs.h_ft)) {
+          pushError(errors, "h", "Mean roof height h must be a positive number.");
+        }
+
+        if (!isFinitePositive(inputs.G)) {
+          pushError(errors, "G", "Gust effect factor G must be a positive number.");
+        }
+
+        if (!isFinitePositive(inputs.Kzt)) {
+          pushError(errors, "Kzt", "Topographic factor Kzt must be a positive number.");
+        }
+
+        if (!isFinitePositive(inputs.Ke)) {
+          pushError(errors, "Ke", "Ground elevation factor Ke must be a positive number.");
+        }
+
+        if (!(inputs.kdMode === "auto" || inputs.kdMode === "manual")) {
+          pushError(errors, "kdMode", "Kd mode must be auto or manual.");
+        }
+
+        if (inputs.kdMode === "manual" && !isFinitePositive(inputs.Kd_manual)) {
+          pushError(errors, "kdManual", "Manual Kd must be a positive number.");
+        }
+
+        if (!findPreset(inputs.gcpPresetId)) {
+          pushError(errors, "gcpPreset", "Select a valid GCp preset.");
+        }
+
+        if (!isFiniteNumber(inputs.GCp)) {
+          pushError(errors, "gcp", "GCp must be a valid number.");
+        }
+
+        if (!(inputs.GCpiMode === "standard" || inputs.GCpiMode === "manual")) {
+          pushError(errors, "gcpiMode", "GCpi mode must be standard or manual.");
+        }
+
+        if (
+          inputs.GCpiMode === "standard" &&
+          !Object.prototype.hasOwnProperty.call(GCPI_STANDARD_CASES, inputs.enclosureClass)
+        ) {
+          pushError(errors, "enclosure", "Select a valid enclosure class.");
+        }
+
+        if (inputs.GCpiMode === "manual" && !isFiniteNumber(inputs.GCpi_manual)) {
+          pushError(errors, "gcpiManual", "Manual GCpi must be a valid number.");
+        }
+
+        return { ok: errors.length === 0, errors: errors };
+      }
+
+      function computeResults(inputs) {
+        var kzInfo = calculateKz(inputs.z_ft, inputs.exposure);
+        var khInfo = calculateKz(inputs.h_ft, inputs.exposure);
+        var Kd = resolveKd(inputs);
+        var I = RISK_IMPORTANCE[inputs.risk];
+
+        // ASCE 7-16/7-22 velocity pressure expression qz (Chapter 26 framework).
+        var qz =
+          0.00256 *
+          kzInfo.coefficient *
+          inputs.Kzt *
+          Kd *
+          inputs.Ke *
+          Math.pow(inputs.V_mph, 2) *
+          I;
+
+        // qi is computed with the same expression evaluated at mean roof height h.
+        var qi =
+          0.00256 *
+          khInfo.coefficient *
+          inputs.Kzt *
+          Kd *
+          inputs.Ke *
+          Math.pow(inputs.V_mph, 2) *
+          I;
+
+        var gcpiCases = resolveGcpiCases(inputs);
+
+        // ASCE 7 components and cladding net pressure form:
+        // p = qz * G * GCp - qi * GCpi
+        var pCases = gcpiCases.map(function (gcpi) {
+          return {
+            gcpi: gcpi,
+            pressure: qz * inputs.G * inputs.GCp - qi * gcpi
+          };
+        });
+
+        var pValues = pCases.map(function (entry) {
+          return entry.pressure;
+        });
+
+        return {
+          Kz: kzInfo.coefficient,
+          KzEffHeight: kzInfo.effectiveHeight,
+          Kh: khInfo.coefficient,
+          KhEffHeight: khInfo.effectiveHeight,
+          alpha: kzInfo.alpha,
+          zg: kzInfo.zg,
+          Kd: Kd,
+          I: I,
+          qz: qz,
+          qi: qi,
+          pCases: pCases,
+          pMin: Math.min.apply(null, pValues),
+          pMax: Math.max.apply(null, pValues)
+        };
+      }
+
+      function calculateKz(heightFt, exposure) {
+        var constants = EXPOSURE_CONSTANTS[exposure];
+        var effectiveHeight = clamp(heightFt, 15, constants.zg);
+        var coefficient = 2.01 * Math.pow(effectiveHeight / constants.zg, 2 / constants.alpha);
+
+        return {
+          coefficient: coefficient,
+          effectiveHeight: effectiveHeight,
+          alpha: constants.alpha,
+          zg: constants.zg
+        };
+      }
+
+      function resolveKd(inputs) {
+        if (inputs.kdMode === "manual") {
+          return inputs.Kd_manual;
+        }
+        var preset = findPreset(inputs.gcpPresetId);
+        if (preset && isFinitePositive(preset.kd)) {
+          return preset.kd;
+        }
+        return 0.85;
+      }
+
+      function resolveGcpiCases(inputs) {
+        if (inputs.GCpiMode === "manual") {
+          return [inputs.GCpi_manual];
+        }
+        return GCPI_STANDARD_CASES[inputs.enclosureClass] || [0.18, -0.18];
+      }
+
+      function renderResults(inputs, results) {
+        errorSummaryEl.classList.add("hidden");
+        resultPlaceholderEl.classList.add("hidden");
+        resultContentEl.classList.remove("hidden");
+
+        qzValueEl.textContent = formatPsf(results.qz);
+        qiValueEl.textContent = formatPsf(results.qi);
+        pMinValueEl.textContent = formatPsf(results.pMin);
+        pMaxValueEl.textContent = formatPsf(results.pMax);
+
+        factorTableBodyEl.innerHTML = [
+          tableRow("Exposure", escapeHtml(inputs.exposure)),
+          tableRow("Risk Category", escapeHtml(inputs.risk)),
+          tableRow("Importance factor I", formatNumber(results.I)),
+          tableRow("Kz at z", formatNumber(results.Kz)),
+          tableRow("z effective for Kz (ft)", formatNumber(results.KzEffHeight)),
+          tableRow("Kh at h", formatNumber(results.Kh)),
+          tableRow("h effective for Kh (ft)", formatNumber(results.KhEffHeight)),
+          tableRow("alpha", formatNumber(results.alpha)),
+          tableRow("zg (ft)", formatNumber(results.zg)),
+          tableRow("Kd", formatNumber(results.Kd)),
+          tableRow("Kzt", formatNumber(inputs.Kzt)),
+          tableRow("Ke", formatNumber(inputs.Ke)),
+          tableRow("G", formatNumber(inputs.G)),
+          tableRow("GCp", formatSigned(inputs.GCp))
+        ].join("");
+
+        caseTableBodyEl.innerHTML = results.pCases
+          .map(function (entry) {
+            return (
+              "<tr>" +
+              "<td>" + formatSigned(entry.gcpi) + "</td>" +
+              "<td>" + formatPsf(entry.pressure) + "</td>" +
+              "</tr>"
+            );
+          })
+          .join("");
+
+        formulaBlockEl.innerHTML = renderFormulaBlocks(inputs, results);
+
+        editionNoteEl.textContent =
+          inputs.edition === "7-22"
+            ? "Note for ASCE 7-22 mode: this v1 tool applies the selected Risk Category multiplier I per project policy and displays all factors transparently."
+            : "ASCE 7-16 mode active. Results are shown with full factor substitution.";
+
+        resultAnnouncerEl.textContent =
+          "Calculation complete. qz is " +
+          formatPsf(results.qz) +
+          ", qi is " +
+          formatPsf(results.qi) +
+          ", envelope ranges from " +
+          formatPsf(results.pMin) +
+          " to " +
+          formatPsf(results.pMax) +
+          ".";
+      }
+
+      function renderFormulaBlocks(inputs, results) {
+        var formulaRows = [];
+
+        formulaRows.push(
+          formulaHtml(
+            "Kz calculation at z",
+            "Kz = 2.01 * (z/zg)^(2/alpha)",
+            "Kz = 2.01 * (" +
+              formatNumber(results.KzEffHeight) +
+              "/" +
+              formatNumber(results.zg) +
+              ")^(2/" +
+              formatNumber(results.alpha) +
+              ") = " +
+              formatNumber(results.Kz)
+          )
+        );
+
+        formulaRows.push(
+          formulaHtml(
+            "Kh calculation at h (used for qi)",
+            "Kh = 2.01 * (h/zg)^(2/alpha)",
+            "Kh = 2.01 * (" +
+              formatNumber(results.KhEffHeight) +
+              "/" +
+              formatNumber(results.zg) +
+              ")^(2/" +
+              formatNumber(results.alpha) +
+              ") = " +
+              formatNumber(results.Kh)
+          )
+        );
+
+        formulaRows.push(
+          formulaHtml(
+            "Velocity pressure qz",
+            "qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2 * I",
+            "qz = 0.00256 * " +
+              formatNumber(results.Kz) +
+              " * " +
+              formatNumber(inputs.Kzt) +
+              " * " +
+              formatNumber(results.Kd) +
+              " * " +
+              formatNumber(inputs.Ke) +
+              " * " +
+              formatNumber(inputs.V_mph) +
+              "^2 * " +
+              formatNumber(results.I) +
+              " = " +
+              formatPsf(results.qz)
+          )
+        );
+
+        formulaRows.push(
+          formulaHtml(
+            "Internal velocity pressure qi",
+            "qi = 0.00256 * Kh * Kzt * Kd * Ke * V^2 * I",
+            "qi = 0.00256 * " +
+              formatNumber(results.Kh) +
+              " * " +
+              formatNumber(inputs.Kzt) +
+              " * " +
+              formatNumber(results.Kd) +
+              " * " +
+              formatNumber(inputs.Ke) +
+              " * " +
+              formatNumber(inputs.V_mph) +
+              "^2 * " +
+              formatNumber(results.I) +
+              " = " +
+              formatPsf(results.qi)
+          )
+        );
+
+        results.pCases.forEach(function (entry, index) {
+          formulaRows.push(
+            formulaHtml(
+              "Net design pressure case " + (index + 1),
+              "p = qz * G * GCp - qi * GCpi",
+              "p = " +
+                formatPsf(results.qz) +
+                " * " +
+                formatNumber(inputs.G) +
+                " * " +
+                formatSigned(inputs.GCp) +
+                " - " +
+                formatPsf(results.qi) +
+                " * " +
+                formatSigned(entry.gcpi) +
+                " = " +
+                formatPsf(entry.pressure)
+            )
+          );
+        });
+
+        formulaRows.push(
+          formulaHtml(
+            "Envelope result",
+            "p_min = min(all cases), p_max = max(all cases)",
+            "p_min = " + formatPsf(results.pMin) + ", p_max = " + formatPsf(results.pMax)
+          )
+        );
+
+        return formulaRows.join("");
+      }
+
+      function renderNoResult() {
+        resultPlaceholderEl.classList.remove("hidden");
+        resultContentEl.classList.add("hidden");
+      }
+
+      function renderErrors(errors) {
+        if (!errors.length) {
+          errorSummaryEl.classList.add("hidden");
+          return;
+        }
+
+        var messageList = errors.map(function (entry) {
+          return "<li>" + escapeHtml(entry.message) + "</li>";
+        }).join("");
+
+        errorSummaryEl.innerHTML =
+          "<h3>Please fix the following inputs:</h3><ul>" + messageList + "</ul>";
+        errorSummaryEl.classList.remove("hidden");
+
+        errors.forEach(function (entry) {
+          var id = FIELD_TO_ERROR[entry.field];
+          if (!id) {
+            return;
+          }
+          var errorEl = document.getElementById(id);
+          if (errorEl) {
+            errorEl.textContent = entry.message;
+            var fieldInput = findFieldInput(entry.field);
+            if (fieldInput) {
+              fieldInput.setAttribute("aria-invalid", "true");
+            }
+          }
+        });
+      }
+
+      function clearErrors() {
+        Object.keys(FIELD_TO_ERROR).forEach(function (field) {
+          var id = FIELD_TO_ERROR[field];
+          var errorEl = document.getElementById(id);
+          if (errorEl) {
+            errorEl.textContent = "";
+          }
+          var inputEl = findFieldInput(field);
+          if (inputEl) {
+            inputEl.removeAttribute("aria-invalid");
+          }
+        });
+        errorSummaryEl.innerHTML = "";
+        errorSummaryEl.classList.add("hidden");
+      }
+
+      function findFieldInput(field) {
+        switch (field) {
+          case "edition":
+            return editionEl;
+          case "risk":
+            return riskEl;
+          case "V":
+            return speedEl;
+          case "exposure":
+            return exposureEl;
+          case "h":
+            return meanRoofEl;
+          case "z":
+            return qzHeightEl;
+          case "G":
+            return gustEl;
+          case "Kzt":
+            return kztEl;
+          case "Ke":
+            return keEl;
+          case "kdMode":
+            return kdModeEl;
+          case "kdManual":
+            return kdManualEl;
+          case "gcpPreset":
+            return gcpPresetEl;
+          case "gcp":
+            return gcpEl;
+          case "gcpiMode":
+            return gcpiModeEl;
+          case "enclosure":
+            return enclosureEl;
+          case "gcpiManual":
+            return gcpiManualEl;
+          default:
+            return null;
+        }
+      }
+
+      function pushError(errors, field, message) {
+        errors.push({ field: field, message: message });
+      }
+
+      function findPreset(id) {
+        return PRESETS.find(function (preset) {
+          return preset.id === id;
+        });
+      }
+
+      function parseNumber(value) {
+        return Number(value);
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function formatPsf(value) {
+        return Number(value).toFixed(2) + " psf";
+      }
+
+      function formatSigned(value) {
+        var normalized = Math.abs(value) < 0.0000001 ? 0 : value;
+        var num = Number(normalized).toFixed(2);
+        return value > 0 ? "+" + num : num;
+      }
+
+      function formatNumber(value, decimals) {
+        var places = typeof decimals === "number" ? decimals : 4;
+        var fixed = Number(value).toFixed(places);
+        if (fixed.indexOf(".") === -1) {
+          return fixed;
+        }
+        return fixed.replace(/0+$/, "").replace(/\.$/, "");
+      }
+
+      function toFixedString(value, decimals) {
+        return Number(value).toFixed(decimals);
+      }
+
+      function tableRow(name, value) {
+        return "<tr><th scope=\"row\">" + name + "</th><td>" + value + "</td></tr>";
+      }
+
+      function formulaHtml(title, general, substituted) {
+        return (
+          '<div class="formula">' +
+          "<strong>" + escapeHtml(title) + "</strong><br>" +
+          "<code>" + escapeHtml(general) + "</code><br>" +
+          "<code>" + escapeHtml(substituted) + "</code>" +
+          "</div>"
+        );
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function isFinitePositive(value) {
+        return Number.isFinite(value) && value > 0;
+      }
+
+      function isFiniteNumber(value) {
+        return Number.isFinite(value);
+      }
+
+      function copyEmbedCode() {
+        var text = embedCodeEl.value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function () {
+              copyStatusEl.textContent = "Embed code copied.";
+            },
+            function () {
+              fallbackCopy();
+            }
+          );
+        } else {
+          fallbackCopy();
+        }
+
+        function fallbackCopy() {
+          embedCodeEl.focus();
+          embedCodeEl.select();
+          try {
+            document.execCommand("copy");
+            copyStatusEl.textContent = "Embed code copied.";
+          } catch (err) {
+            copyStatusEl.textContent = "Copy failed. Select and copy manually.";
+          }
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
