@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WindCalculations Super Calculator (ASCE 7)</title>
+  <title>WindCalculations ASCE Wind Pressure Reference Calculator</title>
   <meta name="description" content="Public static client-side wind parameter calculator for ASCE 7-16/7-22 velocity pressure qz and net design pressures.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,6 +101,25 @@
       margin: 0;
       max-width: 90ch;
       color: #def5f8;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand-row img {
+      height: 46px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.22));
+    }
+
+    .brand-row .eyebrow {
+      margin-bottom: 0;
     }
 
     .embed-banner {
@@ -351,8 +370,23 @@
       background: #fff9f2;
       padding: 10px 12px;
       border-radius: 6px;
-      font-weight: 700;
       color: #6b360f;
+    }
+
+    .disclaimer strong {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .disclaimer ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.92rem;
+    }
+
+    .disclaimer li + li {
+      margin-top: 4px;
     }
 
     .citation {
@@ -460,11 +494,16 @@
 <body>
   <div class="shell">
     <section class="hero" aria-labelledby="app-title">
-      <span class="eyebrow">WindCalculations.com</span>
-      <h1 id="app-title">Super Wind Parameter Calculator</h1>
+      <div class="brand-row">
+        <img
+          src="https://assets.zyrosite.com/cdn-cgi/image/format%3Dauto%2Cw%3D768%2Cfit%3Dcrop%2Cq%3D95/mv0LOLq49lt1GvqG/windcalculations-logo-design1-SfWY8HFp8d1mSaGl.png"
+          alt="WindCalculations.com logo">
+        <span class="eyebrow">WindCalculations.com</span>
+      </div>
+      <h1 id="app-title">ASCE Wind Pressure Reference Calculator</h1>
       <p>
-        Public ASCE 7 reference calculator for velocity pressure (qz) and net design pressures (p)
-        for rooftop HVAC and low-rise components and cladding use cases.
+        Public ASCE 7 reference calculator for velocity pressure and low-rise components and cladding
+        net pressure screening using a transparent, browser-only workflow.
       </p>
     </section>
 
@@ -500,6 +539,7 @@
                   <option value="III">III</option>
                   <option value="IV">IV</option>
                 </select>
+                <p class="hint">Use to select the correct basic wind speed map value V.</p>
                 <p class="field-error" id="err-risk-category"></p>
               </div>
 
@@ -528,6 +568,7 @@
               <div class="field">
                 <label for="qz-height">Exposure Height z for qz (ft)</label>
                 <input id="qz-height" name="qz-height" type="number" inputmode="decimal" step="0.1" min="1" value="30" aria-describedby="err-qz-height">
+                <p class="hint">Used for qz reporting. Net C&C pressure uses qh at mean roof height h.</p>
                 <p class="field-error" id="err-qz-height"></p>
               </div>
             </div>
@@ -537,9 +578,9 @@
             <legend>Factors and Pressure Coefficients</legend>
             <div class="grid">
               <div class="field">
-                <label for="gust-factor">Gust Effect Factor G</label>
-                <input id="gust-factor" name="gust-factor" type="number" inputmode="decimal" step="0.01" value="0.85" aria-describedby="err-gust-factor">
-                <p class="hint">Default 0.85</p>
+                <label for="gust-factor">Gust Effect Factor G (display only)</label>
+                <input id="gust-factor" name="gust-factor" type="number" inputmode="decimal" step="0.01" value="0.85" aria-describedby="err-gust-factor" disabled>
+                <p class="hint">For ASCE Ch. 30 Eq. 30.3-1, GCp and GCpi are already gust-combined.</p>
                 <p class="field-error" id="err-gust-factor"></p>
               </div>
 
@@ -560,7 +601,7 @@
               <div class="field">
                 <label for="kd-mode">Directionality Factor Kd Mode</label>
                 <select id="kd-mode" name="kd-mode" aria-describedby="err-kd-mode">
-                  <option value="auto" selected>Auto (C&C/HVAC default 0.85)</option>
+                  <option value="auto" selected>Auto (low-rise C&C default 0.85)</option>
                   <option value="manual">Manual override</option>
                 </select>
                 <p class="field-error" id="err-kd-mode"></p>
@@ -581,6 +622,7 @@
               <div class="field">
                 <label for="gcp">External Pressure Coefficient GCp</label>
                 <input id="gcp" name="gcp" type="number" inputmode="decimal" step="0.01" value="-0.90" aria-describedby="err-gcp">
+                <p class="hint">Verify GCp from the applicable ASCE figure, zone, and effective wind area.</p>
                 <p class="field-error" id="err-gcp"></p>
               </div>
 
@@ -610,6 +652,12 @@
               </div>
             </div>
           </fieldset>
+
+          <div class="status-box">
+            Method implemented: low-rise C&C pressure equation <strong>p = qh * (GCp - GCpi)</strong>
+            (ASCE Ch. 30 form). Rooftop equipment force design procedures (ASCE Ch. 29) are not
+            included in this version.
+          </div>
 
           <div class="actions">
             <button class="btn btn-primary" type="submit">Calculate Wind Pressures</button>
@@ -644,8 +692,8 @@
               <div class="value" id="qz-value">-</div>
             </div>
             <div class="item">
-              <div class="label">Internal Velocity Pressure qi</div>
-              <div class="value" id="qi-value">-</div>
+              <div class="label">Velocity Pressure qh (at mean roof height)</div>
+              <div class="value" id="qh-value">-</div>
             </div>
             <div class="item">
               <div class="label">Net Pressure Envelope (min)</div>
@@ -670,7 +718,7 @@
                 <thead>
                   <tr>
                     <th>GCpi case</th>
-                    <th>p = qz * G * GCp - qi * GCpi (psf)</th>
+                    <th>p = qh * (GCp - GCpi) (psf)</th>
                   </tr>
                 </thead>
                 <tbody id="case-table-body"></tbody>
@@ -689,17 +737,27 @@
           Core wind equations are implemented in-browser for transparency and review.
         </p>
         <ul class="method-links">
-          <li><a href="https://windcalculations.com/wind-tools-and-resources/" target="_blank" rel="noopener noreferrer">Methodology page</a></li>
+          <li><a href="https://windcalculations.com/wind-pressure-calculator-methodology/" target="_blank" rel="noopener noreferrer">Methodology page</a></li>
           <li><a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">WindCalculations.com</a></li>
         </ul>
 
         <p class="citation">
-          ASCE 7-16 / ASCE 7-22 wind pressure formulas implemented (client-side reference tool).
+          ASCE 7-16 / ASCE 7-22 formulas implemented as a client-side reference tool:
+          qz/qh via Chapter 26 velocity pressure form and net C&C pressure in the Chapter 30
+          low-rise equation form.
         </p>
 
-        <p class="disclaimer">
-          For informational use only; consult a licensed engineer for final design.
-        </p>
+        <div class="disclaimer">
+          <strong>Important Disclaimer</strong>
+          <ul>
+            <li>This calculator is for informational and preliminary screening use only.</li>
+            <li>Use does not create an engineer-client relationship or professional engineering service agreement.</li>
+            <li>Results depend on user-selected coefficients and assumptions and are not a substitute for project-specific code analysis.</li>
+            <li>Users are responsible for confirming adopted code edition, jurisdictional amendments, and governing load cases.</li>
+            <li>Final design and permit decisions must be reviewed and approved by a licensed professional engineer.</li>
+            <li>WindCalculations.com disclaims liability for losses arising from use or misuse of this tool.</li>
+          </ul>
+        </div>
 
         <div class="cta">
           Need stamped design support? Request a professional review at
@@ -721,13 +779,7 @@
         D: { alpha: 11.5, zg: 700 }
       };
 
-      // Project-specific v1 policy for risk category multipliers.
-      var RISK_IMPORTANCE = {
-        I: 0.87,
-        II: 1.0,
-        III: 1.15,
-        IV: 1.15
-      };
+      var RISK_CATEGORIES = ["I", "II", "III", "IV"];
 
       var PRESETS = [
         { id: "custom", label: "Custom manual GCp", gcp: null, kd: 0.85 },
@@ -810,7 +862,7 @@
       var caseTableBodyEl = document.getElementById("case-table-body");
       var formulaBlockEl = document.getElementById("formula-block");
       var qzValueEl = document.getElementById("qz-value");
-      var qiValueEl = document.getElementById("qi-value");
+      var qhValueEl = document.getElementById("qh-value");
       var pMinValueEl = document.getElementById("p-min-value");
       var pMaxValueEl = document.getElementById("p-max-value");
       var editionNoteEl = document.getElementById("edition-note");
@@ -910,7 +962,7 @@
       }
 
       function updateEmbedSnippet() {
-        var baseUrl = "https://windcalculations.com/super-calculator";
+        var baseUrl = "https://windcalculations.com/asce-wind-pressure-calculator";
         embedCodeEl.value =
           '<iframe src="' +
           baseUrl +
@@ -977,7 +1029,7 @@
           pushError(errors, "edition", "Choose either ASCE 7-16 or ASCE 7-22.");
         }
 
-        if (!Object.prototype.hasOwnProperty.call(RISK_IMPORTANCE, inputs.risk)) {
+        if (RISK_CATEGORIES.indexOf(inputs.risk) === -1) {
           pushError(errors, "risk", "Risk Category must be I, II, III, or IV.");
         }
 
@@ -1047,36 +1099,33 @@
         var kzInfo = calculateKz(inputs.z_ft, inputs.exposure);
         var khInfo = calculateKz(inputs.h_ft, inputs.exposure);
         var Kd = resolveKd(inputs);
-        var I = RISK_IMPORTANCE[inputs.risk];
-
         // ASCE 7-16/7-22 velocity pressure expression qz (Chapter 26 framework).
+        // Risk category is represented by selecting the correct basic wind speed map value V.
+        // No additional importance multiplier is applied in this implementation.
         var qz =
           0.00256 *
           kzInfo.coefficient *
           inputs.Kzt *
           Kd *
           inputs.Ke *
-          Math.pow(inputs.V_mph, 2) *
-          I;
+          Math.pow(inputs.V_mph, 2);
 
-        // qi is computed with the same expression evaluated at mean roof height h.
-        var qi =
+        var qh =
           0.00256 *
           khInfo.coefficient *
           inputs.Kzt *
           Kd *
           inputs.Ke *
-          Math.pow(inputs.V_mph, 2) *
-          I;
+          Math.pow(inputs.V_mph, 2);
 
         var gcpiCases = resolveGcpiCases(inputs);
 
-        // ASCE 7 components and cladding net pressure form:
-        // p = qz * G * GCp - qi * GCpi
+        // ASCE low-rise C&C net pressure form (Eq. 30.3-1 style):
+        // p = qh * (GCp - GCpi)
         var pCases = gcpiCases.map(function (gcpi) {
           return {
             gcpi: gcpi,
-            pressure: qz * inputs.G * inputs.GCp - qi * gcpi
+            pressure: qh * (inputs.GCp - gcpi)
           };
         });
 
@@ -1092,9 +1141,8 @@
           alpha: kzInfo.alpha,
           zg: kzInfo.zg,
           Kd: Kd,
-          I: I,
           qz: qz,
-          qi: qi,
+          qh: qh,
           pCases: pCases,
           pMin: Math.min.apply(null, pValues),
           pMax: Math.max.apply(null, pValues)
@@ -1138,14 +1186,13 @@
         resultContentEl.classList.remove("hidden");
 
         qzValueEl.textContent = formatPsf(results.qz);
-        qiValueEl.textContent = formatPsf(results.qi);
+        qhValueEl.textContent = formatPsf(results.qh);
         pMinValueEl.textContent = formatPsf(results.pMin);
         pMaxValueEl.textContent = formatPsf(results.pMax);
 
         factorTableBodyEl.innerHTML = [
           tableRow("Exposure", escapeHtml(inputs.exposure)),
           tableRow("Risk Category", escapeHtml(inputs.risk)),
-          tableRow("Importance factor I", formatNumber(results.I)),
           tableRow("Kz at z", formatNumber(results.Kz)),
           tableRow("z effective for Kz (ft)", formatNumber(results.KzEffHeight)),
           tableRow("Kh at h", formatNumber(results.Kh)),
@@ -1155,7 +1202,7 @@
           tableRow("Kd", formatNumber(results.Kd)),
           tableRow("Kzt", formatNumber(inputs.Kzt)),
           tableRow("Ke", formatNumber(inputs.Ke)),
-          tableRow("G", formatNumber(inputs.G)),
+          tableRow("G (not used in Ch. 30 net pressure equation)", formatNumber(inputs.G)),
           tableRow("GCp", formatSigned(inputs.GCp))
         ].join("");
 
@@ -1173,15 +1220,13 @@
         formulaBlockEl.innerHTML = renderFormulaBlocks(inputs, results);
 
         editionNoteEl.textContent =
-          inputs.edition === "7-22"
-            ? "Note for ASCE 7-22 mode: this v1 tool applies the selected Risk Category multiplier I per project policy and displays all factors transparently."
-            : "ASCE 7-16 mode active. Results are shown with full factor substitution.";
+          "Risk Category is used to select basic wind speed V from the adopted map. No separate importance multiplier is applied in the equations shown.";
 
         resultAnnouncerEl.textContent =
           "Calculation complete. qz is " +
           formatPsf(results.qz) +
-          ", qi is " +
-          formatPsf(results.qi) +
+          ", qh is " +
+          formatPsf(results.qh) +
           ", envelope ranges from " +
           formatPsf(results.pMin) +
           " to " +
@@ -1209,7 +1254,7 @@
 
         formulaRows.push(
           formulaHtml(
-            "Kh calculation at h (used for qi)",
+            "Kh calculation at h (used for qh)",
             "Kh = 2.01 * (h/zg)^(2/alpha)",
             "Kh = 2.01 * (" +
               formatNumber(results.KhEffHeight) +
@@ -1225,7 +1270,7 @@
         formulaRows.push(
           formulaHtml(
             "Velocity pressure qz",
-            "qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2 * I",
+            "qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2",
             "qz = 0.00256 * " +
               formatNumber(results.Kz) +
               " * " +
@@ -1236,8 +1281,7 @@
               formatNumber(inputs.Ke) +
               " * " +
               formatNumber(inputs.V_mph) +
-              "^2 * " +
-              formatNumber(results.I) +
+              "^2" +
               " = " +
               formatPsf(results.qz)
           )
@@ -1245,9 +1289,9 @@
 
         formulaRows.push(
           formulaHtml(
-            "Internal velocity pressure qi",
-            "qi = 0.00256 * Kh * Kzt * Kd * Ke * V^2 * I",
-            "qi = 0.00256 * " +
+            "Velocity pressure at mean roof height qh",
+            "qh = 0.00256 * Kh * Kzt * Kd * Ke * V^2",
+            "qh = 0.00256 * " +
               formatNumber(results.Kh) +
               " * " +
               formatNumber(inputs.Kzt) +
@@ -1257,10 +1301,9 @@
               formatNumber(inputs.Ke) +
               " * " +
               formatNumber(inputs.V_mph) +
-              "^2 * " +
-              formatNumber(results.I) +
+              "^2" +
               " = " +
-              formatPsf(results.qi)
+              formatPsf(results.qh)
           )
         );
 
@@ -1268,17 +1311,14 @@
           formulaRows.push(
             formulaHtml(
               "Net design pressure case " + (index + 1),
-              "p = qz * G * GCp - qi * GCpi",
+              "p = qh * (GCp - GCpi)",
               "p = " +
-                formatPsf(results.qz) +
-                " * " +
-                formatNumber(inputs.G) +
-                " * " +
+                formatPsf(results.qh) +
+                " * (" +
                 formatSigned(inputs.GCp) +
                 " - " +
-                formatPsf(results.qi) +
-                " * " +
                 formatSigned(entry.gcpi) +
+                ")" +
                 " = " +
                 formatPsf(entry.pressure)
             )
