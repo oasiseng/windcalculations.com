@@ -24,10 +24,12 @@ Static engineering calculator apps for WindCalculations.com.
 - Includes validation, intermediate-factor display, and formula substitution output.
 - Includes visual formula proof tables, decision logs, and exportable calculation records.
 - No backend calls and no server-side calculations.
+- RTU tool uses explicit factorized stability screening (`fD`, `fW`) and computes `Ke` from site elevation input.
 
 ## Not in scope (v1)
 
-- Rooftop equipment force design workflow under ASCE Chapter 29.
+- Final, project-specific rooftop equipment force coefficient selection and anchorage detailing under the adopted ASCE provisions.
+- Final project-specific governing load-combination selection remains the responsibility of the engineer of record.
 - Project-specific stamped design decisions.
 
 ## Embed

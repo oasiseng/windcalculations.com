@@ -557,9 +557,10 @@
               </div>
 
               <div class="field">
-                <label for="Ke">Ground Elevation Factor Ke</label>
-                <input id="Ke" name="Ke" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-Ke">
-                <p class="field-error" id="err-Ke"></p>
+                <label for="elevation">Site elevation above mean sea level (ft)</label>
+                <input id="elevation" name="elevation" type="number" inputmode="decimal" step="1" value="0" aria-describedby="err-elevation">
+                <p class="hint">Ke is computed internally from elevation.</p>
+                <p class="field-error" id="err-elevation"></p>
               </div>
 
               <div class="field">
@@ -575,18 +576,6 @@
             <legend>Building and RTU Geometry</legend>
             <div class="grid">
               <div class="field">
-                <label for="B">Building width B normal to wind (ft)</label>
-                <input id="B" name="B" type="number" inputmode="decimal" min="0.1" step="0.1" value="100" aria-describedby="err-B">
-                <p class="field-error" id="err-B"></p>
-              </div>
-
-              <div class="field">
-                <label for="L">Building length L parallel to wind (ft)</label>
-                <input id="L" name="L" type="number" inputmode="decimal" min="0.1" step="0.1" value="150" aria-describedby="err-L">
-                <p class="field-error" id="err-L"></p>
-              </div>
-
-              <div class="field">
                 <label for="Af">RTU projected area Af normal to wind (ft²)</label>
                 <input id="Af" name="Af" type="number" inputmode="decimal" min="0.1" step="0.1" value="48" aria-describedby="err-Af">
                 <p class="field-error" id="err-Af"></p>
@@ -600,14 +589,21 @@
 
               <div class="field">
                 <label for="W">RTU dead load W (lb)</label>
-                <input id="W" name="W" type="number" inputmode="decimal" min="0" step="1" value="1200" aria-describedby="err-W">
+                <input id="W" name="W" type="number" inputmode="decimal" min="0" step="1" value="3500" aria-describedby="err-W">
                 <p class="field-error" id="err-W"></p>
               </div>
 
               <div class="field">
-                <label for="zcg">CG height above roof for lateral moment arm (ft)</label>
-                <input id="zcg" name="zcg" type="number" inputmode="decimal" min="0.1" step="0.1" value="4" aria-describedby="err-zcg">
-                <p class="field-error" id="err-zcg"></p>
+                <label for="hUnit">RTU overall height h_unit (ft)</label>
+                <input id="hUnit" name="hUnit" type="number" inputmode="decimal" min="0.1" step="0.1" value="6" aria-describedby="err-hUnit">
+                <p class="field-error" id="err-hUnit"></p>
+              </div>
+
+              <div class="field">
+                <label for="hCurb">Curb / stand height above roof h_curb (ft)</label>
+                <input id="hCurb" name="hCurb" type="number" inputmode="decimal" min="0" step="0.1" value="0.5" aria-describedby="err-hCurb">
+                <p class="hint">Wind resultant height uses z_wind = h_curb + h_unit/2.</p>
+                <p class="field-error" id="err-hCurb"></p>
               </div>
 
               <div class="field">
@@ -634,23 +630,16 @@
             <legend>Rooftop Coefficient Input (GCr)</legend>
             <div class="grid">
               <div class="field">
-                <label for="gcrMode">GCr mode</label>
-                <select id="gcrMode" name="gcrMode" aria-describedby="err-gcrMode">
-                  <option value="manual" selected>Manual (recommended for final design)</option>
-                  <option value="estimate">Estimated interpolation (screening only)</option>
-                </select>
-                <p class="field-error" id="err-gcrMode"></p>
-              </div>
-
-              <div class="field">
                 <label for="GCrL">GCr lateral coefficient</label>
-                <input id="GCrL" name="GCrL" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-GCrL">
+                <input id="GCrL" name="GCrL" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.90" aria-describedby="err-GCrL">
+                <p class="hint">Conservative default for rooftop equipment lateral force.</p>
                 <p class="field-error" id="err-GCrL"></p>
               </div>
 
               <div class="field">
                 <label for="GCrU">GCr uplift coefficient</label>
-                <input id="GCrU" name="GCrU" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-GCrU">
+                <input id="GCrU" name="GCrU" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.50" aria-describedby="err-GCrU">
+                <p class="hint">Conservative default for rooftop equipment uplift force.</p>
                 <p class="field-error" id="err-GCrU"></p>
               </div>
 
@@ -658,18 +647,46 @@
                 <label for="preset">RTU size preset (optional)</label>
                 <select id="preset" name="preset">
                   <option value="custom" selected>Custom</option>
-                  <option value="small">Small RTU (Af 16, Ar 16, zcg 2.0, base 4)</option>
-                  <option value="medium">Medium RTU (Af 36, Ar 48, zcg 3.0, base 6)</option>
-                  <option value="large">Large RTU (Af 64, Ar 96, zcg 4.0, base 8)</option>
+                  <option value="small">Small RTU (Af 16, Ar 16, h_unit 3, base 4)</option>
+                  <option value="medium">Medium RTU (Af 36, Ar 48, h_unit 5, base 6)</option>
+                  <option value="large">Large RTU (Af 64, Ar 96, h_unit 7, base 8)</option>
                 </select>
                 <p class="hint">Preset fills RTU geometry fields only.</p>
               </div>
             </div>
           </fieldset>
 
+          <fieldset>
+            <legend>ASD Stability Combination Factors</legend>
+            <div class="grid">
+              <div class="field">
+                <label for="combo">Combination selector</label>
+                <select id="combo" name="combo" aria-describedby="err-combo">
+                  <option value="asd_06_06" selected>0.6D + 0.6W (recommended)</option>
+                  <option value="asd_06_10">0.6D + 1.0W (conservative wind)</option>
+                  <option value="service_10_10">1.0D + 1.0W (service reference)</option>
+                  <option value="custom">Custom factors</option>
+                </select>
+                <p class="field-error" id="err-combo"></p>
+              </div>
+
+              <div class="field">
+                <label for="fD">Dead load factor fD</label>
+                <input id="fD" name="fD" type="number" inputmode="decimal" min="0" step="0.01" value="0.60" aria-describedby="err-fD" disabled>
+                <p class="field-error" id="err-fD"></p>
+              </div>
+
+              <div class="field">
+                <label for="fW">Wind load factor fW</label>
+                <input id="fW" name="fW" type="number" inputmode="decimal" min="0" step="0.01" value="0.60" aria-describedby="err-fW" disabled>
+                <p class="field-error" id="err-fW"></p>
+              </div>
+            </div>
+          </fieldset>
+
           <div class="status-box">
             Method implemented: rooftop equipment force form <strong>F = qh * (GCr) * A</strong>.
-            Manual GCr is recommended for final design. Estimated mode is for screening only.
+            Default GCr values are conservative placeholders (1.9 lateral, 1.5 uplift). Stability checks use explicit ASD-style factors on dead and wind actions. Verify final load combinations and coefficient selection per adopted code.
           </div>
 
           <div class="actions">
@@ -705,11 +722,11 @@
               <div class="value" id="qh-value">-</div>
             </div>
             <div class="item">
-              <div class="label">Lateral wind force Fh</div>
+              <div class="label">Factored lateral wind force fW*Fh</div>
               <div class="value" id="Fh-value">-</div>
             </div>
             <div class="item">
-              <div class="label">Uplift wind force Fu</div>
+              <div class="label">Factored uplift wind force fW*Fu</div>
               <div class="value" id="Fu-value">-</div>
             </div>
             <div class="item">
@@ -777,7 +794,7 @@
           <ul>
             <li>This calculator is for informational and preliminary screening use only.</li>
             <li>Use does not create an engineer-client relationship or professional engineering service agreement.</li>
-            <li>Manual engineer-selected GCr values are recommended for final design. Estimated GCr mode is not a substitute for code-specific coefficient selection.</li>
+            <li>GCr values must be selected and validated by the engineer of record for the specific equipment geometry and code context.</li>
             <li>Users are responsible for confirming adopted code edition, jurisdictional amendments, coefficient applicability, and governing load combinations.</li>
             <li>Final design and permit decisions must be reviewed and approved by a licensed professional engineer.</li>
             <li>WindCalculations.com disclaims liability for losses arising from use or misuse of this tool.</li>
@@ -811,20 +828,21 @@
         exposure: "C",
         h: 30,
         Kzt: 1.0,
-        Ke: 1.0,
+        elevation: 0,
         Kd: 0.85,
-        B: 100,
-        L: 150,
         Af: 48,
         Ar: 48,
-        W: 1200,
-        zcg: 4,
+        W: 3500,
+        hUnit: 6,
+        hCurb: 0.5,
         baseWidth: 6,
         anchors: 4,
         mu: 0.30,
-        gcrMode: "manual",
-        GCrL: 1.00,
-        GCrU: 1.00,
+        GCrL: 1.90,
+        GCrU: 1.50,
+        combo: "asd_06_06",
+        fD: 0.60,
+        fW: 0.60,
         preset: "custom"
       };
 
@@ -835,20 +853,21 @@
         exposure: "err-exposure",
         h: "err-h",
         Kzt: "err-Kzt",
-        Ke: "err-Ke",
+        elevation: "err-elevation",
         Kd: "err-Kd",
-        B: "err-B",
-        L: "err-L",
         Af: "err-Af",
         Ar: "err-Ar",
         W: "err-W",
-        zcg: "err-zcg",
+        hUnit: "err-hUnit",
+        hCurb: "err-hCurb",
         baseWidth: "err-baseWidth",
         anchors: "err-anchors",
         mu: "err-mu",
-        gcrMode: "err-gcrMode",
         GCrL: "err-GCrL",
-        GCrU: "err-GCrU"
+        GCrU: "err-GCrU",
+        combo: "err-combo",
+        fD: "err-fD",
+        fW: "err-fW"
       };
 
       var form = document.getElementById("rtu-form");
@@ -858,20 +877,21 @@
       var exposureEl = document.getElementById("exposure");
       var hEl = document.getElementById("h");
       var KztEl = document.getElementById("Kzt");
-      var KeEl = document.getElementById("Ke");
+      var elevationEl = document.getElementById("elevation");
       var KdEl = document.getElementById("Kd");
-      var BEl = document.getElementById("B");
-      var LEl = document.getElementById("L");
       var AfEl = document.getElementById("Af");
       var ArEl = document.getElementById("Ar");
       var WEl = document.getElementById("W");
-      var zcgEl = document.getElementById("zcg");
+      var hUnitEl = document.getElementById("hUnit");
+      var hCurbEl = document.getElementById("hCurb");
       var baseWidthEl = document.getElementById("baseWidth");
       var anchorsEl = document.getElementById("anchors");
       var muEl = document.getElementById("mu");
-      var gcrModeEl = document.getElementById("gcrMode");
       var GCrLEl = document.getElementById("GCrL");
       var GCrUEl = document.getElementById("GCrU");
+      var comboEl = document.getElementById("combo");
+      var fDEl = document.getElementById("fD");
+      var fWEl = document.getElementById("fW");
       var presetEl = document.getElementById("preset");
       var errorSummaryEl = document.getElementById("error-summary");
       var resultPlaceholderEl = document.getElementById("result-placeholder");
@@ -901,7 +921,7 @@
       function init() {
         applyDefaults();
         applyQueryParams();
-        updateGcrState();
+        updateComboState();
         updateEmbedSnippet();
         attachEvents();
         calculateAndRender();
@@ -913,18 +933,17 @@
           calculateAndRender();
         });
 
-        gcrModeEl.addEventListener("change", function () {
-          updateGcrState();
-          if (gcrModeEl.value === "estimate") {
-            calculateAndRender();
-          }
+        comboEl.addEventListener("change", function () {
+          applyCombinationPreset(comboEl.value);
+          updateComboState();
+          calculateAndRender();
         });
 
         presetEl.addEventListener("change", applyPreset);
 
         resetBtnEl.addEventListener("click", function () {
           applyDefaults();
-          updateGcrState();
+          updateComboState();
           clearErrors();
           calculateAndRender();
         });
@@ -946,20 +965,21 @@
         exposureEl.value = DEFAULTS.exposure;
         hEl.value = String(DEFAULTS.h);
         KztEl.value = toFixedString(DEFAULTS.Kzt, 2);
-        KeEl.value = toFixedString(DEFAULTS.Ke, 2);
+        elevationEl.value = String(DEFAULTS.elevation);
         KdEl.value = toFixedString(DEFAULTS.Kd, 2);
-        BEl.value = String(DEFAULTS.B);
-        LEl.value = String(DEFAULTS.L);
         AfEl.value = String(DEFAULTS.Af);
         ArEl.value = String(DEFAULTS.Ar);
         WEl.value = String(DEFAULTS.W);
-        zcgEl.value = String(DEFAULTS.zcg);
+        hUnitEl.value = String(DEFAULTS.hUnit);
+        hCurbEl.value = String(DEFAULTS.hCurb);
         baseWidthEl.value = String(DEFAULTS.baseWidth);
         anchorsEl.value = String(DEFAULTS.anchors);
         muEl.value = toFixedString(DEFAULTS.mu, 2);
-        gcrModeEl.value = DEFAULTS.gcrMode;
         GCrLEl.value = toFixedString(DEFAULTS.GCrL, 2);
         GCrUEl.value = toFixedString(DEFAULTS.GCrU, 2);
+        comboEl.value = DEFAULTS.combo;
+        fDEl.value = toFixedString(DEFAULTS.fD, 2);
+        fWEl.value = toFixedString(DEFAULTS.fW, 2);
         presetEl.value = DEFAULTS.preset;
       }
 
@@ -980,10 +1000,23 @@
           '<iframe src="https://windcalculations.com/rtu-wind-load-calculator/?embed=1" width="100%" height="1080" style="border:0;" loading="lazy"></iframe>';
       }
 
-      function updateGcrState() {
-        var isManual = gcrModeEl.value === "manual";
-        GCrLEl.disabled = !isManual;
-        GCrUEl.disabled = !isManual;
+      function applyCombinationPreset(combo) {
+        if (combo === "asd_06_06") {
+          fDEl.value = "0.60";
+          fWEl.value = "0.60";
+        } else if (combo === "asd_06_10") {
+          fDEl.value = "0.60";
+          fWEl.value = "1.00";
+        } else if (combo === "service_10_10") {
+          fDEl.value = "1.00";
+          fWEl.value = "1.00";
+        }
+      }
+
+      function updateComboState() {
+        var isCustom = comboEl.value === "custom";
+        fDEl.disabled = !isCustom;
+        fWEl.disabled = !isCustom;
       }
 
       function applyPreset() {
@@ -991,17 +1024,17 @@
         if (preset === "small") {
           AfEl.value = "16";
           ArEl.value = "16";
-          zcgEl.value = "2";
+          hUnitEl.value = "3";
           baseWidthEl.value = "4";
         } else if (preset === "medium") {
           AfEl.value = "36";
           ArEl.value = "48";
-          zcgEl.value = "3";
+          hUnitEl.value = "5";
           baseWidthEl.value = "6";
         } else if (preset === "large") {
           AfEl.value = "64";
           ArEl.value = "96";
-          zcgEl.value = "4";
+          hUnitEl.value = "7";
           baseWidthEl.value = "8";
         }
       }
@@ -1014,20 +1047,21 @@
           exposure: exposureEl.value,
           h: parseNumber(hEl.value),
           Kzt: parseNumber(KztEl.value),
-          Ke: parseNumber(KeEl.value),
+          elevation: parseNumber(elevationEl.value),
           Kd: parseNumber(KdEl.value),
-          B: parseNumber(BEl.value),
-          L: parseNumber(LEl.value),
           Af: parseNumber(AfEl.value),
           Ar: parseNumber(ArEl.value),
           W: parseNumber(WEl.value),
-          zcg: parseNumber(zcgEl.value),
+          hUnit: parseNumber(hUnitEl.value),
+          hCurb: parseNumber(hCurbEl.value),
           baseWidth: parseNumber(baseWidthEl.value),
           anchors: parseNumber(anchorsEl.value),
           mu: parseNumber(muEl.value),
-          gcrMode: gcrModeEl.value,
           GCrL: parseNumber(GCrLEl.value),
           GCrU: parseNumber(GCrUEl.value),
+          combo: comboEl.value,
+          fD: parseNumber(fDEl.value),
+          fW: parseNumber(fWEl.value),
           preset: presetEl.value
         };
       }
@@ -1045,12 +1079,18 @@
           pushError(errors, "exposure", "Exposure Category must be B, C, or D.");
         }
 
-        ["V", "h", "Kzt", "Ke", "Kd", "B", "L", "Af", "Ar", "zcg", "baseWidth", "anchors"].forEach(function (field) {
+        ["V", "h", "Kzt", "Kd", "Af", "Ar", "hUnit", "baseWidth", "anchors"].forEach(function (field) {
           if (!isFinitePositive(inputs[field])) {
             pushError(errors, field, field + " must be a positive number.");
           }
         });
 
+        if (!isFiniteNumber(inputs.elevation)) {
+          pushError(errors, "elevation", "Site elevation must be a valid number.");
+        }
+        if (!isFiniteNonNegative(inputs.hCurb)) {
+          pushError(errors, "hCurb", "Curb / stand height must be zero or positive.");
+        }
         if (!isFiniteNonNegative(inputs.W)) {
           pushError(errors, "W", "Dead load W must be zero or positive.");
         }
@@ -1061,16 +1101,23 @@
           pushError(errors, "anchors", "Anchors must be an integer greater than or equal to 1.");
         }
 
-        if (!(inputs.gcrMode === "manual" || inputs.gcrMode === "estimate")) {
-          pushError(errors, "gcrMode", "GCr mode must be manual or estimate.");
+        if (!isFinitePositive(inputs.GCrL)) {
+          pushError(errors, "GCrL", "GCr lateral must be a positive number.");
+        }
+        if (!isFinitePositive(inputs.GCrU)) {
+          pushError(errors, "GCrU", "GCr uplift must be a positive number.");
         }
 
-        if (inputs.gcrMode === "manual") {
-          if (!isFinitePositive(inputs.GCrL)) {
-            pushError(errors, "GCrL", "Manual GCr lateral must be a positive number.");
+        if (["asd_06_06", "asd_06_10", "service_10_10", "custom"].indexOf(inputs.combo) === -1) {
+          pushError(errors, "combo", "Select a valid ASD combination option.");
+        }
+
+        if (inputs.combo === "custom") {
+          if (!isFiniteNonNegative(inputs.fD)) {
+            pushError(errors, "fD", "Dead load factor must be zero or positive.");
           }
-          if (!isFinitePositive(inputs.GCrU)) {
-            pushError(errors, "GCrU", "Manual GCr uplift must be a positive number.");
+          if (!isFiniteNonNegative(inputs.fW)) {
+            pushError(errors, "fW", "Wind load factor must be zero or positive.");
           }
         }
 
@@ -1094,33 +1141,48 @@
 
       function computeResults(inputs) {
         var khInfo = calculateKz(inputs.h, inputs.exposure);
-        var qh = 0.00256 * khInfo.coefficient * inputs.Kzt * inputs.Kd * inputs.Ke * Math.pow(inputs.V, 2);
+        var combo = resolveCombinationFactors(inputs);
+        var Ke = calculateKe(inputs.elevation);
+        var qh = 0.00256 * khInfo.coefficient * inputs.Kzt * inputs.Kd * Ke * Math.pow(inputs.V, 2);
 
-        var gcr = resolveGcr(inputs);
-        var Fh = qh * gcr.GCrL * inputs.Af;
-        var Fu = qh * gcr.GCrU * inputs.Ar;
+        var Fh = qh * inputs.GCrL * inputs.Af;
+        var Fu = qh * inputs.GCrU * inputs.Ar;
+        var zWind = inputs.hCurb + (inputs.hUnit / 2);
 
-        var WnetDown = Math.max(inputs.W - Fu, 0);
-        var netUplift = Math.max(Fu - inputs.W, 0);
+        var Fh_design = combo.fW * Fh;
+        var Fu_design = combo.fW * Fu;
+        var D_design = combo.fD * inputs.W;
+
+        var WnetDown = Math.max(D_design - Fu_design, 0);
+        var netUplift = Math.max(Fu_design - D_design, 0);
         var perAnchor = netUplift / inputs.anchors;
-        var M_ot = Fh * inputs.zcg;
+        var M_ot = Fh_design * zWind;
         var M_res = WnetDown * (inputs.baseWidth / 2);
         var slideRes = inputs.mu * WnetDown;
 
         var overturningUtil = M_res > 0 ? M_ot / M_res : Infinity;
-        var slidingUtil = slideRes > 0 ? Fh / slideRes : Infinity;
+        var slidingUtil = slideRes > 0 ? Fh_design / slideRes : Infinity;
 
         return {
           Kh: khInfo.coefficient,
           hEff: khInfo.effectiveHeight,
           alpha: khInfo.alpha,
           zg: khInfo.zg,
+          KzMinApplied: khInfo.minApplied,
+          Ke: Ke,
+          combo: combo.key,
+          comboLabel: combo.label,
+          fD: combo.fD,
+          fW: combo.fW,
           qh: qh,
-          GCrL: gcr.GCrL,
-          GCrU: gcr.GCrU,
-          gcrBasis: gcr.basis,
+          GCrL: inputs.GCrL,
+          GCrU: inputs.GCrU,
+          zWind: zWind,
           Fh: Fh,
           Fu: Fu,
+          Fh_design: Fh_design,
+          Fu_design: Fu_design,
+          D_design: D_design,
           WnetDown: WnetDown,
           netUplift: netUplift,
           perAnchor: perAnchor,
@@ -1132,36 +1194,36 @@
         };
       }
 
-      function resolveGcr(inputs) {
-        if (inputs.gcrMode === "manual") {
-          return {
-            GCrL: inputs.GCrL,
-            GCrU: inputs.GCrU,
-            basis: "manual"
-          };
+      function resolveCombinationFactors(inputs) {
+        if (inputs.combo === "asd_06_06") {
+          return { key: "asd_06_06", label: "0.6D + 0.6W", fD: 0.6, fW: 0.6 };
         }
-
-        var Bh = inputs.B * inputs.h;
-        var BL = inputs.B * inputs.L;
-        var GCrL = interpolateBounded(inputs.Af, 0.1 * Bh, 1.9, Bh, 1.0);
-        var GCrU = interpolateBounded(inputs.Ar, 0.1 * BL, 1.5, BL, 1.0);
-        return {
-          GCrL: GCrL,
-          GCrU: GCrU,
-          basis: "estimated"
-        };
+        if (inputs.combo === "asd_06_10") {
+          return { key: "asd_06_10", label: "0.6D + 1.0W", fD: 0.6, fW: 1.0 };
+        }
+        if (inputs.combo === "service_10_10") {
+          return { key: "service_10_10", label: "1.0D + 1.0W", fD: 1.0, fW: 1.0 };
+        }
+        return { key: "custom", label: "Custom", fD: inputs.fD, fW: inputs.fW };
       }
 
       function calculateKz(heightFt, exposure) {
         var constants = EXPOSURE_CONSTANTS[exposure];
         var effectiveHeight = clamp(heightFt, 15, constants.zg);
-        var coefficient = 2.01 * Math.pow(effectiveHeight / constants.zg, 2 / constants.alpha);
+        var raw = 2.01 * Math.pow(effectiveHeight / constants.zg, 2 / constants.alpha);
+        var tableMin = { B: 0.57, C: 0.85, D: 1.03 }[exposure];
+        var coefficient = Math.max(raw, tableMin);
         return {
           coefficient: coefficient,
           effectiveHeight: effectiveHeight,
           alpha: constants.alpha,
-          zg: constants.zg
+          zg: constants.zg,
+          minApplied: raw < tableMin
         };
+      }
+
+      function calculateKe(elevationFt) {
+        return Math.exp(-0.0000361 * elevationFt);
       }
 
       function renderResults(inputs, results) {
@@ -1171,8 +1233,8 @@
         exportStatusEl.textContent = "";
 
         qhValueEl.textContent = formatPressure(results.qh);
-        FhValueEl.textContent = formatForce(results.Fh);
-        FuValueEl.textContent = formatForce(results.Fu);
+        FhValueEl.textContent = formatForce(results.Fh_design);
+        FuValueEl.textContent = formatForce(results.Fu_design);
         UnetValueEl.textContent = formatForce(results.netUplift);
         TanchorValueEl.textContent = formatForce(results.perAnchor);
         slideUtilEl.textContent = formatUtil(results.slidingUtil);
@@ -1180,15 +1242,20 @@
         stabilityTableEl.innerHTML = [
           row("Kh at h", formatNumber(results.Kh)),
           row("h effective", formatNumber(results.hEff, 2) + " ft"),
+          row("Ke from elevation", formatNumber(results.Ke)),
+          row("Stability combination", results.comboLabel),
           row("GCr lateral", formatNumber(results.GCrL)),
           row("GCr uplift", formatNumber(results.GCrU)),
-          row("GCr basis", results.gcrBasis),
-          row("Available downward weight (W - Fu, floor at 0)", formatForce(results.WnetDown)),
-          row("Overturning moment M_ot = Fh * zcg", formatMoment(results.M_ot)),
+          row("Wind resultant height z_wind", formatNumber(results.zWind, 2) + " ft"),
+          row("Factored dead load fD*W", formatForce(results.D_design)),
+          row("Factored lateral force fW*Fh", formatForce(results.Fh_design)),
+          row("Factored uplift force fW*Fu", formatForce(results.Fu_design)),
+          row("Available downward force max(fD*W - fW*Fu, 0)", formatForce(results.WnetDown)),
+          row("Overturning moment M_ot = (fW*Fh) * z_wind", formatMoment(results.M_ot)),
           row("Restoring moment M_res = Wnet * baseWidth/2", formatMoment(results.M_res)),
           row("Overturning utilization M_ot/M_res", formatUtil(results.overturningUtil)),
           row("Sliding resistance R = mu * Wnet", formatForce(results.slideRes)),
-          row("Sliding utilization Fh/R", formatUtil(results.slidingUtil))
+          row("Sliding utilization (fW*Fh)/R", formatUtil(results.slidingUtil))
         ].join("");
 
         formulaBlockEl.innerHTML = renderFormulaBlocks(inputs, results);
@@ -1200,12 +1267,12 @@
           .join("");
 
         editionNoteEl.textContent =
-          "Risk Category is used to select basic wind speed V from the adopted map. Verify final GCr selection and governing combinations per adopted ASCE edition.";
+          "Risk Category is used to select basic wind speed V from the adopted map. Stability checks use selected fD/fW factors; verify governing combinations and coefficients for final design.";
 
         resultAnnouncerEl.textContent =
           "Calculation complete. qh is " + formatPressure(results.qh) +
-          ", lateral force is " + formatForce(results.Fh) +
-          ", uplift force is " + formatForce(results.Fu) + ".";
+          ", factored lateral force is " + formatForce(results.Fh_design) +
+          ", factored uplift force is " + formatForce(results.Fu_design) + ".";
 
         lastCalculationPackage = {
           inputs: inputs,
@@ -1222,13 +1289,19 @@
         var parts = [];
 
         parts.push(formula(
+          "Ground elevation factor",
+          "Ke = exp(-0.0000361 * elevation_ft)",
+          "Ke = exp(-0.0000361 * " + formatNumber(inputs.elevation, 2) + ") = " + formatNumber(results.Ke)
+        ));
+
+        parts.push(formula(
           "Velocity pressure at mean roof height",
           "qh = 0.00256 * Kh * Kzt * Kd * Ke * V^2",
           "qh = 0.00256 * " +
             formatNumber(results.Kh) + " * " +
             formatNumber(inputs.Kzt) + " * " +
             formatNumber(inputs.Kd) + " * " +
-            formatNumber(inputs.Ke) + " * " +
+            formatNumber(results.Ke) + " * " +
             formatNumber(inputs.V, 2) + "^2 = " +
             formatPressure(results.qh)
         ));
@@ -1254,19 +1327,21 @@
         ));
 
         parts.push(formula(
-          "Net uplift and anchor demand",
-          "U_net = max(Fu - W, 0), T_anchor = U_net / n",
-          "U_net = max(" + formatForce(results.Fu) + " - " + formatForce(inputs.W) + ", 0) = " +
+          "Factored net uplift and anchor demand",
+          "U_net = max(fW*Fu - fD*W, 0), T_anchor = U_net / n",
+          "U_net = max(" + formatNumber(results.fW, 2) + "*" + formatForce(results.Fu) +
+            " - " + formatNumber(results.fD, 2) + "*" + formatForce(inputs.W) + ", 0) = " +
             formatForce(results.netUplift) + ", T_anchor = " + formatForce(results.netUplift) +
             " / " + formatNumber(inputs.anchors, 0) + " = " + formatForce(results.perAnchor)
         ));
 
         parts.push(formula(
-          "Overturning and sliding screening",
-          "M_ot = Fh*zcg, M_res = Wnet*(baseWidth/2), R_slide = mu*Wnet",
-          "M_ot = " + formatForce(results.Fh) + " * " + formatNumber(inputs.zcg, 2) + " = " + formatMoment(results.M_ot) +
+          "Factored overturning and sliding screening",
+          "M_ot=(fW*Fh)*z_wind, M_res=Wnet*(baseWidth/2), R_slide=mu*Wnet",
+          "M_ot = (" + formatNumber(results.fW, 2) + "*" + formatForce(results.Fh) + ") * " + formatNumber(results.zWind, 2) + " = " + formatMoment(results.M_ot) +
             ", M_res = " + formatForce(results.WnetDown) + " * (" + formatNumber(inputs.baseWidth, 2) + "/2) = " + formatMoment(results.M_res) +
-            ", R_slide = " + formatNumber(inputs.mu, 2) + " * " + formatForce(results.WnetDown) + " = " + formatForce(results.slideRes)
+            ", R_slide = " + formatNumber(inputs.mu, 2) + " * " + formatForce(results.WnetDown) + " = " + formatForce(results.slideRes) +
+            ", slide util = (" + formatNumber(results.fW, 2) + "*" + formatForce(results.Fh) + ")/" + formatForce(results.slideRes) + " = " + formatUtil(results.slidingUtil)
         ));
 
         return parts.join("");
@@ -1283,15 +1358,19 @@
           ["Kh", formatNumber(results.Kh)],
           ["Kzt", formatNumber(inputs.Kzt)],
           ["Kd", formatNumber(inputs.Kd)],
-          ["Ke", formatNumber(inputs.Ke)],
-          ["B", formatNumber(inputs.B, 2) + " ft"],
-          ["L", formatNumber(inputs.L, 2) + " ft"],
+          ["Elevation", formatNumber(inputs.elevation, 2) + " ft"],
+          ["Ke", formatNumber(results.Ke)],
           ["Af", formatNumber(inputs.Af, 2) + " ft²"],
           ["Ar", formatNumber(inputs.Ar, 2) + " ft²"],
+          ["h_unit", formatNumber(inputs.hUnit, 2) + " ft"],
+          ["h_curb", formatNumber(inputs.hCurb, 2) + " ft"],
+          ["z_wind", formatNumber(results.zWind, 2) + " ft"],
           ["W", formatForce(inputs.W)],
           ["Anchors n", formatNumber(inputs.anchors, 0)],
           ["mu", formatNumber(inputs.mu, 2)],
-          ["GCr mode", results.gcrBasis]
+          ["combo", results.comboLabel],
+          ["fD", formatNumber(results.fD, 2)],
+          ["fW", formatNumber(results.fW, 2)]
         ];
 
         return rows
@@ -1317,13 +1396,25 @@
           messages.push("Mean roof height used directly without clamping.");
         }
 
-        if (results.gcrBasis === "manual") {
-          messages.push("Manual GCr values supplied by user for final-design alignment.");
-        } else {
-          messages.push("Estimated GCr mode used for screening only. Final design should use engineer-selected GCr.");
+        if (results.KzMinApplied) {
+          messages.push("Kh was floored at ASCE minimum exposure coefficient for the selected exposure category.");
         }
 
-        messages.push("Stability checks shown are simplified statics screening metrics, not full code load-combination design.");
+        messages.push("GCr values are user-entered with conservative defaults (1.9 lateral, 1.5 uplift).");
+        messages.push(
+          "Stability checks use selected combination " +
+          results.comboLabel +
+          " with factors fD = " +
+          formatNumber(results.fD, 2) +
+          ", fW = " +
+          formatNumber(results.fW, 2) +
+          "."
+        );
+        messages.push("Overturning lever arm uses z_wind = h_curb + h_unit/2, not center-of-gravity.");
+        if (results.WnetDown <= 0) {
+          messages.push("Factored uplift exceeds factored dead load; restoring normal force is zero. Anchorage design governs.");
+        }
+        messages.push("Stability checks are screening metrics and must be confirmed against full project load combinations.");
         return messages;
       }
 
@@ -1349,8 +1440,10 @@
           "<h2>Summary</h2>" +
           "<table><tbody>" +
           "<tr><th>qh</th><td>" + escapeHtml(formatPressure(pkg.results.qh)) + "</td></tr>" +
-          "<tr><th>Lateral force Fh</th><td>" + escapeHtml(formatForce(pkg.results.Fh)) + "</td></tr>" +
-          "<tr><th>Uplift force Fu</th><td>" + escapeHtml(formatForce(pkg.results.Fu)) + "</td></tr>" +
+          "<tr><th>Nominal lateral force Fh</th><td>" + escapeHtml(formatForce(pkg.results.Fh)) + "</td></tr>" +
+          "<tr><th>Nominal uplift force Fu</th><td>" + escapeHtml(formatForce(pkg.results.Fu)) + "</td></tr>" +
+          "<tr><th>Factored lateral force fW*Fh</th><td>" + escapeHtml(formatForce(pkg.results.Fh_design)) + "</td></tr>" +
+          "<tr><th>Factored uplift force fW*Fu</th><td>" + escapeHtml(formatForce(pkg.results.Fu_design)) + "</td></tr>" +
           "<tr><th>Net uplift</th><td>" + escapeHtml(formatForce(pkg.results.netUplift)) + "</td></tr>" +
           "<tr><th>Tension per anchor</th><td>" + escapeHtml(formatForce(pkg.results.perAnchor)) + "</td></tr>" +
           "</tbody></table>" +
@@ -1432,32 +1525,23 @@
           exposure: exposureEl,
           h: hEl,
           Kzt: KztEl,
-          Ke: KeEl,
+          elevation: elevationEl,
           Kd: KdEl,
-          B: BEl,
-          L: LEl,
           Af: AfEl,
           Ar: ArEl,
           W: WEl,
-          zcg: zcgEl,
+          hUnit: hUnitEl,
+          hCurb: hCurbEl,
           baseWidth: baseWidthEl,
           anchors: anchorsEl,
           mu: muEl,
-          gcrMode: gcrModeEl,
           GCrL: GCrLEl,
-          GCrU: GCrUEl
+          GCrU: GCrUEl,
+          combo: comboEl,
+          fD: fDEl,
+          fW: fWEl
         };
         return map[field] || null;
-      }
-
-      function interpolateBounded(x, x1, y1, x2, y2) {
-        if (x <= x1) {
-          return y1;
-        }
-        if (x >= x2) {
-          return y2;
-        }
-        return y1 + (y2 - y1) * ((x - x1) / (x2 - x1));
       }
 
       function copyEmbedCode() {
