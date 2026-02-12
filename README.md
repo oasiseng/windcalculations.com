@@ -7,10 +7,12 @@ Static engineering calculator apps for WindCalculations.com.
 ## Current app
 
 - `index.html`: ASCE Wind Pressure Reference Calculator (client-side only)
+- `rtu-calculator.html`: RTU wind load calculator with rooftop equipment force workflow and anchor screening metrics
 
 ## Live routes
 
 - Calculator: `https://windcalculations.com/asce-wind-pressure-calculator/`
+- RTU calculator: `https://windcalculations.com/rtu-wind-load-calculator/`
 - Methodology: `https://windcalculations.com/wind-pressure-calculator-methodology/`
 
 ## Engineering scope (v1)
@@ -20,6 +22,7 @@ Static engineering calculator apps for WindCalculations.com.
   - `p = qh * (GCp - GCpi)`
 - Includes coefficient presets plus manual override.
 - Includes validation, intermediate-factor display, and formula substitution output.
+- Includes visual formula proof tables, decision logs, and exportable calculation records.
 - No backend calls and no server-side calculations.
 
 ## Not in scope (v1)

@@ -1,0 +1,1564 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WindCalculations RTU Wind Load Calculator</title>
+  <meta name="description" content="Static client-side rooftop unit wind load calculator using qh and GCr force form with transparent proof output.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #f2f7f8;
+      --bg-2: #dfeff3;
+      --ink: #0f1f2b;
+      --ink-soft: #3d5568;
+      --panel: #ffffff;
+      --line: #c8d8df;
+      --brand: #0f7a8a;
+      --brand-deep: #075866;
+      --accent: #d2691e;
+      --error: #b42318;
+      --shadow: 0 18px 40px rgba(10, 28, 43, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(15, 122, 138, 0.13), transparent 40%),
+        radial-gradient(circle at 88% 10%, rgba(210, 105, 30, 0.14), transparent 36%),
+        linear-gradient(140deg, var(--bg-1), var(--bg-2));
+      font-family: "Public Sans", "Trebuchet MS", "Tahoma", sans-serif;
+      line-height: 1.4;
+    }
+
+    .shell {
+      width: min(1240px, 94vw);
+      margin: 28px auto 56px;
+    }
+
+    .hero {
+      padding: 28px 30px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(120deg, #0f7a8a, #11535f 55%, #8c3f14 120%);
+      color: #f8fcff;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      margin-bottom: 18px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: auto -90px -110px auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+      z-index: -1;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand-row img {
+      height: 46px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.22));
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-bottom: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 10px;
+      font-family: "Space Grotesk", "Public Sans", sans-serif;
+      letter-spacing: -0.01em;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 95ch;
+      color: #def5f8;
+    }
+
+    .embed-banner {
+      display: none;
+      margin-bottom: 14px;
+      border: 1px solid #91b6c0;
+      background: #eff7fa;
+      color: #0f4753;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 0.92rem;
+    }
+
+    .layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    fieldset {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin: 0 0 14px;
+      background: #fbfdfe;
+    }
+
+    legend {
+      padding: 0 8px;
+      font-weight: 700;
+      color: #1a4155;
+      font-size: 0.92rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.93rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid #a8c0cb;
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    button:focus {
+      outline: 3px solid rgba(15, 122, 138, 0.24);
+      outline-offset: 1px;
+      border-color: var(--brand);
+    }
+
+    input[aria-invalid="true"],
+    select[aria-invalid="true"] {
+      border-color: var(--error);
+      background: #fff7f6;
+    }
+
+    input:disabled,
+    select:disabled {
+      background: #f4f7fa;
+      color: #5f7381;
+      cursor: not-allowed;
+    }
+
+    .field-error {
+      min-height: 1rem;
+      font-size: 0.8rem;
+      color: var(--error);
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-deep);
+    }
+
+    .btn-secondary {
+      background: #f0f6f8;
+      border-color: #adcad4;
+      color: #194556;
+    }
+
+    .btn-secondary:hover {
+      background: #e5f0f4;
+    }
+
+    .status-box {
+      border: 1px solid #f0d27e;
+      background: #fff8e5;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      color: #684512;
+      margin-bottom: 12px;
+    }
+
+    .status-box ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .kpi .item {
+      border: 1px solid #cde0e7;
+      background: #f8fcfd;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+    }
+
+    .kpi .label {
+      font-size: 0.8rem;
+      color: #3b5f70;
+      margin-bottom: 3px;
+    }
+
+    .kpi .value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #0d3445;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th,
+    td {
+      border: 1px solid #cfe0e7;
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #edf6f9;
+      color: #18495a;
+      font-weight: 700;
+    }
+
+    .formula {
+      background: #f6fafb;
+      border: 1px solid #d3e4ea;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 0.87rem;
+      overflow-x: auto;
+    }
+
+    .formula code {
+      white-space: nowrap;
+      color: #153948;
+      font-family: "Courier New", monospace;
+    }
+
+    .proof-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+
+    .decision-log {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.88rem;
+      color: #2d4958;
+    }
+
+    .decision-log li + li {
+      margin-top: 5px;
+    }
+
+    .disclaimer {
+      border-left: 4px solid var(--accent);
+      background: #fff9f2;
+      padding: 10px 12px;
+      border-radius: 6px;
+      color: #6b360f;
+    }
+
+    .disclaimer strong {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .disclaimer ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.92rem;
+    }
+
+    .disclaimer li + li {
+      margin-top: 4px;
+    }
+
+    .citation {
+      border-left: 4px solid #0f7a8a;
+      background: #f0f9fb;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #184958;
+    }
+
+    .meta {
+      color: #445f6e;
+      font-size: 0.86rem;
+      margin-bottom: 8px;
+    }
+
+    .method-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      padding-left: 0;
+      margin: 8px 0 0;
+      list-style: none;
+    }
+
+    .method-links a {
+      color: #075e6d;
+      font-weight: 600;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 2px;
+    }
+
+    .embed-tools textarea {
+      min-height: 85px;
+      resize: vertical;
+      font-family: "Courier New", monospace;
+      font-size: 0.84rem;
+    }
+
+    .cta {
+      border: 1px solid #b5d2db;
+      background: linear-gradient(150deg, #f4fbfd, #f8f3eb);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .cta a {
+      color: #0a6272;
+      font-weight: 700;
+    }
+
+    .calc-note {
+      margin-top: 10px;
+      font-size: 0.84rem;
+      color: #4a6676;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    body.embed-mode .hero,
+    body.embed-mode .embed-tools {
+      display: none;
+    }
+
+    body.embed-mode .embed-banner {
+      display: block;
+    }
+
+    @media (min-width: 680px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .proof-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 1020px) {
+      .layout {
+        grid-template-columns: minmax(400px, 1fr) minmax(430px, 1fr);
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero" aria-labelledby="rtu-title">
+      <div class="brand-row">
+        <img src="https://assets.zyrosite.com/cdn-cgi/image/format%3Dauto%2Cw%3D768%2Cfit%3Dcrop%2Cq%3D95/mv0LOLq49lt1GvqG/windcalculations-logo-design1-SfWY8HFp8d1mSaGl.png" alt="WindCalculations.com logo">
+        <span class="eyebrow">WindCalculations.com</span>
+      </div>
+      <h1 id="rtu-title">RTU Wind Load Calculator (Rooftop Unit)</h1>
+      <p>
+        Client-side screening tool for rooftop unit wind forces using the rooftop equipment force form
+        <strong>F = qh * (GCr) * A</strong>, with transparent proof tables and conservative anchor demand checks.
+      </p>
+    </section>
+
+    <div class="embed-banner" id="embed-banner">
+      Embedded mode is active. This compact layout is optimized for iframe usage.
+    </div>
+
+    <div class="layout">
+      <section class="card" aria-labelledby="input-heading">
+        <h2 id="input-heading">Inputs</h2>
+        <p class="meta">All calculations run in your browser. No backend calls are used.</p>
+
+        <div id="error-summary" class="status-box hidden" role="status" aria-live="polite"></div>
+
+        <form id="rtu-form" novalidate>
+          <fieldset>
+            <legend>Code and Site</legend>
+            <div class="grid">
+              <div class="field">
+                <label for="edition">ASCE Edition</label>
+                <select id="edition" name="edition" aria-describedby="err-edition">
+                  <option value="7-16">ASCE 7-16</option>
+                  <option value="7-22">ASCE 7-22</option>
+                </select>
+                <p class="field-error" id="err-edition"></p>
+              </div>
+
+              <div class="field">
+                <label for="risk">Risk Category</label>
+                <select id="risk" name="risk" aria-describedby="err-risk">
+                  <option value="I">I</option>
+                  <option value="II" selected>II</option>
+                  <option value="III">III</option>
+                  <option value="IV">IV</option>
+                </select>
+                <p class="hint">Use to select the correct basic wind speed map value V.</p>
+                <p class="field-error" id="err-risk"></p>
+              </div>
+
+              <div class="field">
+                <label for="V">Basic Wind Speed V (mph)</label>
+                <input id="V" name="V" type="number" inputmode="decimal" min="1" step="1" value="140" aria-describedby="err-V">
+                <p class="field-error" id="err-V"></p>
+              </div>
+
+              <div class="field">
+                <label for="exposure">Exposure Category</label>
+                <select id="exposure" name="exposure" aria-describedby="err-exposure">
+                  <option value="B">B</option>
+                  <option value="C" selected>C</option>
+                  <option value="D">D</option>
+                </select>
+                <p class="field-error" id="err-exposure"></p>
+              </div>
+
+              <div class="field">
+                <label for="h">Mean Roof Height h (ft)</label>
+                <input id="h" name="h" type="number" inputmode="decimal" min="1" step="0.1" value="30" aria-describedby="err-h">
+                <p class="field-error" id="err-h"></p>
+              </div>
+
+              <div class="field">
+                <label for="Kzt">Topographic Factor Kzt</label>
+                <input id="Kzt" name="Kzt" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-Kzt">
+                <p class="field-error" id="err-Kzt"></p>
+              </div>
+
+              <div class="field">
+                <label for="Ke">Ground Elevation Factor Ke</label>
+                <input id="Ke" name="Ke" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-Ke">
+                <p class="field-error" id="err-Ke"></p>
+              </div>
+
+              <div class="field">
+                <label for="Kd">Directionality Factor Kd</label>
+                <input id="Kd" name="Kd" type="number" inputmode="decimal" min="0.01" step="0.01" value="0.85" aria-describedby="err-Kd">
+                <p class="hint">Typical default is 0.85; verify project applicability.</p>
+                <p class="field-error" id="err-Kd"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Building and RTU Geometry</legend>
+            <div class="grid">
+              <div class="field">
+                <label for="B">Building width B normal to wind (ft)</label>
+                <input id="B" name="B" type="number" inputmode="decimal" min="0.1" step="0.1" value="100" aria-describedby="err-B">
+                <p class="field-error" id="err-B"></p>
+              </div>
+
+              <div class="field">
+                <label for="L">Building length L parallel to wind (ft)</label>
+                <input id="L" name="L" type="number" inputmode="decimal" min="0.1" step="0.1" value="150" aria-describedby="err-L">
+                <p class="field-error" id="err-L"></p>
+              </div>
+
+              <div class="field">
+                <label for="Af">RTU projected area Af normal to wind (ft²)</label>
+                <input id="Af" name="Af" type="number" inputmode="decimal" min="0.1" step="0.1" value="48" aria-describedby="err-Af">
+                <p class="field-error" id="err-Af"></p>
+              </div>
+
+              <div class="field">
+                <label for="Ar">RTU plan area Ar for uplift (ft²)</label>
+                <input id="Ar" name="Ar" type="number" inputmode="decimal" min="0.1" step="0.1" value="48" aria-describedby="err-Ar">
+                <p class="field-error" id="err-Ar"></p>
+              </div>
+
+              <div class="field">
+                <label for="W">RTU dead load W (lb)</label>
+                <input id="W" name="W" type="number" inputmode="decimal" min="0" step="1" value="1200" aria-describedby="err-W">
+                <p class="field-error" id="err-W"></p>
+              </div>
+
+              <div class="field">
+                <label for="zcg">CG height above roof for lateral moment arm (ft)</label>
+                <input id="zcg" name="zcg" type="number" inputmode="decimal" min="0.1" step="0.1" value="4" aria-describedby="err-zcg">
+                <p class="field-error" id="err-zcg"></p>
+              </div>
+
+              <div class="field">
+                <label for="baseWidth">RTU base width in wind direction (ft)</label>
+                <input id="baseWidth" name="baseWidth" type="number" inputmode="decimal" min="0.1" step="0.1" value="6" aria-describedby="err-baseWidth">
+                <p class="field-error" id="err-baseWidth"></p>
+              </div>
+
+              <div class="field">
+                <label for="anchors">Hold-down anchors sharing uplift (count)</label>
+                <input id="anchors" name="anchors" type="number" inputmode="numeric" min="1" step="1" value="4" aria-describedby="err-anchors">
+                <p class="field-error" id="err-anchors"></p>
+              </div>
+
+              <div class="field">
+                <label for="mu">Friction coefficient μ (sliding check)</label>
+                <input id="mu" name="mu" type="number" inputmode="decimal" min="0" step="0.01" value="0.30" aria-describedby="err-mu">
+                <p class="field-error" id="err-mu"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Rooftop Coefficient Input (GCr)</legend>
+            <div class="grid">
+              <div class="field">
+                <label for="gcrMode">GCr mode</label>
+                <select id="gcrMode" name="gcrMode" aria-describedby="err-gcrMode">
+                  <option value="manual" selected>Manual (recommended for final design)</option>
+                  <option value="estimate">Estimated interpolation (screening only)</option>
+                </select>
+                <p class="field-error" id="err-gcrMode"></p>
+              </div>
+
+              <div class="field">
+                <label for="GCrL">GCr lateral coefficient</label>
+                <input id="GCrL" name="GCrL" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-GCrL">
+                <p class="field-error" id="err-GCrL"></p>
+              </div>
+
+              <div class="field">
+                <label for="GCrU">GCr uplift coefficient</label>
+                <input id="GCrU" name="GCrU" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" aria-describedby="err-GCrU">
+                <p class="field-error" id="err-GCrU"></p>
+              </div>
+
+              <div class="field">
+                <label for="preset">RTU size preset (optional)</label>
+                <select id="preset" name="preset">
+                  <option value="custom" selected>Custom</option>
+                  <option value="small">Small RTU (Af 16, Ar 16, zcg 2.0, base 4)</option>
+                  <option value="medium">Medium RTU (Af 36, Ar 48, zcg 3.0, base 6)</option>
+                  <option value="large">Large RTU (Af 64, Ar 96, zcg 4.0, base 8)</option>
+                </select>
+                <p class="hint">Preset fills RTU geometry fields only.</p>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="status-box">
+            Method implemented: rooftop equipment force form <strong>F = qh * (GCr) * A</strong>.
+            Manual GCr is recommended for final design. Estimated mode is for screening only.
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Calculate RTU Wind Forces</button>
+            <button class="btn btn-secondary" type="button" id="reset-btn">Reset Defaults</button>
+          </div>
+        </form>
+
+        <section class="embed-tools" aria-labelledby="embed-heading">
+          <h3 id="embed-heading">Embed Snippet</h3>
+          <p class="meta">Use this iframe code to embed the RTU calculator on another page.</p>
+          <textarea id="embed-code" readonly></textarea>
+          <div class="actions">
+            <button class="btn btn-secondary" type="button" id="copy-embed">Copy Embed Code</button>
+            <span class="meta" id="copy-status" aria-live="polite"></span>
+          </div>
+        </section>
+      </section>
+
+      <section class="card" aria-labelledby="result-heading">
+        <h2 id="result-heading">Results</h2>
+        <div id="result-announcer" class="sr-only" aria-live="polite"></div>
+
+        <div id="result-placeholder" class="status-box">
+          <h3>No calculation yet</h3>
+          Fill in the form and select <strong>Calculate RTU Wind Forces</strong>.
+        </div>
+
+        <div id="result-content" class="hidden">
+          <div class="kpi">
+            <div class="item">
+              <div class="label">Velocity pressure qh</div>
+              <div class="value" id="qh-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Lateral wind force Fh</div>
+              <div class="value" id="Fh-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Uplift wind force Fu</div>
+              <div class="value" id="Fu-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Net uplift demand</div>
+              <div class="value" id="Unet-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Required tension / anchor</div>
+              <div class="value" id="Tanchor-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Sliding utilization</div>
+              <div class="value" id="slide-util">-</div>
+            </div>
+          </div>
+
+          <h3>Stability Metrics</h3>
+          <table aria-label="RTU stability metrics table">
+            <tbody id="stability-table"></tbody>
+          </table>
+
+          <h3>Formulas With Substituted Values</h3>
+          <div id="formula-block"></div>
+
+          <h3>Visual Formula Proof</h3>
+          <div class="proof-grid">
+            <div>
+              <table aria-label="RTU proof variables table">
+                <thead>
+                  <tr>
+                    <th>Variable</th>
+                    <th>Value used</th>
+                  </tr>
+                </thead>
+                <tbody id="proof-table"></tbody>
+              </table>
+            </div>
+            <div>
+              <ul class="decision-log" id="decision-log"></ul>
+              <div class="actions">
+                <button class="btn btn-secondary" type="button" id="export-record">Export Calculation Record</button>
+                <span class="meta" id="export-status" aria-live="polite"></span>
+              </div>
+            </div>
+          </div>
+
+          <p class="calc-note" id="edition-note"></p>
+        </div>
+
+        <h3>Methodology and References</h3>
+        <p class="meta">Tool is intended for rooftop unit wind force screening with transparent calculations.</p>
+        <ul class="method-links">
+          <li><a href="https://windcalculations.com/wind-pressure-calculator-methodology/" target="_blank" rel="noopener noreferrer">Methodology page</a></li>
+          <li><a href="https://windcalculations.com/asce-wind-pressure-calculator/" target="_blank" rel="noopener noreferrer">C&C pressure calculator</a></li>
+          <li><a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">WindCalculations.com</a></li>
+        </ul>
+
+        <p class="citation">
+          ASCE rooftop structures/equipment force form implemented in reference-tool format:
+          <strong>F = qh * (GCr) * A</strong>. Verify coefficient selection and governing load combinations in the adopted code.
+        </p>
+
+        <div class="disclaimer">
+          <strong>Important Disclaimer</strong>
+          <ul>
+            <li>This calculator is for informational and preliminary screening use only.</li>
+            <li>Use does not create an engineer-client relationship or professional engineering service agreement.</li>
+            <li>Manual engineer-selected GCr values are recommended for final design. Estimated GCr mode is not a substitute for code-specific coefficient selection.</li>
+            <li>Users are responsible for confirming adopted code edition, jurisdictional amendments, coefficient applicability, and governing load combinations.</li>
+            <li>Final design and permit decisions must be reviewed and approved by a licensed professional engineer.</li>
+            <li>WindCalculations.com disclaims liability for losses arising from use or misuse of this tool.</li>
+          </ul>
+        </div>
+
+        <div class="cta">
+          Need PE-reviewed RTU anchorage design support?
+          <a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">Request engineering review at WindCalculations.com</a>.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var EXPOSURE_CONSTANTS = {
+        B: { alpha: 7.0, zg: 1200 },
+        C: { alpha: 9.5, zg: 900 },
+        D: { alpha: 11.5, zg: 700 }
+      };
+
+      var RISK_CATEGORIES = ["I", "II", "III", "IV"];
+
+      var DEFAULTS = {
+        edition: "7-16",
+        risk: "II",
+        V: 140,
+        exposure: "C",
+        h: 30,
+        Kzt: 1.0,
+        Ke: 1.0,
+        Kd: 0.85,
+        B: 100,
+        L: 150,
+        Af: 48,
+        Ar: 48,
+        W: 1200,
+        zcg: 4,
+        baseWidth: 6,
+        anchors: 4,
+        mu: 0.30,
+        gcrMode: "manual",
+        GCrL: 1.00,
+        GCrU: 1.00,
+        preset: "custom"
+      };
+
+      var FIELD_TO_ERROR = {
+        edition: "err-edition",
+        risk: "err-risk",
+        V: "err-V",
+        exposure: "err-exposure",
+        h: "err-h",
+        Kzt: "err-Kzt",
+        Ke: "err-Ke",
+        Kd: "err-Kd",
+        B: "err-B",
+        L: "err-L",
+        Af: "err-Af",
+        Ar: "err-Ar",
+        W: "err-W",
+        zcg: "err-zcg",
+        baseWidth: "err-baseWidth",
+        anchors: "err-anchors",
+        mu: "err-mu",
+        gcrMode: "err-gcrMode",
+        GCrL: "err-GCrL",
+        GCrU: "err-GCrU"
+      };
+
+      var form = document.getElementById("rtu-form");
+      var editionEl = document.getElementById("edition");
+      var riskEl = document.getElementById("risk");
+      var VEl = document.getElementById("V");
+      var exposureEl = document.getElementById("exposure");
+      var hEl = document.getElementById("h");
+      var KztEl = document.getElementById("Kzt");
+      var KeEl = document.getElementById("Ke");
+      var KdEl = document.getElementById("Kd");
+      var BEl = document.getElementById("B");
+      var LEl = document.getElementById("L");
+      var AfEl = document.getElementById("Af");
+      var ArEl = document.getElementById("Ar");
+      var WEl = document.getElementById("W");
+      var zcgEl = document.getElementById("zcg");
+      var baseWidthEl = document.getElementById("baseWidth");
+      var anchorsEl = document.getElementById("anchors");
+      var muEl = document.getElementById("mu");
+      var gcrModeEl = document.getElementById("gcrMode");
+      var GCrLEl = document.getElementById("GCrL");
+      var GCrUEl = document.getElementById("GCrU");
+      var presetEl = document.getElementById("preset");
+      var errorSummaryEl = document.getElementById("error-summary");
+      var resultPlaceholderEl = document.getElementById("result-placeholder");
+      var resultContentEl = document.getElementById("result-content");
+      var resultAnnouncerEl = document.getElementById("result-announcer");
+      var qhValueEl = document.getElementById("qh-value");
+      var FhValueEl = document.getElementById("Fh-value");
+      var FuValueEl = document.getElementById("Fu-value");
+      var UnetValueEl = document.getElementById("Unet-value");
+      var TanchorValueEl = document.getElementById("Tanchor-value");
+      var slideUtilEl = document.getElementById("slide-util");
+      var stabilityTableEl = document.getElementById("stability-table");
+      var formulaBlockEl = document.getElementById("formula-block");
+      var proofTableEl = document.getElementById("proof-table");
+      var decisionLogEl = document.getElementById("decision-log");
+      var editionNoteEl = document.getElementById("edition-note");
+      var embedCodeEl = document.getElementById("embed-code");
+      var copyEmbedBtnEl = document.getElementById("copy-embed");
+      var copyStatusEl = document.getElementById("copy-status");
+      var exportRecordBtnEl = document.getElementById("export-record");
+      var exportStatusEl = document.getElementById("export-status");
+      var resetBtnEl = document.getElementById("reset-btn");
+      var lastCalculationPackage = null;
+
+      init();
+
+      function init() {
+        applyDefaults();
+        applyQueryParams();
+        updateGcrState();
+        updateEmbedSnippet();
+        attachEvents();
+        calculateAndRender();
+      }
+
+      function attachEvents() {
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          calculateAndRender();
+        });
+
+        gcrModeEl.addEventListener("change", function () {
+          updateGcrState();
+          if (gcrModeEl.value === "estimate") {
+            calculateAndRender();
+          }
+        });
+
+        presetEl.addEventListener("change", applyPreset);
+
+        resetBtnEl.addEventListener("click", function () {
+          applyDefaults();
+          updateGcrState();
+          clearErrors();
+          calculateAndRender();
+        });
+
+        copyEmbedBtnEl.addEventListener("click", copyEmbedCode);
+        exportRecordBtnEl.addEventListener("click", exportCalculationRecord);
+
+        form.addEventListener("input", function () {
+          if (!errorSummaryEl.classList.contains("hidden")) {
+            calculateAndRender();
+          }
+        });
+      }
+
+      function applyDefaults() {
+        editionEl.value = DEFAULTS.edition;
+        riskEl.value = DEFAULTS.risk;
+        VEl.value = String(DEFAULTS.V);
+        exposureEl.value = DEFAULTS.exposure;
+        hEl.value = String(DEFAULTS.h);
+        KztEl.value = toFixedString(DEFAULTS.Kzt, 2);
+        KeEl.value = toFixedString(DEFAULTS.Ke, 2);
+        KdEl.value = toFixedString(DEFAULTS.Kd, 2);
+        BEl.value = String(DEFAULTS.B);
+        LEl.value = String(DEFAULTS.L);
+        AfEl.value = String(DEFAULTS.Af);
+        ArEl.value = String(DEFAULTS.Ar);
+        WEl.value = String(DEFAULTS.W);
+        zcgEl.value = String(DEFAULTS.zcg);
+        baseWidthEl.value = String(DEFAULTS.baseWidth);
+        anchorsEl.value = String(DEFAULTS.anchors);
+        muEl.value = toFixedString(DEFAULTS.mu, 2);
+        gcrModeEl.value = DEFAULTS.gcrMode;
+        GCrLEl.value = toFixedString(DEFAULTS.GCrL, 2);
+        GCrUEl.value = toFixedString(DEFAULTS.GCrU, 2);
+        presetEl.value = DEFAULTS.preset;
+      }
+
+      function applyQueryParams() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get("embed") === "1") {
+          document.body.classList.add("embed-mode");
+        }
+
+        var editionParam = params.get("edition");
+        if (editionParam === "7-16" || editionParam === "7-22") {
+          editionEl.value = editionParam;
+        }
+      }
+
+      function updateEmbedSnippet() {
+        embedCodeEl.value =
+          '<iframe src="https://windcalculations.com/rtu-wind-load-calculator/?embed=1" width="100%" height="1080" style="border:0;" loading="lazy"></iframe>';
+      }
+
+      function updateGcrState() {
+        var isManual = gcrModeEl.value === "manual";
+        GCrLEl.disabled = !isManual;
+        GCrUEl.disabled = !isManual;
+      }
+
+      function applyPreset() {
+        var preset = presetEl.value;
+        if (preset === "small") {
+          AfEl.value = "16";
+          ArEl.value = "16";
+          zcgEl.value = "2";
+          baseWidthEl.value = "4";
+        } else if (preset === "medium") {
+          AfEl.value = "36";
+          ArEl.value = "48";
+          zcgEl.value = "3";
+          baseWidthEl.value = "6";
+        } else if (preset === "large") {
+          AfEl.value = "64";
+          ArEl.value = "96";
+          zcgEl.value = "4";
+          baseWidthEl.value = "8";
+        }
+      }
+
+      function collectInputs() {
+        return {
+          edition: editionEl.value,
+          risk: riskEl.value,
+          V: parseNumber(VEl.value),
+          exposure: exposureEl.value,
+          h: parseNumber(hEl.value),
+          Kzt: parseNumber(KztEl.value),
+          Ke: parseNumber(KeEl.value),
+          Kd: parseNumber(KdEl.value),
+          B: parseNumber(BEl.value),
+          L: parseNumber(LEl.value),
+          Af: parseNumber(AfEl.value),
+          Ar: parseNumber(ArEl.value),
+          W: parseNumber(WEl.value),
+          zcg: parseNumber(zcgEl.value),
+          baseWidth: parseNumber(baseWidthEl.value),
+          anchors: parseNumber(anchorsEl.value),
+          mu: parseNumber(muEl.value),
+          gcrMode: gcrModeEl.value,
+          GCrL: parseNumber(GCrLEl.value),
+          GCrU: parseNumber(GCrUEl.value),
+          preset: presetEl.value
+        };
+      }
+
+      function validateInputs(inputs) {
+        var errors = [];
+
+        if (!(inputs.edition === "7-16" || inputs.edition === "7-22")) {
+          pushError(errors, "edition", "Choose either ASCE 7-16 or ASCE 7-22.");
+        }
+        if (RISK_CATEGORIES.indexOf(inputs.risk) === -1) {
+          pushError(errors, "risk", "Risk Category must be I, II, III, or IV.");
+        }
+        if (!Object.prototype.hasOwnProperty.call(EXPOSURE_CONSTANTS, inputs.exposure)) {
+          pushError(errors, "exposure", "Exposure Category must be B, C, or D.");
+        }
+
+        ["V", "h", "Kzt", "Ke", "Kd", "B", "L", "Af", "Ar", "zcg", "baseWidth", "anchors"].forEach(function (field) {
+          if (!isFinitePositive(inputs[field])) {
+            pushError(errors, field, field + " must be a positive number.");
+          }
+        });
+
+        if (!isFiniteNonNegative(inputs.W)) {
+          pushError(errors, "W", "Dead load W must be zero or positive.");
+        }
+        if (!isFiniteNonNegative(inputs.mu)) {
+          pushError(errors, "mu", "Friction coefficient mu must be zero or positive.");
+        }
+        if (!Number.isInteger(inputs.anchors) || inputs.anchors < 1) {
+          pushError(errors, "anchors", "Anchors must be an integer greater than or equal to 1.");
+        }
+
+        if (!(inputs.gcrMode === "manual" || inputs.gcrMode === "estimate")) {
+          pushError(errors, "gcrMode", "GCr mode must be manual or estimate.");
+        }
+
+        if (inputs.gcrMode === "manual") {
+          if (!isFinitePositive(inputs.GCrL)) {
+            pushError(errors, "GCrL", "Manual GCr lateral must be a positive number.");
+          }
+          if (!isFinitePositive(inputs.GCrU)) {
+            pushError(errors, "GCrU", "Manual GCr uplift must be a positive number.");
+          }
+        }
+
+        return { ok: errors.length === 0, errors: errors };
+      }
+
+      function calculateAndRender() {
+        clearErrors();
+        var inputs = collectInputs();
+        var validation = validateInputs(inputs);
+        if (!validation.ok) {
+          renderErrors(validation.errors);
+          lastCalculationPackage = null;
+          renderNoResult();
+          return;
+        }
+
+        var results = computeResults(inputs);
+        renderResults(inputs, results);
+      }
+
+      function computeResults(inputs) {
+        var khInfo = calculateKz(inputs.h, inputs.exposure);
+        var qh = 0.00256 * khInfo.coefficient * inputs.Kzt * inputs.Kd * inputs.Ke * Math.pow(inputs.V, 2);
+
+        var gcr = resolveGcr(inputs);
+        var Fh = qh * gcr.GCrL * inputs.Af;
+        var Fu = qh * gcr.GCrU * inputs.Ar;
+
+        var WnetDown = Math.max(inputs.W - Fu, 0);
+        var netUplift = Math.max(Fu - inputs.W, 0);
+        var perAnchor = netUplift / inputs.anchors;
+        var M_ot = Fh * inputs.zcg;
+        var M_res = WnetDown * (inputs.baseWidth / 2);
+        var slideRes = inputs.mu * WnetDown;
+
+        var overturningUtil = M_res > 0 ? M_ot / M_res : Infinity;
+        var slidingUtil = slideRes > 0 ? Fh / slideRes : Infinity;
+
+        return {
+          Kh: khInfo.coefficient,
+          hEff: khInfo.effectiveHeight,
+          alpha: khInfo.alpha,
+          zg: khInfo.zg,
+          qh: qh,
+          GCrL: gcr.GCrL,
+          GCrU: gcr.GCrU,
+          gcrBasis: gcr.basis,
+          Fh: Fh,
+          Fu: Fu,
+          WnetDown: WnetDown,
+          netUplift: netUplift,
+          perAnchor: perAnchor,
+          M_ot: M_ot,
+          M_res: M_res,
+          slideRes: slideRes,
+          overturningUtil: overturningUtil,
+          slidingUtil: slidingUtil
+        };
+      }
+
+      function resolveGcr(inputs) {
+        if (inputs.gcrMode === "manual") {
+          return {
+            GCrL: inputs.GCrL,
+            GCrU: inputs.GCrU,
+            basis: "manual"
+          };
+        }
+
+        var Bh = inputs.B * inputs.h;
+        var BL = inputs.B * inputs.L;
+        var GCrL = interpolateBounded(inputs.Af, 0.1 * Bh, 1.9, Bh, 1.0);
+        var GCrU = interpolateBounded(inputs.Ar, 0.1 * BL, 1.5, BL, 1.0);
+        return {
+          GCrL: GCrL,
+          GCrU: GCrU,
+          basis: "estimated"
+        };
+      }
+
+      function calculateKz(heightFt, exposure) {
+        var constants = EXPOSURE_CONSTANTS[exposure];
+        var effectiveHeight = clamp(heightFt, 15, constants.zg);
+        var coefficient = 2.01 * Math.pow(effectiveHeight / constants.zg, 2 / constants.alpha);
+        return {
+          coefficient: coefficient,
+          effectiveHeight: effectiveHeight,
+          alpha: constants.alpha,
+          zg: constants.zg
+        };
+      }
+
+      function renderResults(inputs, results) {
+        errorSummaryEl.classList.add("hidden");
+        resultPlaceholderEl.classList.add("hidden");
+        resultContentEl.classList.remove("hidden");
+        exportStatusEl.textContent = "";
+
+        qhValueEl.textContent = formatPressure(results.qh);
+        FhValueEl.textContent = formatForce(results.Fh);
+        FuValueEl.textContent = formatForce(results.Fu);
+        UnetValueEl.textContent = formatForce(results.netUplift);
+        TanchorValueEl.textContent = formatForce(results.perAnchor);
+        slideUtilEl.textContent = formatUtil(results.slidingUtil);
+
+        stabilityTableEl.innerHTML = [
+          row("Kh at h", formatNumber(results.Kh)),
+          row("h effective", formatNumber(results.hEff, 2) + " ft"),
+          row("GCr lateral", formatNumber(results.GCrL)),
+          row("GCr uplift", formatNumber(results.GCrU)),
+          row("GCr basis", results.gcrBasis),
+          row("Available downward weight (W - Fu, floor at 0)", formatForce(results.WnetDown)),
+          row("Overturning moment M_ot = Fh * zcg", formatMoment(results.M_ot)),
+          row("Restoring moment M_res = Wnet * baseWidth/2", formatMoment(results.M_res)),
+          row("Overturning utilization M_ot/M_res", formatUtil(results.overturningUtil)),
+          row("Sliding resistance R = mu * Wnet", formatForce(results.slideRes)),
+          row("Sliding utilization Fh/R", formatUtil(results.slidingUtil))
+        ].join("");
+
+        formulaBlockEl.innerHTML = renderFormulaBlocks(inputs, results);
+        proofTableEl.innerHTML = renderProofTable(inputs, results);
+        decisionLogEl.innerHTML = buildDecisionLog(inputs, results)
+          .map(function (msg) {
+            return "<li>" + escapeHtml(msg) + "</li>";
+          })
+          .join("");
+
+        editionNoteEl.textContent =
+          "Risk Category is used to select basic wind speed V from the adopted map. Verify final GCr selection and governing combinations per adopted ASCE edition.";
+
+        resultAnnouncerEl.textContent =
+          "Calculation complete. qh is " + formatPressure(results.qh) +
+          ", lateral force is " + formatForce(results.Fh) +
+          ", uplift force is " + formatForce(results.Fu) + ".";
+
+        lastCalculationPackage = {
+          inputs: inputs,
+          results: results,
+          formulaHtml: formulaBlockEl.innerHTML,
+          proofHtml: proofTableEl.innerHTML,
+          decisions: buildDecisionLog(inputs, results),
+          stabilityHtml: stabilityTableEl.innerHTML,
+          timestamp: new Date()
+        };
+      }
+
+      function renderFormulaBlocks(inputs, results) {
+        var parts = [];
+
+        parts.push(formula(
+          "Velocity pressure at mean roof height",
+          "qh = 0.00256 * Kh * Kzt * Kd * Ke * V^2",
+          "qh = 0.00256 * " +
+            formatNumber(results.Kh) + " * " +
+            formatNumber(inputs.Kzt) + " * " +
+            formatNumber(inputs.Kd) + " * " +
+            formatNumber(inputs.Ke) + " * " +
+            formatNumber(inputs.V, 2) + "^2 = " +
+            formatPressure(results.qh)
+        ));
+
+        parts.push(formula(
+          "Lateral RTU force",
+          "Fh = qh * GCr_lateral * Af",
+          "Fh = " +
+            formatPressure(results.qh) + " * " +
+            formatNumber(results.GCrL) + " * " +
+            formatNumber(inputs.Af, 2) + " = " +
+            formatForce(results.Fh)
+        ));
+
+        parts.push(formula(
+          "Uplift RTU force",
+          "Fu = qh * GCr_uplift * Ar",
+          "Fu = " +
+            formatPressure(results.qh) + " * " +
+            formatNumber(results.GCrU) + " * " +
+            formatNumber(inputs.Ar, 2) + " = " +
+            formatForce(results.Fu)
+        ));
+
+        parts.push(formula(
+          "Net uplift and anchor demand",
+          "U_net = max(Fu - W, 0), T_anchor = U_net / n",
+          "U_net = max(" + formatForce(results.Fu) + " - " + formatForce(inputs.W) + ", 0) = " +
+            formatForce(results.netUplift) + ", T_anchor = " + formatForce(results.netUplift) +
+            " / " + formatNumber(inputs.anchors, 0) + " = " + formatForce(results.perAnchor)
+        ));
+
+        parts.push(formula(
+          "Overturning and sliding screening",
+          "M_ot = Fh*zcg, M_res = Wnet*(baseWidth/2), R_slide = mu*Wnet",
+          "M_ot = " + formatForce(results.Fh) + " * " + formatNumber(inputs.zcg, 2) + " = " + formatMoment(results.M_ot) +
+            ", M_res = " + formatForce(results.WnetDown) + " * (" + formatNumber(inputs.baseWidth, 2) + "/2) = " + formatMoment(results.M_res) +
+            ", R_slide = " + formatNumber(inputs.mu, 2) + " * " + formatForce(results.WnetDown) + " = " + formatForce(results.slideRes)
+        ));
+
+        return parts.join("");
+      }
+
+      function renderProofTable(inputs, results) {
+        var rows = [
+          ["Edition", inputs.edition],
+          ["Risk category", inputs.risk],
+          ["V", formatNumber(inputs.V, 2) + " mph"],
+          ["Exposure", inputs.exposure],
+          ["h entered", formatNumber(inputs.h, 2) + " ft"],
+          ["h effective", formatNumber(results.hEff, 2) + " ft"],
+          ["Kh", formatNumber(results.Kh)],
+          ["Kzt", formatNumber(inputs.Kzt)],
+          ["Kd", formatNumber(inputs.Kd)],
+          ["Ke", formatNumber(inputs.Ke)],
+          ["B", formatNumber(inputs.B, 2) + " ft"],
+          ["L", formatNumber(inputs.L, 2) + " ft"],
+          ["Af", formatNumber(inputs.Af, 2) + " ft²"],
+          ["Ar", formatNumber(inputs.Ar, 2) + " ft²"],
+          ["W", formatForce(inputs.W)],
+          ["Anchors n", formatNumber(inputs.anchors, 0)],
+          ["mu", formatNumber(inputs.mu, 2)],
+          ["GCr mode", results.gcrBasis]
+        ];
+
+        return rows
+          .map(function (entry) {
+            return "<tr><th scope=\"row\">" + escapeHtml(entry[0]) + "</th><td>" + escapeHtml(entry[1]) + "</td></tr>";
+          })
+          .join("");
+      }
+
+      function buildDecisionLog(inputs, results) {
+        var messages = [];
+
+        messages.push("Force form used: F = qh * (GCr) * A.");
+        if (inputs.h !== results.hEff) {
+          messages.push(
+            "Mean roof height clamped from " +
+            formatNumber(inputs.h, 2) +
+            " ft to " +
+            formatNumber(results.hEff, 2) +
+            " ft for Kh."
+          );
+        } else {
+          messages.push("Mean roof height used directly without clamping.");
+        }
+
+        if (results.gcrBasis === "manual") {
+          messages.push("Manual GCr values supplied by user for final-design alignment.");
+        } else {
+          messages.push("Estimated GCr mode used for screening only. Final design should use engineer-selected GCr.");
+        }
+
+        messages.push("Stability checks shown are simplified statics screening metrics, not full code load-combination design.");
+        return messages;
+      }
+
+      function exportCalculationRecord() {
+        if (!lastCalculationPackage) {
+          exportStatusEl.textContent = "Run a valid calculation first.";
+          return;
+        }
+
+        var pkg = lastCalculationPackage;
+        var stamp = pkg.timestamp.toISOString();
+        var html =
+          "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>RTU Wind Calculation Record</title>" +
+          "<style>" +
+          "body{font-family:Arial,sans-serif;color:#102535;margin:24px;line-height:1.4;}" +
+          "table{width:100%;border-collapse:collapse;margin:8px 0 14px;}" +
+          "th,td{border:1px solid #c9d8df;padding:8px;text-align:left;vertical-align:top;}" +
+          "th{background:#eef6f8;} .formula{border:1px solid #d3e4ea;background:#f7fbfc;border-radius:8px;padding:8px;margin:0 0 8px;}" +
+          "code{font-family:Courier New,monospace;white-space:nowrap;} ul{padding-left:18px;}" +
+          "</style></head><body>" +
+          "<h1>RTU Wind Calculation Record</h1>" +
+          "<p>Generated: " + escapeHtml(stamp) + "</p>" +
+          "<h2>Summary</h2>" +
+          "<table><tbody>" +
+          "<tr><th>qh</th><td>" + escapeHtml(formatPressure(pkg.results.qh)) + "</td></tr>" +
+          "<tr><th>Lateral force Fh</th><td>" + escapeHtml(formatForce(pkg.results.Fh)) + "</td></tr>" +
+          "<tr><th>Uplift force Fu</th><td>" + escapeHtml(formatForce(pkg.results.Fu)) + "</td></tr>" +
+          "<tr><th>Net uplift</th><td>" + escapeHtml(formatForce(pkg.results.netUplift)) + "</td></tr>" +
+          "<tr><th>Tension per anchor</th><td>" + escapeHtml(formatForce(pkg.results.perAnchor)) + "</td></tr>" +
+          "</tbody></table>" +
+          "<h2>Stability Metrics</h2><table><tbody>" + pkg.stabilityHtml + "</tbody></table>" +
+          "<h2>Formula Proof</h2>" + pkg.formulaHtml +
+          "<h2>Variable Proof Table</h2><table><tbody>" + pkg.proofHtml + "</tbody></table>" +
+          "<h2>Decision Log</h2><ul>" +
+          pkg.decisions.map(function (msg) { return "<li>" + escapeHtml(msg) + "</li>"; }).join("") +
+          "</ul>" +
+          "<p><strong>Disclaimer:</strong> Informational and preliminary screening use only. Final design requires licensed engineering review.</p>" +
+          "</body></html>";
+
+        var blob = new Blob([html], { type: "text/html" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "rtu-wind-calculation-record-" + stamp.replace(/[:]/g, "-") + ".html";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        exportStatusEl.textContent = "Calculation record exported.";
+      }
+
+      function renderNoResult() {
+        resultPlaceholderEl.classList.remove("hidden");
+        resultContentEl.classList.add("hidden");
+      }
+
+      function renderErrors(errors) {
+        if (!errors.length) {
+          errorSummaryEl.classList.add("hidden");
+          return;
+        }
+
+        errorSummaryEl.innerHTML =
+          "<h3>Please fix the following inputs:</h3><ul>" +
+          errors.map(function (entry) { return "<li>" + escapeHtml(entry.message) + "</li>"; }).join("") +
+          "</ul>";
+        errorSummaryEl.classList.remove("hidden");
+
+        errors.forEach(function (entry) {
+          var id = FIELD_TO_ERROR[entry.field];
+          if (!id) {
+            return;
+          }
+          var errorEl = document.getElementById(id);
+          if (errorEl) {
+            errorEl.textContent = entry.message;
+          }
+          var field = findField(entry.field);
+          if (field) {
+            field.setAttribute("aria-invalid", "true");
+          }
+        });
+      }
+
+      function clearErrors() {
+        Object.keys(FIELD_TO_ERROR).forEach(function (field) {
+          var id = FIELD_TO_ERROR[field];
+          var errorEl = document.getElementById(id);
+          if (errorEl) {
+            errorEl.textContent = "";
+          }
+          var inputEl = findField(field);
+          if (inputEl) {
+            inputEl.removeAttribute("aria-invalid");
+          }
+        });
+        errorSummaryEl.classList.add("hidden");
+        errorSummaryEl.innerHTML = "";
+      }
+
+      function findField(field) {
+        var map = {
+          edition: editionEl,
+          risk: riskEl,
+          V: VEl,
+          exposure: exposureEl,
+          h: hEl,
+          Kzt: KztEl,
+          Ke: KeEl,
+          Kd: KdEl,
+          B: BEl,
+          L: LEl,
+          Af: AfEl,
+          Ar: ArEl,
+          W: WEl,
+          zcg: zcgEl,
+          baseWidth: baseWidthEl,
+          anchors: anchorsEl,
+          mu: muEl,
+          gcrMode: gcrModeEl,
+          GCrL: GCrLEl,
+          GCrU: GCrUEl
+        };
+        return map[field] || null;
+      }
+
+      function interpolateBounded(x, x1, y1, x2, y2) {
+        if (x <= x1) {
+          return y1;
+        }
+        if (x >= x2) {
+          return y2;
+        }
+        return y1 + (y2 - y1) * ((x - x1) / (x2 - x1));
+      }
+
+      function copyEmbedCode() {
+        var text = embedCodeEl.value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function () {
+              copyStatusEl.textContent = "Embed code copied.";
+            },
+            function () {
+              fallbackCopy();
+            }
+          );
+        } else {
+          fallbackCopy();
+        }
+
+        function fallbackCopy() {
+          embedCodeEl.focus();
+          embedCodeEl.select();
+          try {
+            document.execCommand("copy");
+            copyStatusEl.textContent = "Embed code copied.";
+          } catch (err) {
+            copyStatusEl.textContent = "Copy failed. Select and copy manually.";
+          }
+        }
+      }
+
+      function formula(title, general, substituted) {
+        return (
+          '<div class="formula">' +
+          "<strong>" + escapeHtml(title) + "</strong><br>" +
+          "<code>" + escapeHtml(general) + "</code><br>" +
+          "<code>" + escapeHtml(substituted) + "</code>" +
+          "</div>"
+        );
+      }
+
+      function row(name, value) {
+        return "<tr><th scope=\"row\">" + escapeHtml(name) + "</th><td>" + escapeHtml(value) + "</td></tr>";
+      }
+
+      function pushError(errors, field, message) {
+        errors.push({ field: field, message: message });
+      }
+
+      function parseNumber(value) {
+        return Number(value);
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function isFinitePositive(value) {
+        return Number.isFinite(value) && value > 0;
+      }
+
+      function isFiniteNonNegative(value) {
+        return Number.isFinite(value) && value >= 0;
+      }
+
+      function formatNumber(value, decimals) {
+        var places = typeof decimals === "number" ? decimals : 4;
+        var fixed = Number(value).toFixed(places);
+        return fixed.replace(/0+$/, "").replace(/\.$/, "");
+      }
+
+      function formatPressure(value) {
+        return Number(value).toFixed(2) + " psf";
+      }
+
+      function formatForce(value) {
+        return Number(value).toFixed(2) + " lb";
+      }
+
+      function formatMoment(value) {
+        return Number(value).toFixed(2) + " lb-ft";
+      }
+
+      function formatUtil(value) {
+        if (!Number.isFinite(value)) {
+          return "N/A (insufficient restoring capacity)";
+        }
+        return Number(value).toFixed(3);
+      }
+
+      function toFixedString(value, decimals) {
+        return Number(value).toFixed(decimals);
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+    })();
+  </script>
+</body>
+</html>
