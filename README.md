@@ -15,4 +15,3 @@ Engineering workspace for WindCalculations.com and related apps.
 ## Compliance and safety
 
 See `docs/SAFETY_AND_COMPLIANCE.md` for baseline requirements used in this repository.
->>>>>>> 40cf197 (chore: initialize WindCalculations.com repository baseline)
