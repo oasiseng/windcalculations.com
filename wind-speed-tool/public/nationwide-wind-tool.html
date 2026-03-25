@@ -459,20 +459,26 @@ function contourFallbackLookup(lat,lng,groups){
     }
     if(west&&east){
       if(west.speed===east.speed){
-        return {raw:west.speed,rounded:west.speed,source:'Local contour fallback',note:'Nearest contour band'};
+        return {raw:west.speed,rounded:roundToMph(west.speed),source:'Local contour fallback',note:'Nearest contour band'};
       }
       const t=(lng-west.lng)/((east.lng-west.lng)||1e-9);
       const raw=west.speed+t*(east.speed-west.speed);
-      return {raw:raw,rounded:roundToFive(raw),source:'Local contour interpolation fallback',note:'Interpolated between embedded contour crossings'};
+      return {raw:raw,rounded:roundToMph(raw),source:'Local contour interpolation fallback',note:'Interpolated between embedded contour crossings'};
     }
   }
 
   const nearest=nearestContourSpeed(lat,lng,groups);
-  return {raw:nearest,rounded:roundToFive(nearest),source:'Local nearest contour fallback',note:'Nearest embedded contour'};
+  return {raw:nearest,rounded:roundToMph(nearest),source:'Local nearest contour fallback',note:'Nearest embedded contour'};
 }
 
-function roundToFive(value){
-  return Math.round(value/5)*5;
+function roundToMph(value){
+  return Math.round(value);
+}
+
+function formatMph(value){
+  if(!Number.isFinite(value)){return '—';}
+  const rounded=Math.round(value*10)/10;
+  return Number.isInteger(rounded)?String(rounded):rounded.toFixed(1).replace(/\.0$/,'');
 }
 
 function inBoulder(lat,lng){
@@ -503,7 +509,7 @@ function coloradoOverlayLookup(lat,lng){
         const east=crossings[i],west=crossings[i+1];
         const t=(lng-east.lng)/((west.lng-east.lng)||1e-9);
         const raw=east.speed+t*(west.speed-east.speed);
-        result={speed:roundToFive(raw),interpolated:true,note:'SEAC/CPP Colorado Front Range contour interpolation'};
+        result={speed:roundToMph(raw),interpolated:true,note:'SEAC/CPP Colorado Front Range contour interpolation'};
         break;
       }
     }
@@ -555,25 +561,55 @@ function isWindBorneDebris(vult,isHurricane,lat,lng){
   return isHurricane&&vult>=130;
 }
 
-function nearestPromptRow(vult){
-  const rows=Object.keys(DATA.promptRcTable).map(Number).sort((a,b)=>a-b);
-  let best=rows[0],bestDist=Math.abs(vult-rows[0]);
-  rows.forEach(row=>{
-    const dist=Math.abs(vult-row);
-    if(dist<bestDist){best=row;bestDist=dist;}
-  });
-  return best;
+function interpolateRiskTable(table,vult,basis){
+  const rows=Object.keys(table).map(Number).sort((a,b)=>a-b);
+  if(!rows.length){
+    return {I:roundToMph(vult),II:roundToMph(vult),'III-IV':roundToMph(vult),IV:roundToMph(vult),basis:basis};
+  }
+  let lower=rows[0];
+  let upper=rows[rows.length-1];
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i];
+    if(row<=vult){lower=row;}
+    if(row>=vult){upper=row;break;}
+  }
+  const low=table[String(lower)]||table[lower];
+  const high=table[String(upper)]||table[upper];
+  if(!low||!high){
+    const fallback=low||high;
+    return {
+      I:roundToMph(fallback?.I??vult),
+      II:roundToMph(vult),
+      'III-IV':roundToMph(fallback?.['III-IV']??vult),
+      IV:roundToMph(fallback?.IV??vult),
+      basis:basis
+    };
+  }
+  if(lower===upper){
+    return {
+      I:roundToMph(low.I),
+      II:roundToMph(vult),
+      'III-IV':roundToMph(low['III-IV']),
+      IV:roundToMph(low.IV),
+      basis:basis
+    };
+  }
+  const t=(vult-lower)/((upper-lower)||1e-9);
+  return {
+    I:roundToMph(low.I+t*(high.I-low.I)),
+    II:roundToMph(vult),
+    'III-IV':roundToMph(low['III-IV']+t*(high['III-IV']-low['III-IV'])),
+    IV:roundToMph(low.IV+t*(high.IV-low.IV)),
+    basis:basis
+  };
 }
 
 function fallbackRiskTable(vult){
-  const row=DATA.promptRcTable[String(nearestPromptRow(vult))]||DATA.promptRcTable[115];
-  return {I:row.I,II:vult,'III-IV':row['III-IV'],IV:row.IV,basis:'Estimated from provided conversion table'};
+  return interpolateRiskTable(DATA.promptRcTable,vult,'Interpolated from provided conversion table');
 }
 
 function coloradoRiskTable(vult){
-  const row=DATA.colorado.rcTable[String(vult)];
-  if(!row){return fallbackRiskTable(vult);}
-  return {I:row.I,II:row.II,'III-IV':row['III-IV'],IV:row.IV,basis:'Colorado Front Range overlay conversion'};
+  return interpolateRiskTable(DATA.colorado.rcTable,vult,'Interpolated from Colorado Front Range overlay conversion');
 }
 
 function getServiceLayer(serviceKey,lat,lng){
@@ -610,7 +646,7 @@ async function fetchLiveRiskSpeeds(lat,lng){
     identifyAsce('RC_III_IV',DATA.serviceBases.RC_III_IV,lat,lng),
     identifyAsce('RC_IV',DATA.serviceBases.RC_IV,lat,lng)
   ]);
-  return {I:roundToFive(i),II:roundToFive(ii),'III-IV':roundToFive(iii),IV:roundToFive(iv),raw:{I:i,II:ii,'III-IV':iii,IV:iv},basis:'Live public ASCE 7-22 GIS'};
+  return {I:roundToMph(i),II:roundToMph(ii),'III-IV':roundToMph(iii),IV:roundToMph(iv),raw:{I:i,II:ii,'III-IV':iii,IV:iv},basis:'Live public ASCE 7-22 GIS'};
 }
 
 async function resolveLocation(lat,lng){
@@ -686,9 +722,9 @@ function updateComparison(result){
   document.getElementById('bInland').style.width=((115/max)*100)+'%';
   document.getElementById('bInland').textContent='115';
   document.getElementById('bSite').style.width=((result.displaySpeed/max)*100)+'%';
-  document.getElementById('bSite').textContent=result.displaySpeed;
+  document.getElementById('bSite').textContent=formatMph(result.displaySpeed);
   document.getElementById('bThreshold').style.width=((result.threshold/max)*100)+'%';
-  document.getElementById('bThreshold').textContent=String(result.threshold);
+  document.getElementById('bThreshold').textContent=formatMph(result.threshold);
   document.getElementById('thresholdLabel').textContent=result.threshold===130?'Hurricane/WBD Trigger':'WBD Trigger';
   const note=document.getElementById('rCompNote');
   if(result.displaySpeed>=result.threshold){
@@ -709,10 +745,10 @@ function updateComparison(result){
 function renderRiskTable(result){
   const table=document.getElementById('rcTable');
   table.innerHTML='<tr><th>Risk Cat</th><th>Basis</th><th>Vult (mph)</th></tr>';
-  table.innerHTML+='<tr><td>I</td><td>300-yr</td><td>'+result.riskTable.I+'</td></tr>';
-  table.innerHTML+='<tr class="active"><td>II</td><td>700-yr</td><td>'+result.riskTable.II+'</td></tr>';
-  table.innerHTML+='<tr><td>III-IV</td><td>1700-yr</td><td>'+result.riskTable['III-IV']+'</td></tr>';
-  table.innerHTML+='<tr><td>IV</td><td>3000-yr</td><td>'+result.riskTable.IV+'</td></tr>';
+  table.innerHTML+='<tr><td>I</td><td>300-yr</td><td>'+formatMph(result.riskTable.I)+'</td></tr>';
+  table.innerHTML+='<tr class="active"><td>II</td><td>700-yr</td><td>'+formatMph(result.riskTable.II)+'</td></tr>';
+  table.innerHTML+='<tr><td>III-IV</td><td>1700-yr</td><td>'+formatMph(result.riskTable['III-IV'])+'</td></tr>';
+  table.innerHTML+='<tr><td>IV</td><td>3000-yr</td><td>'+formatMph(result.riskTable.IV)+'</td></tr>';
   document.getElementById('rcNote').textContent=result.riskTable.basis
     ? result.riskTable.basis+'.'
     : (result.riskTable.raw
@@ -743,9 +779,9 @@ function showResult(result,address){
   document.getElementById('ctaSection').style.display='block';
   const coord=result.lat.toFixed(4)+'°N, '+Math.abs(result.lng).toFixed(4)+'°W';
   document.getElementById('rLoc').innerHTML=address?'<span>'+address+'</span><br>'+coord:'<span>'+coord+'</span>';
-  document.getElementById('rMapped').textContent=result.mapped+' mph';
-  document.getElementById('rMappedNote').textContent=result.lookupNote+'. Rounded to the nearest 5 mph for display.';
-  document.getElementById('rSpeed').textContent=result.displaySpeed;
+  document.getElementById('rMapped').textContent=formatMph(result.mapped)+' mph';
+  document.getElementById('rMappedNote').textContent=result.lookupNote+'. Displayed to the nearest 1 mph.';
+  document.getElementById('rSpeed').textContent=formatMph(result.displaySpeed);
   document.getElementById('rSpeedSrc').textContent=result.sourceDetail;
   document.getElementById('rSourceKind').textContent=result.sourceKind;
   document.getElementById('rSourceKind').style.color=result.sourceKind==='Live ASCE'?'#059669':'#d97706';
