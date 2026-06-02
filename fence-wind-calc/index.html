@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aluminum Fence &amp; Railing Wind Check — windcalculations.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1a5c4c; --green-dark:#13463a; --green-soft:rgba(26,92,76,0.08);
+    --bg:#f5f3ef; --surface:#ffffff; --text:#1a1714; --muted:#5c5955; --border:#e2dfd8;
+    --warn:#b85c00; --pass:#1e7a3b; --fail:#c0392b;
+    --font-body:'Plus Jakarta Sans',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.5;}
+  .app{display:grid;grid-template-columns:minmax(440px,500px) 1fr;gap:0;min-height:100vh;}
+  .form-panel{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;max-height:100vh;position:sticky;top:0;}
+  .preview-panel{padding:2rem 1rem;background:linear-gradient(180deg,#e8e6df 0%,#f5f3ef 100%);overflow-x:auto;}
+  .form-panel h1{color:var(--green);font-size:1.15rem;margin:0 0 0.25rem;}
+  .form-panel .subtitle{font-size:0.76rem;color:var(--muted);margin:0 0 1.2rem;font-family:var(--font-mono);}
+  fieldset{border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem 1rem;margin:0 0 1rem;background:#faf9f7;}
+  fieldset legend{font-weight:700;color:var(--green);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;padding:0 0.4rem;}
+  .field{margin-bottom:0.7rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-weight:600;font-size:0.8rem;margin-bottom:0.25rem;}
+  .field input,.field select,.field textarea{width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;background:#fff;color:var(--text);}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,76,0.12);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;}
+  .hint{color:var(--muted);font-weight:400;font-size:0.72rem;}
+  .chk{display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;font-weight:600;}
+  .chk input{width:auto;}
+  .actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent 0%,var(--surface) 30%);padding:1rem 0 0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{flex:1 1 calc(50% - 0.2rem);min-width:0;padding:0.65rem 0.5rem;border:none;border-radius:6px;font-family:var(--font-body);font-weight:600;font-size:0.84rem;cursor:pointer;}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-secondary{background:#fff;border:1.5px solid var(--border);color:var(--text);}
+  .btn-secondary:hover{border-color:var(--green);color:var(--green);}
+  .live-result{background:var(--green-soft);border:1px solid rgba(26,92,76,0.2);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.8rem;font-family:var(--font-mono);font-size:0.74rem;line-height:1.6;}
+  .live-result strong{color:var(--green);}
+  .warn-banner{background:rgba(184,92,0,0.08);border:1px solid rgba(184,92,0,0.3);border-left:3px solid var(--warn);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.8rem;font-size:0.74rem;color:var(--warn);display:none;}
+  .warn-banner.active{display:block;}
+  .version-badge{display:inline-block;font-family:var(--font-mono);font-size:0.6rem;background:var(--green);color:#fff;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.4rem;}
+  .disclaimer-box{background:#fff7ee;border:1px solid #f0c89a;border-left:3px solid #b85c00;border-radius:6px;padding:0.5rem 0.7rem;margin:0 0 1rem;font-size:0.73rem;color:#7a4a10;line-height:1.5;}
+  .disclaimer-box a{color:#b85c00;font-weight:700;white-space:nowrap;}
+  @media (max-width:820px){ .app{grid-template-columns:1fr;} .form-panel{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border);} }
+
+  .viz-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem 0.9rem;margin:0 auto 1.4rem;max-width:8.5in;box-shadow:0 4px 16px rgba(0,0,0,0.07);}
+  .viz-card h2{margin:0 0 0.2rem;font-size:0.95rem;color:var(--green);}
+  .viz-card .viz-sub{font-size:0.72rem;color:var(--muted);font-family:var(--font-mono);margin:0 0 0.6rem;}
+  .viz-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:0.6rem;align-items:start;}
+  .viz-box{border:1px solid #e6e2da;border-radius:6px;padding:0.4rem;background:#fcfcfa;}
+  .viz-box .vlabel{font-size:0.7rem;font-weight:700;color:#234;text-align:center;margin-bottom:0.2rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .viz-readout{display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.72rem;color:#333;margin-top:0.6rem;}
+  .viz-readout b{color:var(--green);}
+
+  .report{max-width:8.5in;margin:0 auto;}
+  .report-page{background:#fff;width:8.5in;min-height:11in;padding:0.85in 0.8in 1.1in;margin:0 auto 1.5rem;box-shadow:0 6px 24px rgba(0,0,0,0.08);position:relative;font-size:10.5pt;line-height:1.4;color:#1a1714;}
+  .report-page h1{color:var(--green);font-size:20pt;margin:0 0 0.2rem;font-weight:700;letter-spacing:0.06em;}
+  .report-page h2{color:var(--green);font-size:13pt;margin:1.1rem 0 0.5rem;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:0.2rem;}
+  .report-page h3{font-size:11pt;margin:0.8rem 0 0.35rem;font-weight:700;color:var(--green);}
+  .report-page h4{font-size:10pt;margin:0.6rem 0 0.3rem;font-weight:700;color:#b1322a;}
+  .report-page p{margin:0 0 0.5rem;}
+  .report-page .center{text-align:center;}
+
+  .cover-band{background:#dcd6c3;padding:1.4in 0.4in 0.5in;text-align:right;margin:-0.85in -0.8in 0;}
+  .cover-band .title{font-size:26pt;font-weight:700;color:#234;letter-spacing:0.12em;line-height:1.1;}
+  .cover-band .sub{font-size:18pt;font-weight:700;color:#234;letter-spacing:0.2em;}
+  .cover-meta{text-align:right;font-style:italic;color:#555;margin:0.6rem 0 0;}
+  .cover-table{width:100%;border-collapse:collapse;margin-top:2.2in;font-size:11pt;}
+  .cover-table td{padding:0.35rem 0.2rem;border-bottom:1px solid #bbb;color:#234;}
+  .cover-table td:first-child{color:var(--green);width:1.6in;}
+  .cover-products{margin-top:1rem;font-size:10pt;}
+  .cover-products .lbl{font-weight:700;}
+  .cover-code{margin-top:1.2rem;font-weight:700;color:var(--green-dark);}
+
+  .data-grid{width:100%;border-collapse:collapse;font-size:10pt;margin:0.3rem 0 0.6rem;}
+  .data-grid td{padding:0.12rem 0.3rem;vertical-align:top;}
+  .data-grid td.lbl{font-weight:600;}
+  .data-grid td.sym{font-family:var(--font-mono);text-align:right;width:1.2in;color:#234;}
+  .data-grid td.eq{text-align:center;width:0.3in;color:#888;}
+  .data-grid td.val{font-family:var(--font-mono);text-align:right;width:1in;font-weight:700;}
+  .data-grid td.unit{font-style:italic;color:#555;width:0.8in;}
+  .data-grid .group{font-weight:700;color:#234;padding-top:0.35rem;}
+  .data-grid .grade{font-style:italic;color:var(--green-dark);}
+
+  .calc-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:9pt;margin:0.4rem 0 0.7rem;}
+  .calc-table th,.calc-table td{border:1px solid #999;padding:0.22rem 0.4rem;text-align:center;}
+  .calc-table th{background:var(--green);color:#fff;font-weight:700;}
+  .calc-table td.left{text-align:left;font-weight:600;}
+
+  .check-line{font-family:var(--font-mono);font-size:9.5pt;display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem;padding:0.2rem 0.4rem;margin:0.2rem 0;border-left:3px solid var(--green);background:#f7f6f2;}
+  .check-line .formula{flex:1;}
+  .check-line .verdict{font-weight:700;white-space:nowrap;}
+  .check-line .verdict.pass{color:var(--pass);}
+  .check-line .verdict.fail{color:var(--fail);}
+  .section-props{font-family:var(--font-mono);font-size:9pt;background:#eef3f1;border:1px solid #cdddd6;border-radius:4px;padding:0.3rem 0.5rem;margin:0.3rem 0;}
+  .note{font-size:9pt;font-style:italic;color:#555;margin:0.3rem 0;}
+  .code-snip{font-size:9pt;background:#f7f6f2;border-left:3px solid var(--green);padding:0.4rem 0.6rem;margin:0.4rem 0;}
+  .code-snip .ref{font-weight:700;color:var(--green-dark);font-family:var(--font-mono);}
+
+  .fig{text-align:center;margin:0.5rem 0;}
+  .fig svg{max-width:100%;height:auto;}
+  .fig .cap{font-size:9pt;font-style:italic;color:#555;margin-top:0.2rem;}
+  .fig-row{display:grid;grid-template-columns:1.5fr 1fr;gap:0.5rem;align-items:start;}
+  .toc-line{display:flex;justify-content:space-between;border-bottom:1px dotted #bbb;padding:0.3rem 0;font-size:11pt;}
+
+  .page-footer{position:absolute;bottom:0;left:0;right:0;height:0.85in;padding:0 0.8in 0.3in;}
+  .page-footer .footer-text{display:flex;justify-content:space-between;font-size:8pt;color:#222;margin-bottom:0.12rem;}
+  .page-footer .footer-text .left{font-weight:600;}
+  .page-footer .footer-text .right{text-align:right;font-style:italic;}
+  .page-footer .footer-text .right strong{font-style:normal;font-weight:600;}
+  .page-footer .pageno{position:absolute;bottom:0.3in;right:0.8in;font-style:italic;font-size:9pt;color:#444;}
+  .page-footer .swoosh{width:100%;height:0.35in;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 50' preserveAspectRatio='none'><path d='M0,25 Q200,5 400,25 T800,25' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.55'/><path d='M0,30 Q200,12 400,30 T800,30' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.4'/></svg>") no-repeat center / 100% 100%;}
+  .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-style:italic;}
+
+  .dl{stroke:#444;stroke-width:0.8;}
+  .dtxt{font-family:var(--font-mono);font-size:10px;fill:#234;}
+  .dtxt.sm{font-size:8.5px;}
+  .alum{fill:#e8eeec;stroke:#1a5c4c;stroke-width:1.4;}
+  .conc{fill:#cfc9bb;stroke:#8a8470;stroke-width:1;}
+  .plate{fill:#9aa7a2;stroke:#46524e;stroke-width:1;}
+  .bolt{fill:#2b2b2b;}
+  .post{stroke:#1a5c4c;stroke-width:3;fill:#e8eeec;}
+  .rail{stroke:#8aa39a;stroke-width:2;}
+  .picket{stroke:#748a82;stroke-width:1.5;}
+  .loadarrow{stroke:#b1322a;stroke-width:1.6;fill:none;}
+
+  @page{size:letter;margin:0;}
+  @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .form-panel,.viz-card{display:none;}
+    .preview-panel{padding:0;background:#fff;overflow:visible;}
+    .app{display:block;}
+    .report-page{box-shadow:none;margin:0;page-break-after:always;break-inside:avoid;width:8.5in;height:11in;min-height:11in;max-height:11in;overflow:hidden;}
+    .report-page:last-child{page-break-after:auto;}
+    .check-line,.code-snip,.member-block{break-inside:avoid;page-break-inside:avoid;}
+    .page-footer,.page-footer .swoosh{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+    .no-print{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="form-panel">
+  <h1>Aluminum Fence &amp; Railing Wind Check <span class="version-badge">windcalculations.com</span></h1>
+  <p class="subtitle">FBC 2023 · ASCE 7-22 · ADM 2020 — preliminary screening tool</p>
+
+  <div class="disclaimer-box">⚠ <strong>Preliminary screening only.</strong> Order-of-magnitude check of an aluminum fence/railing under wind &amp; guard loads. <strong>Not</strong> a sealed engineering document; not for permit or construction. No warranty or liability — verify all inputs and have a licensed engineer review. <a href="https://windcalculations.com" target="_blank" rel="noopener">Need a sealed calc? →</a></div>
+
+  <div class="live-result" id="liveResult">Fill in member type, height &amp; wind to see live results.</div>
+  <div class="warn-banner" id="warnBanner"></div>
+
+  <fieldset>
+    <legend>Project reference (optional)</legend>
+    <div class="field"><label>Job / project label</label><input type="text" id="f_project" value="" placeholder="e.g. Lot 14 pool fence"></div>
+    <div class="field"><label>Date</label><input type="date" id="f_date"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Member Type &amp; Layout</legend>
+    <div class="field"><label>System Preset Config</label>
+      <select id="f_type" onchange="applyTypePreset()">
+        <option value="fence">Fence (FBC 1616.2.1)</option>
+        <option value="guard">Guard / Balcony Railing (FBC 1607.8.1)</option>
+        <option value="ems_pool" selected>EMS Mechanical Pool Fence (Submittal Layout)</option>
+        <option value="pool">Generic Pool / Barrier Fence</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Height H (in)</label><input type="number" id="f_H" value="53" step="1"></div>
+      <div class="field"><label>Post spacing L (in)</label><input type="number" id="f_L" value="50" step="1"></div>
+      <div class="field"><label>Rail spans</label><input type="number" id="f_spans" value="3" min="1" step="1"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label># Horiz. Rails</label><input type="number" id="f_nrails" value="3" min="0" step="1"></div>
+      <div class="field"><label>Vert. Picket W (in)</label><input type="number" id="f_vert_w" value="1.0" step="0.125"></div>
+      <div class="field"><label>Picket Space c.c. (in)</label><input type="number" id="f_vert_sp" value="4.875" step="0.125"></div>
+    </div>
+    <div class="field"><label>Deflection limit (1616.3)</label>
+      <select id="f_defl"><option value="180" selected>L/180 (Item 6)</option><option value="360">L/360 (Item 5 brittle)</option><option value="80">L/80 (Item 9 screens)</option></select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Live Loads (FBC 1607.8)</legend>
+    <label class="chk"><input type="checkbox" id="f_useGuard" onchange="render()"> Apply guard live loads (200 lb &amp; 50 plf)</label>
+    <p class="hint" style="margin:0.3rem 0 0.5rem;">Standard configuration for safety guards. For on-grade boundary fences, uncheck to apply pure wind pressure design cases.<br><strong style="color:var(--warn);">Caveat: Fences mounted on retaining walls or decks with a drop-off > 30" legally become "Guards" and must resist 200 lb loads.</strong></p>
+    <div class="row-3">
+      <div class="field"><label>Conc. P (lb)</label><input type="number" id="f_P200" value="200" step="10"></div>
+      <div class="field"><label>Uniform (plf)</label><input type="number" id="f_q50" value="50" step="5"></div>
+      <div class="field"><label>Intermed. (lb)</label><input type="number" id="f_P50" value="50" step="5"></div>
+    </div>
+    <div class="field"><label>Self weight / dead (psf)</label><input type="number" id="f_dl" value="2.5" step="0.1"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Wind Data (FBC / ASCE 7-22)</legend>
+    <div class="row-3">
+      <div class="field"><label>V (mph)</label><input type="number" id="f_V" value="160" step="1"></div>
+      <div class="field"><label>Risk Cat</label><select id="f_risk"><option>I</option><option selected>II</option><option>III</option><option>IV</option></select></div>
+      <div class="field"><label>Exposure</label><select id="f_exp"><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Kd</label><input type="number" id="f_Kd" value="0.85" step="0.01"></div>
+      <div class="field"><label>G = Gf</label><input type="number" id="f_Gf" value="0.85" step="0.01"></div>
+      <div class="field"><label>Kzt</label><input type="number" id="f_Kzt" value="1.00" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Iw</label><input type="number" id="f_Iw" value="1.00" step="0.01"></div>
+      <div class="field"><label>ε solid/gross <span id="epsHint" style="font-weight:400;color:var(--muted);font-size:0.6rem;">(Calc: --%)</span></label><input type="number" id="f_eps" value="0.30" step="0.01"></div>
+      <div class="field"><label>Cf (Fig 29.3-1)</label><input type="number" id="f_Cf" value="1.40" step="0.05"></div>
+    </div>
+    <div class="field"><label>Post wind moment distribution</label>
+      <select id="f_windk">
+        <option value="2" selected>Uniform — M = (q/144)·L·H²/2 (standard mechanics)</option>
+        <option value="3">Triangular — M = (q/144)·L·H²/3 (reduced; safety boundary layer profile)</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Top Rail</legend>
+    <div class="field"><label>Rail tributary height (in)</label><input type="number" id="f_railTrib" value="36" step="1"></div>
+    <div class="field"><label>Section</label><select id="f_rail_sec" onchange="toggleCustom('rail')"></select></div>
+    
+    <div id="custom_rail_block" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px dashed var(--border);">
+      <div class="field"><label>Custom Profile Name</label><input type="text" id="f_rail_c_name" value="Custom Rail Shape"></div>
+      <div class="row-3">
+        <div class="field"><label>Area (in²)</label><input type="number" id="f_rail_c_A" value="1.0" step="0.01"></div>
+        <div class="field"><label>I (in⁴)</label><input type="number" id="f_rail_c_I" value="0.5" step="0.01"></div>
+        <div class="field"><label>S (in³)</label><input type="number" id="f_rail_c_S" value="0.5" step="0.01"></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Height (in)</label><input type="number" id="f_rail_c_H" value="2.0" step="0.1"></div>
+        <div class="field"><label>Wall t (in)</label><input type="number" id="f_rail_c_t" value="0.125" step="0.001"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Post</legend>
+    <div class="field"><label>Section</label><select id="f_post_sec" onchange="toggleCustom('post')"></select></div>
+    
+    <div id="custom_post_block" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px dashed var(--border);">
+      <div class="field"><label>Custom Profile Name</label><input type="text" id="f_post_c_name" value="Custom Post Shape"></div>
+      <div class="row-3">
+        <div class="field"><label>Area (in²)</label><input type="number" id="f_post_c_A" value="1.5" step="0.01"></div>
+        <div class="field"><label>I (in⁴)</label><input type="number" id="f_post_c_I" value="1.0" step="0.01"></div>
+        <div class="field"><label>S (in³)</label><input type="number" id="f_post_c_S" value="1.0" step="0.01"></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Height (in)</label><input type="number" id="f_post_c_H" value="2.5" step="0.1"></div>
+        <div class="field"><label>Wall t (in)</label><input type="number" id="f_post_c_t" value="0.125" step="0.001"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Composite Snap Assembly</legend>
+    <label class="chk"><input type="checkbox" id="f_composite" onchange="render()"> Composite action — add HR-2 insert stiffness (Path A: ΣI)</label>
+    <p class="hint" style="margin:0.3rem 0;">Top rail = shell + HR-2 insert; post = shell + HR-2 insert. Enter the <strong>insert</strong> (HR-2) I &amp; A from the EMS section data. ΣI feeds deflection AND stress (S=ΣI/c). Valid only if the snap legs develop the shear flow q=VQ/I — otherwise leave OFF (two separate tubes).</p>
+    <div class="row-2">
+      <div class="field"><label>Rail insert I (in⁴)</label><input type="number" id="f_rail_insI" value="0" step="0.01"></div>
+      <div class="field"><label>Rail insert A (in²)</label><input type="number" id="f_rail_insA" value="0" step="0.01"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Post insert I (in⁴)</label><input type="number" id="f_post_insI" value="0" step="0.01"></div>
+      <div class="field"><label>Post insert A (in²)</label><input type="number" id="f_post_insA" value="0" step="0.01"></div>
+    </div>
+    <div class="field"><label>Bending allowable basis (ADM Ch. F)</label>
+      <select id="f_fbfac" onchange="render()">
+        <option value="0.75" selected>0.75 F_cy — compact section</option>
+        <option value="0.66">0.66 F_cy — moderate</option>
+        <option value="0.60">0.60 F_cy — general (Ω=1.65 yield)</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Base Anchorage</legend>
+    <div class="row-3">
+      <div class="field"><label>n anchors</label><input type="number" id="f_a_n" value="4" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_a_d" value="0.25" step="0.0625"></div>
+      <div class="field"><label>spacing a (in)</label><input type="number" id="f_a_sp" value="3.5" step="0.25"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>embed L (in)</label><input type="number" id="f_a_L" value="2.75" step="0.25"></div>
+      <div class="field"><label>Ω</label><input type="number" id="f_a_omega" value="2.0" step="0.1"></div>
+      <div class="field"><label>n in tension</label><input type="number" id="f_a_nt" value="2" step="1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Allow tension [T] (lb)</label><input type="number" id="f_a_T" value="1150" step="10"></div>
+      <div class="field"><label>Allow shear [V] (lb)</label><input type="number" id="f_a_V" value="980" step="10"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Base plate t (in)</label><input type="number" id="f_bp_t" value="0.25" step="0.0625"></div>
+      <div class="field"><label>Base plate width (in)</label><input type="number" id="f_bp_w" value="5.0" step="0.5"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Substrate</label><select id="f_substrate"><option>Concrete f'c=3000</option><option>Grout-filled CMU</option><option>Steel embed</option></select></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Optional Fastener (rail-to-post / cane bracket)</legend>
+    <label class="chk"><input type="checkbox" id="f_useFast" checked onchange="render()"> Include fastener check</label>
+    <div class="row-3" style="margin-top:0.5rem;">
+      <div class="field"><label>n bolts</label><input type="number" id="f_f_n" value="2" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_f_d" value="0.242" step="0.001"></div>
+      <div class="field"><label>Ω</label><input type="number" id="f_f_omega" value="2.0" step="0.1"></div>
+    </div>
+    <div class="field"><label>Fastener Fu (psi)</label><input type="number" id="f_f_fu" value="65000" step="1000"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Materials</legend>
+    <div class="field"><label>Aluminum alloy</label>
+      <select id="f_alloy" onchange="applyAlloy()"><option value="6061">6061-T6 (Fty 35)</option><option value="6063">6063-T6 (Fty 25)</option></select>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Fty=Fcy (ksi)</label><input type="number" id="f_fty" value="35" step="1"></div>
+      <div class="field"><label>Fsy (ksi)</label><input type="number" id="f_fsy" value="24" step="1"></div>
+      <div class="field"><label>Fu (ksi)</label><input type="number" id="f_fu" value="42" step="1"></div>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('loadFileInput').click()">📂 Load</button>
+    <input type="file" id="loadFileInput" accept=".json" style="display:none" onchange="if(this.files[0]) loadState(this.files[0]); this.value='';">
+    <button class="btn btn-secondary" onclick="saveState()">💾 Save</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 Print / PDF</button>
+  </div>
+</aside>
+
+<main class="preview-panel">
+  <div class="no-print" style="max-width:8.5in;margin:0 auto 1rem;background:var(--green);color:#fff;border-radius:8px;padding:0.7rem 1rem;font-size:0.85rem;line-height:1.5;">
+    This is a <strong>free preliminary check</strong>, not a sealed calculation. For a stamped, project-specific fence, railing, or wind load calculation, visit <a href="https://windcalculations.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">windcalculations.com</a>. Use <strong>Print / PDF</strong> below the form for a shareable copy.
+  </div>
+  <div class="viz-card no-print" id="vizCard">
+    <h2>Live Diagram</h2>
+    <p class="viz-sub">Updates as you type — verify height, spacing, rails, base plate &amp; anchor embedment before printing.</p>
+    <div class="viz-grid">
+      <div class="viz-box"><div class="vlabel">Elevation</div><div id="vizElev"></div></div>
+      <div class="viz-box"><div class="vlabel">Base Section (anchor embedment)</div><div id="vizSide"></div></div>
+    </div>
+    <div class="viz-readout" id="vizReadout"></div>
+  </div>
+  <div class="report" id="report"><div class="empty-state">Fill the form. The report renders here in real time.</div></div>
+</main>
+</div>
+
+<script>
+// SECTION LIBRARY (aluminum HSS tube & Extrusions).
+function rectTube(B,H,t){
+  const A=B*H-(B-2*t)*(H-2*t);
+  const I=(B*Math.pow(H,3)-(B-2*t)*Math.pow(H-2*t,3))/12;
+  const Iy=(H*Math.pow(B,3)-(H-2*t)*Math.pow(B-2*t,3))/12;
+  const S=I/(H/2);
+  return {A:+A.toFixed(3),I:+I.toFixed(2),Iy:+Iy.toFixed(2),Sb:+S.toFixed(2),St:+S.toFixed(2),t,H};
+}
+function effSec(sec,comp,insI,insA){
+  if(comp && insI>0){ const I=sec.I+insI, A=sec.A+Math.max(insA,0), c=(sec.H||2)/2;
+    return {I:+I.toFixed(3), A:+A.toFixed(3), Sb:+(I/c).toFixed(3), name:sec.name, comp:true}; }
+  return {I:sec.I, A:sec.A, Sb:sec.Sb, name:sec.name, comp:false};
+}
+const SECTIONS=[
+  {name:'HR-14 + HR-2 Composite Rail (Iy=0.448)', A:0.856, I:0.448, Iy:0.132, Sb:0.46, St:0.46, t:0.125, H:1.964, exact:true},
+  {name:'HR-4 + HR-2 Composite Post (Iy=0.578)',  A:0.990, I:0.578, Iy:0.302, Sb:0.58, St:0.58, t:0.125, H:2.00,  exact:true},
+  {name:'HR-14 + HR-2 Composite Rail (Ix=0.132)', A:0.856, I:0.132, Iy:0.448, Sb:0.18, St:0.18, t:0.125, H:1.482, exact:true},
+  {name:'HR-4 + HR-2 Composite Post (Ix=0.302)',  A:0.990, I:0.302, Iy:0.578, Sb:0.30, St:0.30, t:0.125, H:2.00,  exact:true},
+  {name:'HR-14 Top Cap (EMS shell)',  A:0.585, I:0.131, Iy:0.366, Sb:0.18, St:0.18, t:0.125, H:1.482, exact:true},
+  {name:'HR-4 Snap Post (EMS shell)', A:0.719, I:0.301, Iy:0.496, Sb:0.30, St:0.30, t:0.125, H:2.00,  exact:true},
+  {name:'HR-2 Snap Plate (EMS)',      A:0.271, I:0.001, Iy:0.082, Sb:0.01, St:0.01, t:0.125, H:0.25,  exact:true},
+  {name:'HR-3 Channel (1.8" x 0.9" x 0.08")', ...rectTube(1.795, 0.895, 0.08)},
+  {name:'HR-5 Picket (1" x 1" x 0.062")', ...rectTube(1, 1, 0.062)},
+  {name:'HSS 2" x 2" x 1/8"',   A:0.94, I:0.55, Iy:0.55, Sb:0.44, St:0.44, t:0.125, H:2.00, exact:true},
+  {name:'HSS 2" x 2" x 1/4"',   A:1.75, I:0.91, Iy:0.91, Sb:0.77, St:0.77, t:0.25,  H:2.00, exact:true},
+  {name:'HSS 2.5" x 2.5" x 1/8" (post)', A:1.19, I:1.12, Iy:1.12, Sb:0.71, St:0.71, t:0.125, H:2.50, exact:true},
+  {name:'HSS 1.5" x 1.5" x 1/8"', ...rectTube(1.5,1.5,0.125)},
+  {name:'HSS 1" x 4" x 1/8" (infill)', ...rectTube(1,4,0.125)},
+  {name:'HSS 1" x 6" x 1/8" (infill)', ...rectTube(1,6,0.125)},
+  {name:'HSS 3" x 3" x 1/8"',   ...rectTube(3,3,0.125)},
+  {name:'HSS 2" x 3" x 1/8"',   ...rectTube(2,3,0.125)},
+  {name:'HSS 2" x 4" x 1/8"',   ...rectTube(2,4,0.125)},
+  {name:'Custom User Input...', customFlag:true, A:1, I:1, Iy:1, Sb:1, St:1, t:0.125, H:2}
+];
+
+function secByName(n){return SECTIONS.find(s=>s.name===n)||SECTIONS[0];}
+function populateSectionSelect(id,def){const sel=document.getElementById(id);if(!sel)return;sel.innerHTML=SECTIONS.map(s=>`<option value="${s.name.replace(/"/g,'&quot;')}"${s.name===def?' selected':''}>${s.name}</option>`).join('');}
+
+// WIND ENGINE
+const EXP={B:{coef:2.01,alpha:7.0,zg:1200},C:{coef:2.01,alpha:9.5,zg:900},D:{coef:2.01,alpha:11.5,zg:700}};
+function Kz(z,exp){const e=EXP[exp]||EXP.C;return e.coef*Math.pow(Math.max(z,15)/e.zg,2/e.alpha);}
+
+function computeWind(d){
+  const hft=d.H/12;                                  
+  const kz=Kz(hft,d.exp);
+  const qh=0.00256*kz*d.Kzt*d.Kd*d.V*d.V;            
+  const PA=0.6*Math.max(16, qh*d.Gf*d.Cf);          
+  const qwind=d.eps*d.Iw*PA;                         
+  return {kz,qh,PA,qwind};
+}
+
+function railCoef(spans){ return spans>=2 ? {cM:0.1012,cV:0.6} : {cM:0.125,cV:0.5}; }
+
+function computeAll(d){
+  const wind=computeWind(d);
+  const q=wind.qwind;                  
+  const Fty=d.fty, fbFac=(d.fbfac>0?d.fbfac:0.75), allowFb=fbFac*Fty, allowFv=0.6*d.fsy, Ey=10100;
+  const rc=railCoef(Math.max(1,Math.round(d.spans)));
+
+  // ---- TOP RAIL (spans L horizontally) ----
+  const wRail=(q/144)*d.railTrib;                    
+  const rail={};
+  rail.M_wind=rc.cM*wRail*d.L*d.L;                   
+  rail.V_wind=rc.cV*wRail*d.L;
+  if(d.useGuard){
+    rail.M_50=rc.cM*(d.q50/12)*d.L*d.L;
+    rail.V_50=rc.cV*(d.q50/12)*d.L;
+    rail.M_200=d.P200*d.L/4;                         
+    rail.V_200=d.P200/2;
+  } else { rail.M_50=0; rail.V_50=0; rail.M_200=0; rail.V_200=0; }
+  rail.M=Math.max(rail.M_wind,rail.M_50,rail.M_200);
+  rail.V=Math.max(rail.V_wind,rail.V_50,rail.V_200);
+  rail.sec=d.rail_sec;
+  rail.eff=effSec(rail.sec, d.composite, d.rail_insI, d.rail_insA);
+  rail.Fb=rail.M/(rail.eff.Sb*1000);                 
+  rail.Fv=rail.V/(rail.eff.A*1000);
+  rail.gov = rail.M===rail.M_wind?'wind':(rail.M===rail.M_200?'200 lb conc.':'50 plf');
+  
+  const wDefl=Math.max(wRail, d.useGuard?(d.q50/12):0);
+  rail.defl=5*wDefl*Math.pow(d.L,4)/(384*Ey*1000*rail.eff.I);
+  rail.deflLimit=d.L/rail.defl;
+
+  // ---- POST (cantilever height H; tributary width L) ----
+  const post={};
+  const kdist=Math.max(2,Math.round(d.windk));
+  post.M_wind=(q/144)*d.L*d.H*d.H/kdist;             
+  post.V_wind=(q/144)*d.L*d.H;
+  if(d.useGuard){
+    const trib_ft=d.L/12;                            
+    post.M_200=d.P200*d.H;                           
+    post.V_200=d.P200;
+    post.F_50=d.q50*trib_ft;                         
+    post.M_50=post.F_50*d.H;
+    post.V_50=post.F_50;
+  } else { post.M_200=0;post.V_200=0;post.M_50=0;post.V_50=0;post.F_50=0; }
+  post.M=Math.max(post.M_wind,post.M_200,post.M_50);
+  post.V=Math.max(post.V_wind,post.V_200,post.V_50);
+  post.sec=d.post_sec;
+  post.eff=effSec(post.sec, d.composite, d.post_insI, d.post_insA);
+  post.Fb=post.M/(post.eff.Sb*1000);
+  post.Fv=post.V/(post.eff.A*1000);
+  post.gov=post.M===post.M_wind?'wind':(post.M===post.M_200?'200 lb conc.':'50 plf');
+  
+  const postI = post.eff.I;
+  post.I_used = postI;
+  post.defl=post.V_wind*Math.pow(d.H,3)/(8*Ey*1000*postI) + (d.useGuard?d.P200*Math.pow(d.H,3)/(3*Ey*1000*postI):0);
+  post.deflSpan = 2*d.H;
+  post.deflLimit=post.deflSpan/post.defl;
+
+  // ---- BASE ANCHORAGE ----
+  const Mbase=post.M;                                 
+  const Pz=d.eps*d.dl*(d.L/12)*(d.H/12);                    
+  const nt=Math.max(1,Math.round(d.a_nt));
+  const T=Math.max(0, Mbase/(nt*d.a_sp) - Pz/Math.max(1,d.a_n));   
+  const Va=post.V/Math.max(1,d.a_n);                  
+  const inter=Math.pow(T/d.a_T,2)+Math.pow(Va/d.a_V,2);
+  
+  const armBP=Math.max(0.25, d.a_sp/2 - post.sec.H/2);   
+  const Bp=Math.max(1, d.bp_w||5);                        
+  const bp_treq=Math.sqrt(6*Math.abs(T)*armBP/(allowFb*1000*Bp))||0;
+  const anchor={Mbase,Pz,T,Va,inter,bp_treq};
+
+  // ---- OPTIONAL FASTENER ----
+  let fast=null;
+  if(d.useFast){
+    const Ab=Math.PI/4*d.f_d*d.f_d;
+    const Rn=0.45*d.f_fu*Ab;
+    const Vallow=Rn/d.f_omega;
+    const tw=Math.min(rail.sec.t||0.125, post.sec.t||0.125);
+    const Rbear=2.0*d.f_d*tw*(d.fu*1000)/d.f_omega;
+    const Vdem=post.V/Math.max(1,d.f_n);
+    fast={Ab,Rn,Vallow,tw,Rbear,Vdem};
+  }
+
+  // --- EPSILON AUTO CALC ---
+  const Agross = d.L * d.H;
+  const Apost = d.post_sec.H * d.H;
+  const Arails = Math.max(0, d.nrails) * d.rail_sec.H * d.L;
+  const nPickets = Math.max(0, Math.floor(d.L / (d.vert_sp || d.L)));
+  const Apickets = nPickets * d.vert_w * d.H; 
+  let eps_calc = (Apost + Arails + Apickets) / Agross;
+  if (eps_calc > 1.0) eps_calc = 1.0;
+  
+  const epsHint = document.getElementById('epsHint');
+  if(epsHint) epsHint.innerHTML = `(Calc: ${Math.round(eps_calc*100)}%)`;
+
+  return {wind,rail,post,anchor,fast,allowFb,allowFv};
+}
+
+// FORM I/O & CUSTOM SECTION LOGIC
+const NUM=['H','L','spans','nrails','vert_w','vert_sp','defl','P200','q50','P50','dl','V','Kd','Gf','Kzt','Iw','eps','Cf','windk',
+  'railTrib','a_n','a_d','a_sp','a_L','a_omega','a_nt','a_T','a_V','bp_t','bp_w','rail_insI','rail_insA','post_insI','post_insA',
+  'fbfac','f_n','f_d','f_omega','f_fu','fty','fsy','fu',
+  'rail_c_A','rail_c_I','rail_c_S','rail_c_H','rail_c_t','post_c_A','post_c_I','post_c_S','post_c_H','post_c_t'];
+const TXT=['project','risk','exp','type','substrate','alloy','rail_c_name','post_c_name'];
+const BOOL=['useGuard','useFast','composite'];
+const SECSEL=['rail_sec','post_sec'];
+
+function toggleCustom(prefix){
+  const sel = document.getElementById('f_'+prefix+'_sec').value;
+  document.getElementById('custom_'+prefix+'_block').style.display = (sel === 'Custom User Input...') ? 'block' : 'none';
+  render();
+}
+
+function getSection(prefix){
+  const name = document.getElementById('f_'+prefix+'_sec').value;
+  if(name === 'Custom User Input...'){
+    return {
+      name: document.getElementById('f_'+prefix+'_c_name').value || 'Custom Shape',
+      A: parseFloat(document.getElementById('f_'+prefix+'_c_A').value) || 0.01,
+      I: parseFloat(document.getElementById('f_'+prefix+'_c_I').value) || 0.01,
+      Sb: parseFloat(document.getElementById('f_'+prefix+'_c_S').value) || 0.01,
+      St: parseFloat(document.getElementById('f_'+prefix+'_c_S').value) || 0.01,
+      H: parseFloat(document.getElementById('f_'+prefix+'_c_H').value) || 1.0,
+      t: parseFloat(document.getElementById('f_'+prefix+'_c_t').value) || 0.125
+    };
+  }
+  return secByName(name);
+}
+
+function readForm(){
+  const d={};
+  NUM.forEach(k=>{d[k]=parseFloat(document.getElementById('f_'+k).value)||0;});
+  TXT.forEach(k=>{d[k]=document.getElementById('f_'+k).value;});
+  BOOL.forEach(k=>{d[k]=document.getElementById('f_'+k).checked;});
+  d.date=document.getElementById('f_date').value;
+  d.rail_sec=getSection('rail');
+  d.post_sec=getSection('post');
+  return d;
+}
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(x,dp){return (x).toFixed(dp==null?2:dp);}
+function fmtDateUpper(iso){const d=iso?(()=> {const[y,m,dd]=iso.split('-');return new Date(+y,+m-1,+dd);})():new Date();return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}).toUpperCase();}
+
+function applyTypePreset(){
+  const t=document.getElementById('f_type').value;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
+  const setChk=(id,v)=>{const e=document.getElementById(id);if(e)e.checked=v;};
+  
+  if(t==='ems_pool'){
+      set('f_H',53); set('f_L',50); set('f_nrails',3); 
+      set('f_vert_w',1.0); set('f_vert_sp',4.875);
+      set('f_defl',180); setChk('f_useGuard',false); 
+      set('f_eps', 0.30); set('f_a_d',0.25); set('f_a_L',2.75); set('f_a_T',1150); set('f_a_V',980);
+      document.getElementById('f_rail_sec').value = 'HR-14 + HR-2 Composite Rail (Iy=0.448)';
+      document.getElementById('f_post_sec').value = 'HR-4 + HR-2 Composite Post (Iy=0.578)';
+  }
+  else if(t==='fence'){set('f_H',72);set('f_defl',180);setChk('f_useGuard',false);}
+  else if(t==='guard'){set('f_H',42);set('f_defl',180);setChk('f_useGuard',true);}
+  else if(t==='handrail'){set('f_H',42);set('f_defl',180);setChk('f_useGuard',true);}
+  else if(t==='pool'){set('f_H',48);set('f_defl',180);setChk('f_useGuard',false);}
+  
+  toggleCustom('rail');
+  toggleCustom('post');
+  render();
+}
+function applyAlloy(){
+  const a=document.getElementById('f_alloy').value;
+  if(a==='6063'){document.getElementById('f_fty').value=25;document.getElementById('f_fu').value=30;}
+  else{document.getElementById('f_fty').value=35;document.getElementById('f_fu').value=42;}
+  render();
+}
+
+function saveState(){
+  const s={version:'FENCE-V1.6',timestamp:new Date().toISOString(),fields:{},bools:{},sections:{}};
+  NUM.concat(TXT).forEach(k=>{const e=document.getElementById('f_'+k);if(e)s.fields[k]=e.value;});
+  s.fields.date=document.getElementById('f_date').value;
+  BOOL.forEach(k=>{s.bools[k]=document.getElementById('f_'+k).checked;});
+  SECSEL.forEach(k=>{s.sections[k]=document.getElementById('f_'+k).value;});
+  const slug=(s.fields.project||'fence').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+  const b=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`fence_${slug}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function loadState(file){
+  const r=new FileReader();
+  r.onload=e=>{try{const s=JSON.parse(e.target.result);
+    if(s.fields)Object.entries(s.fields).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.value=v;});
+    if(s.bools)Object.entries(s.bools).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.checked=!!v;});
+    if(s.sections)Object.entries(s.sections).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.value=v;});
+    
+    toggleCustom('rail');
+    toggleCustom('post');
+    render();}catch(err){alert('Failed to load: '+err.message);}};
+  r.readAsText(file);
+}
+
+// DRAWINGS
+function dimV(x,y1,y2,label){
+  return `<line class="dl" x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+    <line class="dl" x1="${x-4}" y1="${y1}" x2="${x+4}" y2="${y1}"/>
+    <line class="dl" x1="${x-4}" y1="${y2}" x2="${x+4}" y2="${y2}"/>
+    <text class="dtxt sm" x="${x-6}" y="${(y1+y2)/2}" text-anchor="end" transform="rotate(-90 ${x-6} ${(y1+y2)/2})">${label}</text>`;
+}
+function dimH(x1,y,x2,label){
+  return `<line class="dl" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+    <line class="dl" x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+    <line class="dl" x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+    <text class="dtxt sm" x="${(x1+x2)/2}" y="${y-4}" text-anchor="middle">${label}</text>`;
+}
+function elevationSVG(d){
+  const W=440,Hsvg=270, gy=215, top=40;
+  const x0=70, x1=210, x2=350;            // two bays, three posts
+  const postW=8;
+  let s='';
+  
+  // ground
+  s+=`<line class="dl" x1="20" y1="${gy}" x2="${W-20}" y2="${gy}" stroke-width="1.4"/>`;
+  for(let i=20;i<W-20;i+=12){ s+=`<line class="dl" x1="${i}" y1="${gy}" x2="${i-6}" y2="${gy+7}"/>`; }
+  
+  // Draw Vertical Pickets Layer
+  if(d.vert_sp > 0 && d.vert_w > 0) {
+      const np = Math.floor(d.L / d.vert_sp);
+      [ [x0, x1], [x1, x2] ].forEach(bay => {
+          const bayW = bay[1] - bay[0];
+          const spacingPx = bayW / (np + 1);
+          for(let i=1; i<=np; i++){
+              const px = bay[0] + i*spacingPx;
+              s += `<line class="picket" x1="${px}" y1="${top+2}" x2="${px}" y2="${gy-8}" stroke-width="${Math.max(1, d.vert_w*1.5)}"/>`;
+          }
+      });
+  }
+
+  // Draw Horizontal Rails
+  const nr=Math.max(0,Math.round(d.nrails));
+  if(nr === 3) {
+      // Common Pool Configuration (Top, Mid near top, Bottom)
+      s+=`<line class="rail" x1="${x0+2}" y1="${top+14}" x2="${x2-2}" y2="${top+14}"/>`;
+      s+=`<line class="rail" x1="${x0+2}" y1="${gy-8}" x2="${x2-2}" y2="${gy-8}"/>`;
+  } else {
+      // Evenly spaced
+      for(let i=1;i<nr;i++){ const y=top+ (gy-top)*i/nr; s+=`<line class="rail" x1="${x0+2}" y1="${y}" x2="${x2-2}" y2="${y}"/>`; }
+  }
+
+  // Top rail (Alum)
+  s+=`<rect class="alum" x="${x0}" y="${top}" width="${x2-x0}" height="6"/>`;
+  
+  // Draw Posts Layer (overlays pickets & rails)
+  [x0,x1,x2].forEach(x=>{
+    s+=`<rect class="post" x="${x-postW/2}" y="${top}" width="${postW}" height="${gy-top}"/>`;
+    s+=`<rect class="plate" x="${x-9}" y="${gy-3}" width="18" height="5"/>`;   
+    s+=`<circle class="bolt" cx="${x-4}" cy="${gy-1}" r="1.5"/><circle class="bolt" cx="${x+4}" cy="${gy-1}" r="1.5"/>`;
+  });
+
+  // load arrows (guard)
+  if(d.useGuard){
+    s+=`<line class="loadarrow" x1="${x1}" y1="${top-22}" x2="${x1}" y2="${top-4}"/><path d="M${x1-3},${top-9} L${x1},${top-3} L${x1+3},${top-9}" class="loadarrow"/>`;
+    s+=`<text class="dtxt sm" x="${x1+5}" y="${top-12}" fill="#b1322a">${num(d.P200,0)} lb</text>`;
+    s+=`<text class="dtxt sm" x="${x0}" y="${top-24}" fill="#b1322a">${num(d.q50,0)} plf →</text>`;
+  }
+  // wind arrows
+  for(let i=0;i<3;i++){const y=top+30+i*45; s+=`<line class="loadarrow" x1="40" y1="${y}" x2="${x0-12}" y2="${y}" stroke-dasharray="3 2"/><path d="M${x0-16},${y-3} L${x0-10},${y} L${x0-16},${y+3}" class="loadarrow"/>`;}
+  s+=`<text class="dtxt sm" x="26" y="${top+22}" fill="#b1322a">wind</text>`;
+  // dims
+  s+=dimV(W-30, top, gy, `H = ${num(d.H,0)}"`);
+  s+=dimH(x0, gy+22, x1, `L = ${num(d.L,0)}"`);
+  return `<svg viewBox="0 0 ${W} ${Hsvg}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+function sideSVG(d){
+  const W=260,Hsvg=300, gy=150, top=20, cx=120;
+  let s='';
+  s+=`<rect class="conc" x="40" y="${gy}" width="${W-70}" height="${Hsvg-gy-20}"/>`;
+  for(let i=46;i<W-32;i+=14){for(let j=gy+8;j<Hsvg-22;j+=14){s+=`<line class="dl" x1="${i}" y1="${j}" x2="${i+6}" y2="${j+6}" stroke-width="0.5"/>`;}}
+  s+=`<line class="dl" x1="40" y1="${gy}" x2="${W-30}" y2="${gy}" stroke-width="1.4"/>`;
+  s+=`<text class="dtxt sm" x="${W-34}" y="${gy-4}" text-anchor="end" fill="#777">substrate</text>`;
+  s+=`<rect class="post" x="${cx-6}" y="${top}" width="12" height="${gy-top-2}"/>`;
+  s+=`<rect class="plate" x="${cx-26}" y="${gy-4}" width="52" height="5"/>`;
+  const embPx=Math.min(90, d.a_L*9);
+  [-16,16].forEach(dx=>{
+    s+=`<line class="bolt" x1="${cx+dx}" y1="${gy-2}" x2="${cx+dx}" y2="${gy+embPx}" stroke="#2b2b2b" stroke-width="2.4"/>`;
+    s+=`<circle class="bolt" cx="${cx+dx}" cy="${gy-2}" r="2"/>`;
+    s+=`<line class="dl" x1="${cx+dx-3}" y1="${gy+embPx}" x2="${cx+dx+3}" y2="${gy+embPx}" stroke-width="1.4"/>`;
+  });
+  s+=`<line class="dl" x1="${cx+34}" y1="${gy}" x2="${cx+34}" y2="${gy+embPx}"/>
+      <line class="dl" x1="${cx+30}" y1="${gy}" x2="${cx+38}" y2="${gy}"/>
+      <line class="dl" x1="${cx+30}" y1="${gy+embPx}" x2="${cx+38}" y2="${gy+embPx}"/>
+      <text class="dtxt sm" x="${cx+40}" y="${gy+embPx/2}" fill="#234">embed ${num(d.a_L,1)}"</text>`;
+  s+=dimH(cx-16, gy-10, cx+16, `a=${num(d.a_sp,1)}"`);
+  s+=dimV(cx-30, top, gy, `H = ${num(d.H,0)}"`);
+  s+=`<text class="dtxt sm" x="${cx+14}" y="${top+14}" fill="#1a5c4c">post</text>`;
+  s+=`<text class="dtxt sm" x="${cx-24}" y="${gy+13}" fill="#46524e">base plate ${num(d.bp_t,2)}"</text>`;
+  return `<svg viewBox="0 0 ${W} ${Hsvg}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+
+// REPORT
+function footer(d,pg){
+  return `<div class="page-footer"><div class="footer-text">
+    <div class="left"><div><strong>PRELIMINARY — not for construction or permit</strong></div><div>${esc(d.project||'')}</div></div>
+    <div class="right"><div><strong>windcalculations.com</strong></div><div>Aluminum Fence &amp; Railing Wind Check</div></div>
+    </div><div class="swoosh"></div><div class="pageno">Page [${pg}]</div></div>`;
+}
+function checkLine(label,dem,allow,demDisp,allowDisp){
+  const ok=Math.abs(dem)<=Math.abs(allow)+1e-9;
+  return `<div class="check-line"><span class="formula">${label}: <strong>${demDisp}</strong> &lt; ${allowDisp}</span><span class="verdict ${ok?'pass':'fail'}">${ok?'[Satisfactory]':'[CHECK]'}</span></div>`;
+}
+
+function render(){
+  const d=readForm();
+  if(!d.V||!d.H){document.getElementById('report').innerHTML='<div class="empty-state">Enter wind speed and member height to render.</div>';return;}
+  const R=computeAll(d);
+  const w=R.wind;
+
+  document.getElementById('vizElev').innerHTML=elevationSVG(d);
+  document.getElementById('vizSide').innerHTML=sideSVG(d);
+  document.getElementById('vizReadout').innerHTML=
+    `<span>Type: <b>${esc(d.type)}</b></span><span>H: <b>${num(d.H,0)}"</b></span><span>Spacing L: <b>${num(d.L,0)}"</b></span>`+
+    `<span>qwind: <b>${num(w.qwind,1)} psf</b></span><span>Anchors: <b>${Math.round(d.a_n)}×${num(d.a_d,3)}"</b></span>`+
+    `<span>Embed: <b>${num(d.a_L,1)}"</b></span><span>Guard loads: <b>${d.useGuard?'on':'off'}</b></span>`;
+
+  document.getElementById('liveResult').innerHTML=
+    `<strong>qh</strong>=${num(w.qh,1)} · <strong>PA</strong>=${num(w.PA,1)} · <strong>qwind</strong>=${num(w.qwind,1)} psf<br>`+
+    `Rail M=${num(R.rail.M,0)} in-lb (gov ${R.rail.gov}) Fb=${num(R.rail.Fb,2)} ksi<br>`+
+    `Post M=${num(R.post.M,0)} in-lb (gov ${R.post.gov}) Fb=${num(R.post.Fb,2)} ksi<br>`+
+    `Anchor T=${num(R.anchor.T,0)} lb, interaction=${num(R.anchor.inter,2)}`;
+
+  const wb=document.getElementById('warnBanner');
+  if(d.type==='fence'&&d.H>72){wb.classList.add('active');wb.innerHTML='<strong>Note:</strong> FBC 1616.2.1 covers fences ≤6 ft. Taller fences need full wind design — confirm method.';}
+  else{wb.classList.remove('active');wb.innerHTML='';}
+
+  const date=fmtDateUpper(d.date);
+  const allowFb=R.allowFb, allowFv=R.allowFv;
+
+  // P1 TITLE + DISCLAIMER
+  const p1=`<div class="report-page">
+    <div class="cover-band"><div class="title">FENCE / RAILING</div><div class="sub">WIND &amp; GUARD CHECK</div></div>
+    <div class="cover-meta"><strong>${date}</strong>${d.project?'<br>'+esc(d.project):''}</div>
+    <div style="margin-top:1.5in;border:2px solid #b85c00;border-radius:8px;padding:0.7rem 0.9rem;background:#fff7ee;">
+      <p style="font-weight:700;color:#b85c00;margin:0 0 0.4rem;font-size:12pt;">PRELIMINARY SCREENING — NOT FOR CONSTRUCTION OR PERMIT</p>
+      <p style="margin:0 0 0.5rem;font-size:10pt;">This document is an automated, preliminary screening check of an aluminum fence/railing under wind and guard loads per the cited codes. It is <strong>not</strong> a sealed engineering calculation, is not signed by a licensed Professional Engineer, and must not be relied upon for permitting, fabrication, or construction. All inputs, section properties, anchor allowables, and code interpretations must be independently verified by a qualified engineer.</p>
+      <p style="margin:0;font-size:10pt;"><strong>No warranty is made and no liability is assumed</strong> for any use of this output. For a project-specific, sealed calculation, contact <strong>windcalculations.com</strong>.</p>
+    </div>
+    <div class="cover-code" style="margin-top:1rem;">Code basis: FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19</div>
+    ${footer(d,'')}
+  </div>`;
+
+  // P2 OVERVIEW + DIAGRAMS
+  const p2=`<div class="report-page">
+    <h3 style="margin-top:0;">DESIGN CRITERIA:</h3><p>FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19</p>
+    <h3>OVERVIEW &amp; CONFIGURATION:</h3>
+    <div class="fig-row">
+      <div class="fig">${elevationSVG(d)}<div class="cap">Elevation — ${esc(d.type)} system</div></div>
+      <div class="fig">${sideSVG(d)}<div class="cap">Base section — anchor embedment</div></div>
+    </div>
+    <table class="data-grid">
+      <tr><td class="lbl">Member type</td><td class="eq">=</td><td class="val">${esc(d.type)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Height</td><td class="sym">H</td><td class="eq">=</td><td class="val">${num(d.H,0)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Post spacing</td><td class="sym">L</td><td class="eq">=</td><td class="val">${num(d.L,0)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Picket spacing (c.c.)</td><td class="eq">=</td><td class="val">${num(d.vert_sp,3)}"</td><td class="unit">width ${num(d.vert_w,2)}"</td></tr>
+      <tr><td class="lbl">Anchors / post</td><td class="eq">=</td><td class="val">${Math.round(d.a_n)} × ${num(d.a_d,3)}"</td><td class="unit">embed ${num(d.a_L,1)}"</td></tr>
+    </table>
+    <h3>MATERIAL DATA:</h3>
+    <table class="data-grid">
+      <tr><td class="group">Aluminium:</td><td colspan="4" class="grade">${d.alloy}-T6</td></tr>
+      <tr><td class="lbl">Yield strength</td><td class="sym">f<sub>ty</sub>=f<sub>cy</sub></td><td class="eq">=</td><td class="val">${num(d.fty,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Shear yield</td><td class="sym">f<sub>sy</sub></td><td class="eq">=</td><td class="val">${num(d.fsy,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Tensile</td><td class="sym">f<sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.fu,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Modulus</td><td class="sym">E<sub>y</sub></td><td class="eq">=</td><td class="val">10100</td><td class="unit">ksi</td></tr>
+    </table>
+    <h3>DESIGN LOADS:</h3>
+    <table class="data-grid">
+      <tr><td class="lbl">Dead (self wt)</td><td class="eq">=</td><td class="val">${num(d.dl,1)}</td><td class="unit">psf</td></tr>
+      ${d.useGuard?`<tr><td class="lbl">Concentrated</td><td class="sym">P</td><td class="eq">=</td><td class="val">${num(d.P200,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Uniform</td><td class="sym">w</td><td class="eq">=</td><td class="val">${num(d.q50,0)}</td><td class="unit">plf</td></tr>
+      <tr><td class="lbl">Intermediate</td><td class="eq">=</td><td class="val">${num(d.P50,0)}</td><td class="unit">lb</td></tr>`:`<tr><td class="lbl" colspan="5"><em>Guard live loads not applied (wind only).</em></td></tr>`}
+    </table>
+    ${footer(d,'1')}
+  </div>`;
+
+  // P3 CODE BASIS
+  const guardNoteText = d.useGuard 
+        ? 'Guard live loads (200 lb &amp; 50 plf) are applied to this design per FBC 1607.8.1.'
+        : 'Guard live loads waived — this member is checked for wind only. <br><br><strong style="color:#b1322a;">ENGINEERING CAVEAT:</strong> If any portion of this fence is mounted on a retaining wall or elevated deck where the drop-off on the other side exceeds 30 inches, that specific section legally becomes a "Guard" (FBC 1015.2) and the 200 lb impact load requirement immediately applies.';
+        
+  const p3=`<div class="report-page">
+    <h3 style="margin-top:0;">Code Basis (FBC 2023)</h3>
+    <div class="code-snip"><span class="ref">1607.8.1 Handrails and guards.</span> Designed to resist a linear load of <strong>50 plf</strong> per ASCE 7 §4.5.1. Exceptions: one/two-family dwellings — single concentrated load only; certain I-3/F/H/S areas (occupant load &lt;50) — 20 plf.</div>
+    <div class="code-snip"><span class="ref">1607.8.1.1 Concentrated load.</span> Designed to resist a concentrated load of <strong>200 lb</strong> per ASCE 7 §4.5.1.</div>
+    <div class="code-snip"><span class="ref">1607.8.1.2 Intermediate rails.</span> Intermediate rails, balusters and panel fillers shall resist a concentrated load of <strong>50 lb</strong>.</div>
+    <div class="code-snip"><span class="ref">1616.2.1 Fences.</span> Fences not exceeding 6 ft in height from grade may be designed for allowable wind speeds of 115 mph 3-second gust.</div>
+    <div class="code-snip"><span class="ref">1616.3 Deflection (allowable).</span> Item 5 (brittle/hardening): L/360. Item 6 (other vertical/wall members): L/180. Item 9 (members supporting screens only): L/80. This calc uses <strong>L/${num(d.defl,0)}</strong>.</div>
+    <p class="note">${guardNoteText}</p>
+    ${footer(d,'2')}
+  </div>`;
+
+  // P4 WIND
+  const hft=d.H/12, EC=EXP[d.exp]||EXP.C;
+  const p4=`<div class="report-page">
+    <h3 style="margin-top:0;">1. Wind Load (FBC 2023 &amp; ASCE 7-22)</h3>
+    <table class="data-grid">
+      <tr><td class="lbl">Basic wind speed</td><td class="sym">V</td><td class="eq">=</td><td class="val">${num(d.V,0)}</td><td class="unit">mph</td></tr>
+      <tr><td class="lbl">Risk category</td><td class="eq"></td><td class="val">${esc(d.risk)}</td><td></td></tr>
+      <tr><td class="lbl">Exposure</td><td class="eq"></td><td class="val">${esc(d.exp)}</td><td></td></tr>
+      <tr><td class="lbl">Height of railing</td><td class="sym">h</td><td class="eq">=</td><td class="val">${num(hft,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Directionality</td><td class="sym">K<sub>d</sub></td><td class="eq">=</td><td class="val">${num(d.Kd,2)}</td><td></td></tr>
+      <tr><td class="lbl">Gust effect factor</td><td class="sym">G=G<sub>f</sub></td><td class="eq">=</td><td class="val">${num(d.Gf,2)}</td><td></td></tr>
+      <tr><td class="lbl">Topography</td><td class="sym">K<sub>zt</sub></td><td class="eq">=</td><td class="val">${num(d.Kzt,2)}</td><td></td></tr>
+      <tr><td class="lbl">Importance</td><td class="sym">I<sub>w</sub></td><td class="eq">=</td><td class="val">${num(d.Iw,2)}</td><td></td></tr>
+      <tr><td class="lbl">Vel. press. coeff (Table 26.10-1)</td><td class="sym">K<sub>z</sub></td><td class="eq">=</td><td class="val">${num(w.kz,2)}</td><td class="unit">@ z=${num(hft,1)} ft</td></tr>
+      <tr><td class="lbl">Solid/gross ratio</td><td class="sym">ε</td><td class="eq">=</td><td class="val">${num(d.eps*100,0)}</td><td class="unit">%</td></tr>
+      <tr><td class="lbl">Force coeff (Fig 29.3-1)</td><td class="sym">C<sub>f</sub></td><td class="eq">=</td><td class="val">${num(d.Cf,2)}</td><td></td></tr>
+    </table>
+    <p style="font-family:var(--font-mono);font-size:9.5pt;">q<sub>h</sub> = 0.00256·K<sub>z</sub>·K<sub>zt</sub>·K<sub>d</sub>·V² = <strong>${num(w.qh,1)} psf</strong><br>
+    P<sub>A</sub> = 0.6·max(16 psf, q<sub>h</sub>·G<sub>f</sub>·C<sub>f</sub>) = <strong>${num(w.PA,1)} psf</strong><br>
+    P<sub>A.EQ</sub> = ε·I<sub>w</sub>·P<sub>A</sub> = <strong>${num(w.qwind,1)} psf</strong> &nbsp;(design wind pressure)</p>
+    ${footer(d,'3')}
+  </div>`;
+
+  // member block helper
+  function railRows(){
+    let r=`<tr><td class="l">Span L</td><td class="v">${num(d.L,0)}</td><td class="u">in</td></tr>
+      <tr><td class="l">Wind trib. height</td><td class="v">${num(d.railTrib,0)}</td><td class="u">in</td></tr>
+      <tr><td class="l">q<sub>wind</sub></td><td class="v">${num(w.qwind,1)}</td><td class="u">psf</td></tr>
+      <tr class="hl"><td class="l">M wind</td><td class="v">${num(R.rail.M_wind,0)}</td><td class="u">in-lb</td></tr>`;
+    if(d.useGuard) r+=`<tr class="hl"><td class="l">M 200 lb (PL/4)</td><td class="v">${num(R.rail.M_200,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">M 50 plf</td><td class="v">${num(R.rail.M_50,0)}</td><td class="u">in-lb</td></tr>`;
+    r+=`<tr class="hl"><td class="l">M governing (${R.rail.gov})</td><td class="v">${num(R.rail.M,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">V governing</td><td class="v">${num(R.rail.V,0)}</td><td class="u">lb</td></tr>`;
+    return r;
+  }
+  function postRows(){
+    let r=`<tr><td class="l">Height H</td><td class="v">${num(d.H,0)}</td><td class="u">in</td></tr>
+      <tr><td class="l">Tributary width L</td><td class="v">${num(d.L,0)}</td><td class="u">in</td></tr>
+      <tr class="hl"><td class="l">M wind (H²/${Math.max(2,Math.round(d.windk))})</td><td class="v">${num(R.post.M_wind,0)}</td><td class="u">in-lb</td></tr>`;
+    if(d.useGuard) r+=`<tr class="hl"><td class="l">M 200 lb (P·H)</td><td class="v">${num(R.post.M_200,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">M 50 plf</td><td class="v">${num(R.post.M_50,0)}</td><td class="u">in-lb</td></tr>`;
+    r+=`<tr class="hl"><td class="l">M governing (${R.post.gov})</td><td class="v">${num(R.post.M,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">V governing</td><td class="v">${num(R.post.V,0)}</td><td class="u">lb</td></tr>`;
+    return r;
+  }
+  const railSec=R.rail.sec, postSec=R.post.sec;
+  const p5=`<div class="report-page">
+    <h3 style="margin-top:0;">2. Result of Analysis</h3>
+    <div class="member-block">
+      <h4>2.1 — Top Rail / Handrail</h4>
+      <table class="ld-table" style="width:100%;font-family:var(--font-mono);font-size:9pt;">${railRows()}</table>
+      <div class="section-props">${esc(railSec.name)} → A=${num(R.rail.eff.A,2)} in², I=${num(R.rail.eff.I,2)} in⁴${R.rail.eff.comp?' (composite ΣI)':''}, S=${num(R.rail.eff.Sb,2)} in³ · F<sub>ty</sub>=${num(d.fty,0)} ksi</div>
+      ${checkLine('F<sub>b</sub> = M/S = '+num(R.rail.Fb,2)+' ksi', R.rail.Fb, allowFb, num(R.rail.Fb,2)+' ksi', num(allowFb/Math.max(d.fty,1),2)+' F<sub>cy</sub> = '+num(allowFb,1)+' ksi')}
+      ${checkLine('F<sub>v</sub> = V/A = '+num(R.rail.Fv,2)+' ksi', R.rail.Fv, allowFv, num(R.rail.Fv,2)+' ksi', '0.6 F<sub>sy</sub> = '+num(allowFv,1)+' ksi')}
+      ${checkLine('Deflection δ', R.rail.defl, d.L/d.defl, num(R.rail.defl,3)+' in', 'L/'+num(d.defl,0)+' = '+num(d.L/d.defl,3)+' in')}
+    </div>
+    <div class="member-block">
+      <h4>2.2 — Post (cantilever, H = ${num(d.H,0)}")</h4>
+      <table class="ld-table" style="width:100%;font-family:var(--font-mono);font-size:9pt;">${postRows()}</table>
+      <div class="section-props">${esc(postSec.name)} → A=${num(R.post.eff.A,2)} in², I=${num(R.post.eff.I,2)} in⁴${R.post.eff.comp?' (composite ΣI)':''}, S=${num(R.post.eff.Sb,2)} in³ · F<sub>ty</sub>=${num(d.fty,0)} ksi</div>${R.rail.sec.name===R.post.sec.name?'<div class="note" style="color:#b85c00;">⚠ Post and top-rail are the same section — confirm the post dropdown is the snap post, not the top cap.</div>':''}
+      ${checkLine('F<sub>b</sub> = M/S = '+num(R.post.Fb,2)+' ksi', R.post.Fb, allowFb, num(R.post.Fb,2)+' ksi', num(allowFb/Math.max(d.fty,1),2)+' F<sub>cy</sub> = '+num(allowFb,1)+' ksi')}
+      ${checkLine('F<sub>v</sub> = V/A = '+num(R.post.Fv,2)+' ksi', R.post.Fv, allowFv, num(R.post.Fv,2)+' ksi', '0.6 F<sub>sy</sub> = '+num(allowFv,1)+' ksi')}
+      ${checkLine('Deflection δ', R.post.defl, (2*d.H)/d.defl, num(R.post.defl,3)+' in', '2H/'+num(d.defl,0)+' = '+num((2*d.H)/d.defl,3)+' in (cantilever, FBC Table 1604.3)')}
+      <div class="note">Bending allowable = ${num(allowFb/Math.max(d.fty,1),2)}·F<sub>cy</sub>; section assumed compact — ADM Ch. F local buckling (b/t) not explicitly checked. ${R.post.eff.comp?'Composite uses ΣI (Path A, two-beam, S=ΣI/c) — valid only if the snap legs develop the longitudinal shear flow q=VQ/I; otherwise turn composite OFF.':''}</div>
+    </div>
+    <p class="note">Post wind moment uses ${Math.round(d.windk)===2?'a uniform pressure distribution (M = q·L·H²/2, conservative)':'a triangular pressure resultant at H/3 (M = q·L·H²/3, per safety boundary layer profile).'}</p>
+    ${footer(d,'4')}
+  </div>`;
+
+  // P6 CONNECTIONS
+  const a=R.anchor;
+  let fastBlock='';
+  if(R.fast){const f=R.fast;
+    fastBlock=`<h4>3.2 — Fastener (rail-to-post / cane bracket)</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Number of bolts</td><td class="sym">n</td><td class="eq">=</td><td class="val">${Math.round(d.f_n)}</td><td class="unit">pc</td></tr>
+      <tr><td class="lbl">Diameter</td><td class="sym">d</td><td class="eq">=</td><td class="val">${num(d.f_d,3)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Tensile strength</td><td class="sym">F<sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.f_fu,0)}</td><td class="unit">psi</td></tr>
+      <tr><td class="lbl">R<sub>n</sub>=0.45 F<sub>u</sub> A<sub>b</sub></td><td class="eq">=</td><td class="val">${num(f.Rn,0)}</td><td class="unit">lb</td></tr>
+    </table>
+    ${checkLine('Bolt shear / 1 bolt', f.Vdem, f.Vallow, num(f.Vdem,1)+' lb', num(f.Vallow,0)+' lb (R<sub>n</sub>/Ω)')}
+    ${checkLine('Aluminum bearing / bolt (ADM J.5)', f.Vdem, f.Rbear, num(f.Vdem,1)+' lb', num(f.Rbear,0)+' lb (2·d·t·F<sub>u</sub>/Ω, t='+num(f.tw,3)+'")')}`;
+  }
+  const p6=`<div class="report-page">
+    <h3 style="margin-top:0;">3. Connection Design</h3>
+    <h4>3.1 — Base Anchorage (${Math.round(d.a_n)} × ${num(d.a_d,3)}" embed ${num(d.a_L,1)}")</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Base moment</td><td class="sym">M</td><td class="eq">=</td><td class="val">${num(a.Mbase,0)}</td><td class="unit">in-lb</td></tr>
+      <tr><td class="lbl">Anchors in tension</td><td class="sym">n<sub>t</sub></td><td class="eq">=</td><td class="val">${Math.round(d.a_nt)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Anchor spacing</td><td class="sym">a</td><td class="eq">=</td><td class="val">${num(d.a_sp,2)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Axial dead (relief)</td><td class="sym">P<sub>z</sub></td><td class="eq">=</td><td class="val">${num(a.Pz,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Tension / anchor</td><td class="sym">T=M/(n<sub>t</sub>·a)−P<sub>z</sub>/n</td><td class="eq">=</td><td class="val">${num(a.T,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Shear / anchor</td><td class="sym">V/n</td><td class="eq">=</td><td class="val">${num(a.Va,0)}</td><td class="unit">lb</td></tr>
+    </table>
+    ${checkLine('Tension / anchor', a.T, d.a_T, num(a.T,0)+' lb', '[T] = '+num(d.a_T,0)+' lb')}
+    ${checkLine('Shear / anchor', a.Va, d.a_V, num(a.Va,0)+' lb', '[V] = '+num(d.a_V,0)+' lb')}
+    ${checkLine('Interaction (T/[T])²+(V/[V])²', a.inter, 1.0, num(a.inter,2), '1.0')}
+    <h4>Base Plate</h4>
+    ${checkLine('Required thickness t<sub>p</sub>', a.bp_treq, d.bp_t, num(a.bp_treq,3)+' in', 'design '+num(d.bp_t,2)+' in')}
+    <p class="note">Anchor allowables [T], [V] are per the manufacturer ESR for the substrate &amp; embedment selected — editable in the form. Embedment shown: ${num(d.a_L,1)} in into ${esc(d.substrate)}.</p>
+    ${fastBlock}
+    ${footer(d,'5')}
+  </div>`;
+
+  document.getElementById('report').innerHTML=p1+p2+p3+p4+p5+p6;
+}
+
+// INIT
+function resetForm(){if(!confirm('Reset to defaults?'))return;location.reload();}
+populateSectionSelect('f_rail_sec','HR-14 + HR-2 Composite Rail (Iy=0.448)');
+populateSectionSelect('f_post_sec','HR-4 + HR-2 Composite Post (Iy=0.578)');
+const _d=document.getElementById('f_date'); if(_d&&!_d.value){_d.value=new Date().toISOString().slice(0,10);}
+const _p=document.querySelector('.form-panel');
+if(_p){_p.addEventListener('input',render);_p.addEventListener('change',render);}
+applyTypePreset();
+</script>
+</body>
+</html>
