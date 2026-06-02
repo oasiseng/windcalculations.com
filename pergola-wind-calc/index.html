@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aluminum Pergola Wind &amp; Structure Check — windcalculations.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1a5c4c;--green-dark:#13463a;--green-soft:rgba(26,92,76,0.08);
+    --bg:#f5f3ef;--surface:#ffffff;--text:#1a1714;--muted:#5c5955;--border:#e2dfd8;
+    --error:#d93025;--warn:#b85c00;--pass:#1e7a3b;--fail:#c0392b;--pending:#7a6d4f;
+    --font-body:'Plus Jakarta Sans',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.5;}
+  .app{display:grid;grid-template-columns:minmax(440px,500px) 1fr;gap:0;min-height:100vh;}
+  .form-panel{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;max-height:100vh;position:sticky;top:0;}
+  .preview-panel{padding:2rem 1rem;background:linear-gradient(180deg,#e8e6df 0%,#f5f3ef 100%);overflow-x:auto;}
+  .form-panel h1{color:var(--green);font-size:1.2rem;margin:0 0 0.25rem;}
+  .form-panel .subtitle{font-size:0.78rem;color:var(--muted);margin:0 0 1.2rem;font-family:var(--font-mono);}
+  fieldset{border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem 1rem;margin:0 0 1rem;background:#faf9f7;}
+  fieldset legend{font-weight:700;color:var(--green);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;padding:0 0.4rem;}
+  .field{margin-bottom:0.7rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-weight:600;font-size:0.8rem;margin-bottom:0.25rem;}
+  .field input,.field select,.field textarea{width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;background:#fff;color:var(--text);transition:border-color 0.15s;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,76,0.12);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;}
+  .hint{color:var(--muted);font-weight:400;font-size:0.72rem;}
+  .sub-legend{font-weight:700;color:var(--green-dark);font-size:0.78rem;margin:0.6rem 0 0.4rem;border-bottom:1px dashed var(--border);padding-bottom:0.2rem;}
+  .actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent 0%,var(--surface) 30%);padding:1rem 0 0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{flex:1 1 calc(50% - 0.2rem);min-width:0;padding:0.65rem 0.5rem;border:none;border-radius:6px;font-family:var(--font-body);font-weight:600;font-size:0.84rem;cursor:pointer;transition:background 0.15s,transform 0.05s;}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-primary:active{transform:scale(0.98);}
+  .btn-secondary{background:#fff;border:1.5px solid var(--border);color:var(--text);}
+  .btn-secondary:hover{border-color:var(--green);color:var(--green);}
+  .live-result{background:var(--green-soft);border:1px solid rgba(26,92,76,0.2);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.8rem;font-family:var(--font-mono);font-size:0.74rem;color:var(--text);line-height:1.6;}
+  .live-result strong{color:var(--green);}
+  .warn-banner{background:rgba(184,92,0,0.08);border:1px solid rgba(184,92,0,0.3);border-left:3px solid var(--warn);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.8rem;font-size:0.74rem;color:var(--warn);display:none;}
+  .warn-banner.active{display:block;}
+  .version-badge{display:inline-block;font-family:var(--font-mono);font-size:0.6rem;background:var(--green);color:#fff;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.4rem;letter-spacing:0.05em;}
+  .disclaimer-box{background:#fff7ee;border:1px solid #f0c89a;border-left:3px solid #b85c00;border-radius:6px;padding:0.5rem 0.7rem;margin:0 0 1rem;font-size:0.73rem;color:#7a4a10;line-height:1.5;}
+  .disclaimer-box a{color:#b85c00;font-weight:700;white-space:nowrap;}
+  @media (max-width:900px){ .app{grid-template-columns:1fr;} .form-panel{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border);} }
+  .viz-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem 0.9rem;margin:0 auto 1.4rem;max-width:8.5in;box-shadow:0 4px 16px rgba(0,0,0,0.07);}
+  .viz-card h2{margin:0 0 0.2rem;font-size:0.95rem;color:var(--green);}
+  .viz-card .viz-sub{font-size:0.72rem;color:var(--muted);font-family:var(--font-mono);margin:0 0 0.6rem;}
+  .viz-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:0.6rem;align-items:start;}
+  .viz-box{border:1px solid #e6e2da;border-radius:6px;padding:0.4rem;background:#fcfcfa;}
+  .viz-box .vlabel{font-size:0.7rem;font-weight:700;color:#234;text-align:center;margin-bottom:0.2rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .viz-readout{display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.72rem;color:#333;margin-top:0.6rem;}
+  .viz-readout b{color:var(--green);}
+  .report{max-width:8.5in;margin:0 auto;}
+  .report-page{background:#fff;width:8.5in;min-height:11in;padding:0.85in 0.8in 1.1in;margin:0 auto 1.5rem;box-shadow:0 6px 24px rgba(0,0,0,0.08);position:relative;font-size:10.5pt;line-height:1.4;color:#1a1714;}
+  .report-page h1{color:var(--green);font-size:20pt;margin:0 0 0.2rem;font-weight:700;letter-spacing:0.06em;}
+  .report-page h2{color:var(--green);font-size:13pt;margin:1.1rem 0 0.5rem;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:0.2rem;}
+  .report-page h3{font-size:11pt;margin:0.8rem 0 0.35rem;font-weight:700;color:var(--green);}
+  .report-page h4{font-size:10pt;margin:0.6rem 0 0.3rem;font-weight:700;color:#b1322a;}
+  .report-page p{margin:0 0 0.5rem;}
+  .report-page .center{text-align:center;}
+  .cover-band{background:#dcd6c3;padding:1.4in 0.4in 0.5in;text-align:right;margin:-0.85in -0.8in 0;}
+  .cover-band .title{font-size:26pt;font-weight:700;color:#234;letter-spacing:0.12em;line-height:1.1;}
+  .cover-band .sub{font-size:18pt;font-weight:700;color:#234;letter-spacing:0.2em;}
+  .cover-meta{text-align:right;font-style:italic;color:#555;margin:0.6rem 0 0;}
+  .cover-table{width:100%;border-collapse:collapse;margin-top:2.2in;font-size:11pt;}
+  .cover-table td{padding:0.35rem 0.2rem;border-bottom:1px solid #bbb;color:#234;}
+  .cover-table td:first-child{color:var(--green);width:1.6in;}
+  .cover-products{margin-top:1rem;font-size:10pt;}
+  .cover-products .lbl{font-weight:700;}
+  .cover-code{margin-top:1.2rem;font-weight:700;color:var(--green-dark);}
+  .data-grid{width:100%;border-collapse:collapse;font-size:10pt;margin:0.3rem 0 0.6rem;}
+  .data-grid td{padding:0.12rem 0.3rem;vertical-align:top;}
+  .data-grid td.lbl{font-weight:600;}
+  .data-grid td.sym{font-family:var(--font-mono);text-align:right;width:1.1in;color:#234;}
+  .data-grid td.eq{text-align:center;width:0.3in;color:#888;}
+  .data-grid td.val{font-family:var(--font-mono);text-align:right;width:1in;font-weight:700;}
+  .data-grid td.unit{font-style:italic;color:#555;width:0.7in;}
+  .data-grid .group{font-weight:700;color:#234;padding-top:0.35rem;}
+  .data-grid .grade{font-style:italic;color:var(--green-dark);}
+  .calc-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:9pt;margin:0.4rem 0 0.7rem;}
+  .calc-table th,.calc-table td{border:1px solid #999;padding:0.22rem 0.4rem;text-align:center;}
+  .calc-table th{background:var(--green);color:#fff;font-weight:700;}
+  .calc-table td.left{text-align:left;font-weight:600;}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;align-items:start;}
+  .panel-label{background:var(--green);color:#fff;font-weight:700;text-align:center;padding:0.2rem;font-size:9.5pt;border-radius:4px 4px 0 0;}
+  .ld-table{width:100%;border-collapse:collapse;font-size:9pt;font-family:var(--font-mono);}
+  .ld-table td{padding:0.12rem 0.3rem;}
+  .ld-table td.l{text-align:left;color:#234;}
+  .ld-table td.v{text-align:right;font-weight:700;}
+  .ld-table td.u{font-style:italic;color:#555;width:0.9in;}
+  .ld-table tr.hl td{font-weight:700;color:var(--green-dark);}
+  .check-line{font-family:var(--font-mono);font-size:9.5pt;display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem;padding:0.2rem 0.4rem;margin:0.2rem 0;border-left:3px solid var(--green);background:#f7f6f2;}
+  .check-line .formula{flex:1;}
+  .check-line .verdict{font-weight:700;white-space:nowrap;}
+  .check-line .verdict.pass{color:var(--pass);}
+  .check-line .verdict.fail{color:var(--fail);}
+  .section-props{font-family:var(--font-mono);font-size:9pt;background:#eef3f1;border:1px solid #cdddd6;border-radius:4px;padding:0.3rem 0.5rem;margin:0.3rem 0;}
+  .note{font-size:9pt;font-style:italic;color:#555;margin:0.3rem 0;}
+  .fig{text-align:center;margin:0.5rem 0;}
+  .fig svg{max-width:100%;height:auto;}
+  .fig.compact svg{max-height:1.95in;width:auto;}
+  .fig.plan svg{max-height:2.7in;width:auto;}
+  .fig .cap{font-size:9pt;font-style:italic;color:#555;margin-top:0.2rem;}
+  .fig-row{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;align-items:start;}
+  .toc-line{display:flex;justify-content:space-between;border-bottom:1px dotted #bbb;padding:0.3rem 0;font-size:11pt;}
+  .page-footer{position:absolute;bottom:0;left:0;right:0;height:0.85in;padding:0 0.8in 0.3in;}
+  .page-footer .footer-text{display:flex;justify-content:space-between;font-size:8pt;color:#222;margin-bottom:0.12rem;}
+  .page-footer .footer-text .left{font-weight:600;}
+  .page-footer .footer-text .right{text-align:right;font-style:italic;}
+  .page-footer .footer-text .right strong{font-style:normal;font-weight:600;}
+  .page-footer .pageno{position:absolute;bottom:0.1in;right:0.8in;font-style:italic;font-size:9pt;color:#444;}
+  .page-footer .swoosh{width:100%;height:0.35in;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 50' preserveAspectRatio='none'><path d='M0,25 Q200,5 400,25 T800,25' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.55'/><path d='M0,30 Q200,12 400,30 T800,30' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.4'/><path d='M0,35 Q200,18 400,35 T800,35' stroke='%237fa8c5' stroke-width='1' fill='none' opacity='0.4'/></svg>") no-repeat center / 100% 100%;}
+  .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-style:italic;}
+  .dl{stroke:#444;stroke-width:0.8;}
+  .dtxt{font-family:var(--font-mono);font-size:10px;fill:#234;}
+  .dtxt.sm{font-size:8.5px;}
+  .alum{fill:#e8eeec;stroke:#1a5c4c;stroke-width:1.4;}
+  .grnd{fill:#d8d2bf;stroke:#8a8470;stroke-width:1;}
+  .plate{fill:#9aa7a2;stroke:#46524e;stroke-width:1;}
+  .bolt{fill:#2b2b2b;}
+  .slat{stroke:#8aa39a;stroke-width:1.1;}
+  .beam{fill:#dfe9e4;stroke:#1a5c4c;stroke-width:1.4;}
+  .post{stroke:#1a5c4c;stroke-width:3;fill:#e8eeec;}
+  .ftg{fill:#cfc8b4;stroke:#8a8470;stroke-width:1;}
+  @page{size:letter;margin:0;}
+  @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .form-panel{display:none;}
+    .preview-panel{padding:0;background:#fff;overflow:visible;}
+    .app{display:block;}
+    .viz-card{display:none;}
+    .report-page{box-shadow:none;margin:0;page-break-after:always;break-inside:avoid;width:8.5in;height:11in;min-height:11in;max-height:11in;overflow:hidden;}
+    .report-page:last-child{page-break-after:auto;}
+    .page-footer,.page-footer .swoosh,.page-footer .footer-text{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+    .member-block,.check-line,.twocol{break-inside:avoid;page-break-inside:avoid;}
+    .no-print{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="form-panel">
+  <h1>Aluminum Pergola Wind &amp; Structure Check <span class="version-badge">windcalculations.com</span></h1>
+  <p class="subtitle">ASCE 7-22 · ADM 2020 · freestanding / attached open-roof aluminum pergola — preliminary screening</p>
+
+  <div class="disclaimer-box">⚠ <strong>Preliminary screening only.</strong> Order-of-magnitude check of an aluminum pergola under wind, gravity &amp; overturning. <strong>Not</strong> a sealed engineering document; not for permit or construction. No warranty or liability — verify all inputs and have a licensed engineer review. <a href="https://windcalculations.com" target="_blank" rel="noopener">Need a sealed calc? →</a></div>
+
+  <div class="live-result" id="liveResult">Fill in wind &amp; geometry to see live results.</div>
+  <div class="warn-banner" id="warnBanner"></div>
+
+  <fieldset>
+    <legend>Project reference (optional)</legend>
+    <div class="field"><label>Job / project label</label><input type="text" id="f_project" value="" placeholder="e.g. Backyard pergola"></div>
+    <div class="field"><label>Date</label><input type="date" id="f_date"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Pergola Geometry</legend>
+    <p class="hint" style="margin:0 0 0.5rem;">All counts are independent — set posts, bays and rafters separately. The governing length bay drives beam design; width post-spacing drives the end frame.</p>
+    <div class="field"><label>Structural system</label>
+      <select id="f_sys"><option value="free" selected>Freestanding (posts to footings — overturning governs)</option><option value="attached">Attached on one side (top laterally braced)</option></select></div>
+    <div class="row-2">
+      <div class="field"><label>Overall length (ft)</label><input type="number" id="f_len" value="29.08" step="0.01"></div>
+      <div class="field"><label>Overall width (ft)</label><input type="number" id="f_wid" value="13.0" step="0.1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label># posts along length</label><input type="number" id="f_nPostL" value="4" min="2" step="1"></div>
+      <div class="field"><label># posts along width</label><input type="number" id="f_nPostW" value="2" min="2" step="1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Governing length bay (ft)</label><input type="number" id="f_bayL" value="9.0" step="0.1"><span class="hint">Largest c/c bay (here 9.0).</span></div>
+      <div class="field"><label>Width post spacing (ft)</label><input type="number" id="f_bayW" value="11.5" step="0.1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Clear height (ft)</label><input type="number" id="f_htClear" value="9.5" step="0.1"></div>
+      <div class="field"><label>Overall height (ft)</label><input type="number" id="f_htOverall" value="10.58" step="0.01"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Wind Data (ASCE 7-22)</legend>
+    <div class="row-3">
+      <div class="field"><label>V (mph)</label><input type="number" id="f_V" value="170" step="1"></div>
+      <div class="field"><label>Risk Cat</label><select id="f_risk"><option>I</option><option selected>II</option><option>III</option><option>IV</option></select></div>
+      <div class="field"><label>Exposure</label><select id="f_exp"><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Kd</label><input type="number" id="f_Kd" value="0.85" step="0.01"></div>
+      <div class="field"><label>Ke</label><input type="number" id="f_Ke" value="1.00" step="0.01"></div>
+      <div class="field"><label>Kzt</label><input type="number" id="f_Kzt" value="1.00" step="0.01"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>G (gust)</label><input type="number" id="f_G" value="0.85" step="0.01"></div>
+      <div class="field"><label>&epsilon; frame solidity (lateral)</label><input type="number" id="f_eps" value="0.25" step="0.01"><span class="hint">Solid fraction of the SIDE elevation the wind actually hits (open frame ≈ 0.15–0.30) — NOT 0.9.</span></div>
+    </div>
+    <div class="field"><label>Roof / load method</label>
+      <select id="f_method">
+        <option value="cn" selected>Open free roof — net pressure C_N (Fig 27.3-4/6)</option>
+        <option value="force">Open frame — force method (C_f × ε)</option>
+      </select></div>
+    <div class="field"><label>Roof type &amp; wind flow (sets default C_N)</label>
+      <select id="f_roofflow">
+        <option value="flat_clear" selected>Flat / monoslope θ≤5°, clear wind flow</option>
+        <option value="flat_obstr">Flat / monoslope θ≤5°, obstructed wind flow</option>
+        <option value="manual">Manual — keep C_N below</option>
+      </select></div>
+    <div class="row-2">
+      <div class="field"><label>C_N downward (+)</label><input type="number" id="f_CNd" value="1.2" step="0.05"></div>
+      <div class="field"><label>C_N uplift (−)</label><input type="number" id="f_CNu" value="-1.1" step="0.05"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>C_f (force method)</label><input type="number" id="f_Cf" value="1.6" step="0.05"></div>
+      <div class="field"><label>Lateral proj. area A<sub>proj</sub> (ft²)</label><input type="number" id="f_Aproj" value="0" step="1"><span class="hint">0 = auto: ε·L·h.</span></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Loads</legend>
+    <div class="row-2">
+      <div class="field"><label>Self weight / dead (psf)</label><input type="number" id="f_dl" value="3.5" step="0.1"><span class="hint">True self-wt only (~2.5–5). Don't pad — low D is conservative for uplift.</span></div>
+      <div class="field"><label>Roof live L<sub>r</sub> (psf)</label><input type="number" id="f_rll" value="0" step="1"><span class="hint">Open slats: typ. 0 (FL no snow).</span></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Rafter / Slat (purlin)</legend>
+    <div class="row-3">
+      <div class="field"><label>Spacing o.c. (in)</label><input type="number" id="f_r_sp" value="3.625" step="0.125"></div>
+      <div class="field"><label>Span (ft)</label><input type="number" id="f_r_span" value="9.0" step="0.1"><span class="hint">Between beams.</span></div>
+      <div class="field"><label>Spans</label><input type="number" id="f_r_spans" value="3" min="1" step="1"></div>
+    </div>
+    <div class="field"><label>Section</label><select id="f_r_sec" data-sec="r"></select></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Beam (carrier)</legend>
+    <div class="row-3">
+      <div class="field"><label>Span = post bay (ft)</label><input type="number" id="f_b_span" value="9.0" step="0.1"></div>
+      <div class="field"><label>Trib width (ft)</label><input type="number" id="f_b_trib" value="5.75" step="0.1"><span class="hint">½ rafter span each side.</span></div>
+      <div class="field"><label>Spans</label><input type="number" id="f_b_spans" value="3" min="1" step="1"></div>
+    </div>
+    <div class="field"><label>Section</label><select id="f_b_sec" data-sec="b"></select></div>
+    <div class="field"><label><input type="checkbox" id="f_b_double" checked style="width:auto;margin-right:0.3rem;">Double beam (one each side of post — per Detail #2)</label></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Post (column)</legend>
+    <div class="row-3">
+      <div class="field"><label>Unbraced height (ft)</label><input type="number" id="f_p_ht" value="9.5" step="0.1"></div>
+      <div class="field"><label>K (eff. length)</label><input type="number" id="f_p_K" value="2.1" step="0.05"><span class="hint">Base fixed/top free ≈2.1; braced ≈1.0.</span></div>
+      <div class="field"><label>Base plate gage s (in)</label><input type="number" id="f_p_s" value="5.5" step="0.25"><span class="hint">Anchor tension lever arm.</span></div>
+    </div>
+    <div class="field"><label>Section</label><select id="f_p_sec" data-sec="p"></select></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Connections</legend>
+    <div class="sub-legend">1 — Beam → Post bolt (Detail #2/#3)</div>
+    <div class="row-3">
+      <div class="field"><label>n bolts</label><input type="number" id="f_c1_n" value="4" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_c1_d" value="0.375" step="0.0625"></div>
+      <div class="field"><label>&Omega;</label><input type="number" id="f_c1_omega" value="2.0" step="0.1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Material</label><input type="text" id="f_c1_mat" value="SS 304 (A2-70)"></div>
+      <div class="field"><label>Fbu (psi)</label><input type="number" id="f_c1_fbu" value="70000" step="1000"></div>
+    </div>
+
+    <div class="sub-legend">2 — Purlin → Beam Tek screw (Detail #4)</div>
+    <div class="row-3">
+      <div class="field"><label>n / purlin</label><input type="number" id="f_c2_n" value="1" step="1"></div>
+      <div class="field"><label>dia</label><input type="text" id="f_c2_d" value="#14 x 2&quot;"></div>
+      <div class="field"><label>&Omega;</label><input type="number" id="f_c2_omega" value="3.0" step="0.1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Allow V (lb)</label><input type="number" id="f_c2_V" value="300" step="5"></div>
+      <div class="field"><label>Allow T pull-out (lb)</label><input type="number" id="f_c2_T" value="240" step="5"></div>
+    </div>
+
+    <div class="sub-legend">3 — Post base anchor (Detail #1, wedge)</div>
+    <div class="row-3">
+      <div class="field"><label>n anchors</label><input type="number" id="f_c3_n" value="4" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_c3_d" value="0.375" step="0.0625"></div>
+      <div class="field"><label>Embed L (in)</label><input type="number" id="f_c3_L" value="2.0" step="0.25"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>&Omega;</label><input type="number" id="f_c3_omega" value="2.0" step="0.1"></div>
+      <div class="field"><label>Allow V (lb)</label><input type="number" id="f_c3_V" value="595" step="5"></div>
+      <div class="field"><label>Allow T (lb)</label><input type="number" id="f_c3_T" value="445" step="5"></div>
+    </div>
+    <div class="field"><label>Auto-fill — wedge anchor in normal-wt concrete (confirm ESR for product/embed/f'c)</label>
+      <select id="f_c3_ps">
+        <option value="">— manual / keep values above —</option>
+        <option value="0.375|2">3/8&quot; @ 2&quot; embed, f'c=3000 → T=445, V=595 (ESR-screening)</option>
+        <option value="0.5|3.25">1/2&quot; @ 3.25&quot; embed, f'c=3000 → T=1130, V=1640</option>
+        <option value="0.625|3.5">5/8&quot; @ 3.5&quot; embed, f'c=3000 → T=1505, V=2275</option>
+      </select>
+    </div>
+
+    <div class="sub-legend">4 — Base plate (Detail #1, flat bar)</div>
+    <div class="row-3">
+      <div class="field"><label>Width B (in)</label><input type="number" id="f_bp_B" value="8" step="0.5"></div>
+      <div class="field"><label>Length N (in)</label><input type="number" id="f_bp_N" value="8" step="0.5"></div>
+      <div class="field"><label>Thick t (in)</label><input type="number" id="f_bp_t" value="0.375" step="0.0625"></div>
+    </div>
+    <div class="field"><label>Plate F<sub>cy</sub> (ksi)</label><input type="number" id="f_bp_Fcy" value="35" step="1"><span class="hint">6061-T6 flat bar ≈ 35 ksi. Anchor gage = post-base "s" field above.</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Footing (freestanding overturning)</legend>
+    <p class="hint" style="margin:0 0 0.5rem;">Per-post isolated footing. Resists overturning + sliding from base shear. Drawing notes "concrete footings required at mounting level to meet engineering".</p>
+    <div class="row-3">
+      <div class="field"><label>Footing W (ft)</label><input type="number" id="f_ft_W" value="2.5" step="0.25"></div>
+      <div class="field"><label>Footing L (ft)</label><input type="number" id="f_ft_L" value="2.5" step="0.25"></div>
+      <div class="field"><label>Depth D (ft)</label><input type="number" id="f_ft_D" value="2.5" step="0.25"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Concrete density (pcf)</label><input type="number" id="f_ft_den" value="150" step="5"></div>
+      <div class="field"><label>Soil friction coef.</label><input type="number" id="f_ft_mu" value="0.40" step="0.05"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Materials (display / HSS default)</legend>
+    <div class="row-2">
+      <div class="field"><label>Aluminum alloy</label><input type="text" id="f_alloy" value="6061-T6"></div>
+      <div class="field"><label>Fty=Fcy (ksi)</label><input type="number" id="f_fty" value="35" step="1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Fsy (ksi)</label><input type="number" id="f_fsy" value="20" step="1"></div>
+      <div class="field"><label>Fu (ksi)</label><input type="number" id="f_fu" value="38" step="1"></div>
+    </div>
+    <p class="hint">Per-member alloy is auto-derived from the section name (6063-T6→Fty 25, 6061-T6→35). HSS/Custom use these global fields.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Custom Section Properties</legend>
+    <p class="hint" style="margin:0 0 0.5rem;">For any member not in the dropdown: set its Section to <strong>"— Custom —"</strong>, then enter a name and properties here. A (in²), strong-axis I<sub>x</sub> and weak-axis I<sub>y</sub> (in⁴), S (in³); B/H are optional (display/diagram). I<sub>y</sub> drives post weak-axis buckling — enter it for rectangular tubes (don't leave 0).</p>
+    <div class="sub-legend">Rafter / slat</div>
+    <div class="field"><label>Custom name (shows on report)</label><input type="text" id="f_cr_name" value="" placeholder="e.g. EMS 2x6 extrusion"></div>
+    <div class="row-3">
+      <div class="field"><label>Width B (in)</label><input type="number" id="f_cr_B" value="0" step="0.01"></div>
+      <div class="field"><label>Depth H (in)</label><input type="number" id="f_cr_H" value="0" step="0.01"></div>
+      <div class="field"><label>A (in²)</label><input type="number" id="f_cr_A" value="0" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Ix strong (in⁴)</label><input type="number" id="f_cr_I" value="0" step="0.01"></div>
+      <div class="field"><label>Iy weak (in⁴)</label><input type="number" id="f_cr_Iy" value="0" step="0.01"></div>
+      <div class="field"><label>S (in³)</label><input type="number" id="f_cr_S" value="0" step="0.01"></div>
+    </div>
+    <div class="sub-legend">Beam</div>
+    <div class="field"><label>Custom name (shows on report)</label><input type="text" id="f_cb_name" value="" placeholder="e.g. EMS 2x6 extrusion"></div>
+    <div class="row-3">
+      <div class="field"><label>Width B (in)</label><input type="number" id="f_cb_B" value="0" step="0.01"></div>
+      <div class="field"><label>Depth H (in)</label><input type="number" id="f_cb_H" value="0" step="0.01"></div>
+      <div class="field"><label>A (in²)</label><input type="number" id="f_cb_A" value="0" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Ix strong (in⁴)</label><input type="number" id="f_cb_I" value="0" step="0.01"></div>
+      <div class="field"><label>Iy weak (in⁴)</label><input type="number" id="f_cb_Iy" value="0" step="0.01"></div>
+      <div class="field"><label>S (in³)</label><input type="number" id="f_cb_S" value="0" step="0.01"></div>
+    </div>
+    <div class="sub-legend">Post <span class="hint">(Iy governs buckling)</span></div>
+    <div class="field"><label>Custom name (shows on report)</label><input type="text" id="f_cp_name" value="" placeholder="e.g. EMS 2x6 extrusion"></div>
+    <div class="row-3">
+      <div class="field"><label>Width B (in)</label><input type="number" id="f_cp_B" value="0" step="0.01"></div>
+      <div class="field"><label>Depth H (in)</label><input type="number" id="f_cp_H" value="0" step="0.01"></div>
+      <div class="field"><label>A (in²)</label><input type="number" id="f_cp_A" value="0" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Ix strong (in⁴)</label><input type="number" id="f_cp_I" value="0" step="0.01"></div>
+      <div class="field"><label>Iy weak (in⁴)</label><input type="number" id="f_cp_Iy" value="0" step="0.01"></div>
+      <div class="field"><label>S (in³)</label><input type="number" id="f_cp_S" value="0" step="0.01"></div>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('loadFileInput').click()">📂 Load</button>
+    <input type="file" id="loadFileInput" accept=".json" style="display:none" onchange="if(this.files[0]) loadState(this.files[0]); this.value='';">
+    <button class="btn btn-secondary" onclick="saveState()">💾 Save</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 Print / PDF</button>
+  </div>
+</aside>
+<main class="preview-panel">
+  <div class="no-print" style="max-width:8.5in;margin:0 auto 1rem;background:var(--green);color:#fff;border-radius:8px;padding:0.7rem 1rem;font-size:0.85rem;line-height:1.5;">
+    This is a <strong>free preliminary check</strong>, not a sealed calculation. For a stamped, project-specific pergola, canopy, or wind load calculation, visit <a href="https://windcalculations.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">windcalculations.com</a>. Use <strong>Print / PDF</strong> below the form for a shareable copy.
+  </div>
+  <div class="viz-card no-print" id="vizCard">
+    <h2>Live Pergola Diagram</h2>
+    <p class="viz-sub">Updates as you type — verify length, width, posts, bays, beams, purlins &amp; height before printing.</p>
+    <div class="viz-grid">
+      <div class="viz-box"><div class="vlabel">Roof Framing Plan</div><div id="vizPlan"></div></div>
+      <div>
+        <div class="viz-box" style="margin-bottom:0.5rem;"><div class="vlabel">Long Elevation</div><div id="vizElev"></div></div>
+        <div class="viz-box"><div class="vlabel">End Section</div><div id="vizSect"></div></div>
+      </div>
+    </div>
+    <div class="viz-readout" id="vizReadout"></div>
+  </div>
+  <div class="report" id="report"><div class="empty-state">Fill the form. The report renders here in real time.</div></div>
+</main>
+</div>
+<script>
+// ====================== SECTION LIBRARY — Aluminum square/rect HSS ======================
+function rectTube(B,H,t){
+  // B = width (weak-axis dim), H = depth (strong-axis dim)
+  const A  = B*H - (B-2*t)*(H-2*t);
+  const Ix = (B*Math.pow(H,3) - (B-2*t)*Math.pow(H-2*t,3))/12;   // strong axis (about horizontal)
+  const Iy = (H*Math.pow(B,3) - (H-2*t)*Math.pow(B-2*t,3))/12;   // weak axis
+  const S  = Ix/(H/2);
+  return {A:+A.toFixed(4), I:+Ix.toFixed(4), Iy:+Iy.toFixed(4), Sb:+S.toFixed(4), St:+S.toFixed(4), t, B, H};
+}
+const SECTIONS = [
+  {name:'HSS 1" x 1" x 1/8" (purlin)',   ...rectTube(1,1,0.125)},
+  {name:'HSS 1.5" x 1.5" x 1/8"',        ...rectTube(1.5,1.5,0.125)},
+  {name:'HSS 2" x 2" x 1/8"',            ...rectTube(2,2,0.125)},
+  {name:'HSS 2" x 2" x 1/4"',            ...rectTube(2,2,0.25)},
+  {name:'HSS 2" x 4" x 1/8"',            ...rectTube(2,4,0.125)},
+  {name:'HSS 3" x 3" x 1/8"',            ...rectTube(3,3,0.125)},
+  {name:'HSS 3" x 3" x 1/4"',            ...rectTube(3,3,0.25)},
+  {name:'HSS 4" x 4" x 1/4"',            ...rectTube(4,4,0.25)},
+  {name:'HSS 4" x 6" x 1/8" (beam)',     ...rectTube(4,6,0.125)},
+  {name:'HSS 4" x 6" x 3/16"',           ...rectTube(4,6,0.1875)},
+  {name:'HSS 4" x 6" x 1/4"',            ...rectTube(4,6,0.25)},
+  {name:'HSS 6" x 6" x 1/8" (post end cap stock)', ...rectTube(6,6,0.125)},
+  {name:'HSS 6" x 6" x 1/4" (post)',     ...rectTube(6,6,0.25)},
+  {name:'HSS 6" x 6" x 3/8"',            ...rectTube(6,6,0.375)},
+  {name:'HSS 8" x 8" x 1/4"',            ...rectTube(8,8,0.25)},
+  {name:'— Custom (enter A, I, S below) —', custom:true, B:0, H:0},
+];
+function secByName(name){ return SECTIONS.find(s=>s.name===name) || SECTIONS[0]; }
+function memSec(selId, cA, cI, cS, cIy, cName, cB, cH){
+  const base = secByName(document.getElementById(selId).value);
+  if(base.custom){
+    const blank = !(cA>0 && cI>0 && cS>0);
+    const A=cA>0?cA:0.01, I=cI>0?cI:0.01, S=cS>0?cS:0.01;
+    const Iy = cIy>0 ? cIy : I;   // explicit weak-axis I; falls back to Ix only if left blank (warns below)
+    const iyBlank = !(cIy>0);
+    const nm = (cName && cName.trim()) ? ('Custom — '+cName.trim()) : 'Custom (user-entered)';
+    return {name:nm, A, I, Iy, Sb:S, St:S, t:0, B:(cB>0?cB:0), H:(cH>0?cH:0), custom:true, blank, iyBlank};
+  }
+  // Defensive guard: never return a section missing numeric A/Sb (prevents undefined-property runtime errors).
+  if(!(base.A>0) || !(base.Sb>0)){
+    return {name:base.name||'(invalid section)', A:base.A||0.01, I:base.I||0.01, Iy:base.Iy||base.I||0.01,
+            Sb:base.Sb||0.01, St:base.St||base.Sb||0.01, t:base.t||0, B:base.B||0, H:base.H||0, blank:true};
+  }
+  return base;
+}
+// Per-member alloy from the section name (mirrors canopy logic).
+function alloyFor(sec, d){
+  const n=(sec&&sec.name)||'';
+  if(/6063/.test(n)) return {Fty:25, Fsy:15, Fu:30, label:'6063-T6'};
+  if(/6061/.test(n)) return {Fty:35, Fsy:20, Fu:38, label:'6061-T6'};
+  return {Fty:d.fty, Fsy:d.fsy, Fu:d.fu, label:(d.alloy||'global')};
+}
+function populateSectionSelect(id, defaultName){
+  const sel = document.getElementById(id); if(!sel) return;
+  sel.innerHTML = SECTIONS.map(s=>`<option value="${esc(s.name)}"${s.name===defaultName?' selected':''}>${esc(s.name)}</option>`).join('');
+}
+function applyMethod(){ render(); }
+function applyFlow(){
+  const f=document.getElementById('f_roofflow').value;
+  if(f==='flat_clear'){ document.getElementById('f_CNd').value='1.2'; document.getElementById('f_CNu').value='-1.1'; }
+  else if(f==='flat_obstr'){ document.getElementById('f_CNd').value='1.8'; document.getElementById('f_CNu').value='-1.5'; }
+  render();
+}
+const ANCHOR_PS={
+  '0.375|2':{d:0.375,L:2,T:445,V:595},
+  '0.5|3.25':{d:0.5,L:3.25,T:1130,V:1640},
+  '0.625|3.5':{d:0.625,L:3.5,T:1505,V:2275}
+};
+function applyAnchorPS(){
+  const k=document.getElementById('f_c3_ps').value; if(!k) return;
+  const a=ANCHOR_PS[k]; if(!a) return;
+  document.getElementById('f_c3_d').value=a.d;
+  document.getElementById('f_c3_L').value=a.L;
+  document.getElementById('f_c3_T').value=a.T;
+  document.getElementById('f_c3_V').value=a.V;
+  render();
+}
+
+// ====================== WIND ENGINE (ASCE 7-22) ======================
+const EXP = { B:{coef:2.01,alpha:7.0,zg:1200}, C:{coef:2.01,alpha:9.5,zg:900}, D:{coef:2.01,alpha:11.5,zg:700} };
+function Kz(z, exp){ const e=EXP[exp]||EXP.C; return e.coef*Math.pow(Math.max(z,15)/e.zg, 2/e.alpha); }
+function computeWind(d){
+  const kz = Kz(d.htOverall, d.exp);
+  const qz = 0.00256 * kz * d.Kzt * d.Kd * d.Ke * d.V * d.V;   // psf (Kd in qz)
+  const pDn = qz * d.G * d.CNd;     // net downward (+)  [ASCE 7-22: no Iw — risk category is baked into V]
+  const pUp = qz * d.G * d.CNu;     // net uplift (−)
+  // Lateral wind on the frame (open-frame force method): F = qz*G*Cf*Aproj
+  const Aproj = d.Aproj>0 ? d.Aproj : d.eps*d.len*d.htOverall;   // ft^2
+  const Flat = qz * d.G * d.Cf * Aproj;    // lb total base shear
+  return {kz, qz, pDn, pUp, Aproj, Flat, method:d.method};
+}
+
+// ====================== FLEXURE (ADM allowable stress) ======================
+function beamMV(w, L, spans){
+  let mCoef=0.125, vCoef=0.5;
+  if(spans===2){ mCoef=0.125; vCoef=0.625; }
+  else if(spans>=3){ mCoef=0.10; vCoef=0.60; }
+  return {M:Math.abs(mCoef*w*L*L), V:Math.abs(vCoef*w*L), mCoef, vCoef};
+}
+const EY = 10100; // ksi
+// w in plf, L in ft. Returns stresses (ksi), shear, deflection ratio.
+function analyzeFlexural(d, trib, L, sec, spans, dlPlf, windDnPlf, windUpPlf){
+  const qPlus  = dlPlf + 0.6*Math.abs(windDnPlf);      // gravity + downward wind (down)
+  const qMinus = 0.6*Math.abs(windUpPlf) - 0.6*dlPlf;  // net uplift
+  const mvPlus  = beamMV(qPlus,  L, spans);
+  const mvMinus = beamMV(Math.abs(qMinus), L, spans);
+  const Mgov = Math.max(mvPlus.M, mvMinus.M);            // lb-ft
+  const Vmax = Math.max(mvPlus.V, mvMinus.V);            // lb
+  const Mkipin = Mgov/1000*12;
+  const Fb = Mkipin/sec.Sb;                              // ksi
+  const Fv = (Vmax/1000)/sec.A;                          // ksi
+  // deflection under service wind (full net pressure, unfactored) — governing magnitude
+  const wServ = Math.max(Math.abs(windDnPlf), Math.abs(windUpPlf)) + dlPlf; // plf
+  const wIn = wServ/12;                                  // lb/in
+  const Lin = L*12;
+  // Max uniform-load deflection coefficients: simple 5/384≈1/76.8; 2-span ≈1/185; 3+ end span ≈1/154
+  const defCoef = spans>=3?(1/154):(spans===2?(1/185):(5/384));
+  const defl = defCoef * wIn*Math.pow(Lin,4)/(EY*1000*sec.I);    // in
+  const dAllow = Lin/180;
+  return {qPlus, qMinus, Mpos:mvPlus.M/1000, Mneg:mvMinus.M/1000, Mgov:Mgov/1000, Vmax:Vmax/1000, Fb, Fv, defl, dAllow, ratio:Lin/Math.max(defl,1e-6)};
+}
+
+// ====================== ADM COLUMN BUCKLING (mirrors canopy) ======================
+function columnFca(KLr, Fty){
+  const Bc = Fty*(1 + Math.sqrt(Fty/2250));
+  const Dc = (Bc/10)*Math.sqrt(Bc/EY);
+  const Cc = 0.41*Bc/Dc;
+  const Fcr = KLr<=Cc ? (Bc - Dc*KLr) : (Math.PI*Math.PI*EY/(KLr*KLr));
+  return {Bc, Dc, Cc, Fcr, Fca:Fcr/1.65, elastic:KLr>Cc};
+}
+
+// ====================== MASTER COMPUTE ======================
+function computeAll(d){
+  const wind = computeWind(d);
+
+  // --- Rafter / slat ---
+  const rTrib = d.r_sp/12;                       // ft (spacing)
+  const r_dl  = d.dl*rTrib, r_wDn=wind.pDn*rTrib, r_wUp=wind.pUp*rTrib;
+  const rafter = analyzeFlexural(d, rTrib, d.r_span, d.r_sec, Math.max(1,Math.round(d.r_spans)), r_dl, r_wDn, r_wUp);
+  rafter.dl=r_dl; rafter.wDn=r_wDn; rafter.wUp=r_wUp; rafter.trib=rTrib;
+
+  // --- Beam (carrier) --- double-beam shares load between 2 sections
+  const nB = d.b_double?2:1;
+  const b_dl=d.dl*d.b_trib/nB, b_wDn=wind.pDn*d.b_trib/nB, b_wUp=wind.pUp*d.b_trib/nB;
+  const beam = analyzeFlexural(d, d.b_trib, d.b_span, d.b_sec, Math.max(1,Math.round(d.b_spans)), b_dl, b_wDn, b_wUp);
+  beam.dl=b_dl; beam.wDn=b_wDn; beam.wUp=b_wUp; beam.nB=nB; beam.trib=d.b_trib;
+  // beam end reaction (governing, per beam) for connection to post
+  beam.React = Math.max(beam.qPlus, Math.abs(beam.qMinus))*d.b_span/2/1000; // kip
+
+  // --- Post (column): combined axial + bending ---
+  const nPost = Math.max(1,Math.round(d.nPostL))*Math.max(1,Math.round(d.nPostW));
+  const roofArea = d.len*d.wid;
+  const tribAreaPost = roofArea/nPost;                     // ft^2 per post
+  const P_D = d.dl*tribAreaPost;                           // lb dead axial
+  const P_Lr= d.rll*tribAreaPost;                          // lb roof live
+  const P_Wdn = Math.abs(wind.pDn)*tribAreaPost;           // lb downward wind axial
+  const P_Wup = Math.abs(wind.pUp)*tribAreaPost;           // lb uplift
+  // ASD combos
+  const N_comp = (P_D + P_Lr) + 0.6*P_Wdn;                 // lb compression (gravity governs)
+  const N_tens = 0.6*P_Wup - 0.6*P_D;                      // lb net uplift tension (may be <0)
+  // lateral
+  const Vpost = wind.Flat/nPost;                           // lb shear per post
+  const Hin = d.p_ht*12;
+  const Mpost_lbin = (d.sys==='attached') ? (Vpost*Hin/2) : (Vpost*Hin); // cantilever vs braced
+  const Mpost = 0.6*Mpost_lbin/1000;                       // kip-in (0.6W)
+  const sec=d.p_sec, al=alloyFor(sec,d);
+  const fa_c = (N_comp/1000)/sec.A;                        // ksi
+  const fa_t = (Math.max(N_tens,0)/1000)/sec.A;            // ksi
+  const fb   = Mpost/sec.Sb;                               // ksi
+  // buckling weak axis
+  const Imin = sec.Iy?Math.min(sec.I,sec.Iy):sec.I;
+  const rmin = Math.sqrt(Imin/sec.A);
+  const KLr = rmin>0 ? d.p_K*Hin/rmin : 0;
+  const buck = columnFca(KLr, al.Fty);
+  const Fa = buck.Fca;                                     // compression allow
+  const Fb = 0.75*al.Fty;                                  // bending allow (rect tube, ADM F.8 screening)
+  const Ft = 0.6*al.Fty;                                   // tension allow on gross
+  const interC = fa_c/Fa + fb/Fb;                          // compression+bending interaction
+  const interT = fa_t/Ft + fb/Fb;                          // tension+bending
+  const post = {tribAreaPost,P_D,P_Lr,P_Wdn,P_Wup,N_comp:N_comp/1000,N_tens:N_tens/1000,Vpost:Vpost/1000,
+    Mpost,fa_c,fa_t,fb,KLr,rmin,Imin,Fa,Fb,Ft,interC,interT,buck,al,nPost};
+
+  // --- Footing / overturning (freestanding, per post) ---
+  const Wfoot = d.ft_W*d.ft_L*d.ft_D*d.ft_den;             // lb
+  const Wstr  = (d.dl*roofArea)/nPost;                     // structure dead share per post (lb)
+  // Classical (nominal, unfactored) factor of safety - what a plan reviewer expects, target >= 1.5
+  const M_OT_n = Vpost*d.p_ht;                             // lb-ft  nominal overturning (full W per post)
+  const M_R_n  = (Wfoot + Wstr)*(d.ft_W/2);                // lb-ft  nominal resisting (full D)
+  const FS_OT  = M_OT_n>0 ? M_R_n/M_OT_n : 99;             // nominal FS (target >= 1.5)
+  const Vres_n = d.ft_mu*(Wfoot+Wstr);                     // lb  nominal friction resistance
+  const FS_sl  = Vpost>0 ? Vres_n/Vpost : 99;              // nominal sliding FS (target >= 1.5)
+  // ASD strength-level check (0.6D resisting vs 0.6W demand) shown alongside for transparency
+  const M_OT  = 0.6*M_OT_n;                                // lb-ft (0.6W)
+  const M_R   = 0.6*M_R_n;                                 // lb-ft (0.6D)
+  const upliftNet = Math.max(N_tens,0);                     // lb net uplift (0.6W−0.6D) on post/footing
+  const uplift_nom = Math.max(P_Wup - (P_D + P_Lr), 0);     // lb nominal net uplift per post (W − D)
+  const FS_up = uplift_nom>0 ? (Wfoot + Wstr)/uplift_nom : 99;  // footing+structure weight vs uplift (target >= 1.5)
+  const footing = {Wfoot,Wstr,M_OT_n,M_R_n,M_OT,M_R,FS_OT,Vres_n,FS_sl,upliftNet,uplift_nom,FS_up};
+
+  // --- Connections ---
+  // C1: beam-to-post bolts — shear = beam reaction (both beams), through 4 bolts
+  const Ab=Math.PI/4*d.c1_d*d.c1_d;
+  const Rn=0.45*d.c1_fbu*Ab, Rt=0.75*d.c1_fbu*Ab;
+  const c1Vdem = beam.React*1000*nB/Math.max(1,d.c1_n);     // lb/bolt (both beams sum reaction)
+  const c1 = {Ab,Rn,Rt,Vallow:Rn/d.c1_omega,Tallow:Rt/d.c1_omega,Vdem:c1Vdem,Tdem:0};
+
+  // C2: purlin-to-beam Tek — shear=purlin reaction; tension=uplift withdrawal
+  const purlReact = Math.max(rafter.qPlus,Math.abs(rafter.qMinus))*d.r_span/2; // lb (governing)
+  const purlUp = Math.abs(0.6*rafter.wUp - 0.6*rafter.dl)*d.r_span/2;          // lb net uplift
+  const c2 = {Vallow:d.c2_V,Tallow:d.c2_T,Vdem:purlReact/Math.max(1,d.c2_n),Tdem:purlUp/Math.max(1,d.c2_n)};
+
+  // C3: post base anchors — shear from base shear, tension from overturning + net uplift
+  const sIn=d.p_s, nTens=Math.max(1,Math.floor(d.c3_n/2));
+  // Freestanding: the base overturning MOMENT is resisted by the embedded footing (see 4.4),
+  // NOT by prying these surface anchors over the small plate gage. Surface anchors carry base
+  // SHEAR + net direct UPLIFT only (column-scale forces). The couple value is kept for reference
+  // in case the base is detailed instead as a fixed moment plate bolted to a slab (then ACI 318 Ch.17).
+  const T_couple = sIn>0 ? (0.6*Mpost_lbin)/(sIn*nTens) : 0; // lb/anchor IF base were a fixed moment plate
+  const T_up = upliftNet/Math.max(1,d.c3_n);                 // lb/anchor from net direct uplift
+  const c3 = {Vallow:d.c3_V,Tallow:d.c3_T,
+    Vdem:(0.6*Vpost)/Math.max(1,d.c3_n),
+    Tdem:Math.max(T_up,0),
+    T_couple, T_up,
+    inter:0};
+  c3.inter = (c3.Tdem/Math.max(1,c3.Tallow)) + (c3.Vdem/Math.max(1,c3.Vallow));
+
+  // --- Post base plate (flat bar) bending: uplift cantilever + concrete bearing cantilever ---
+  const bpFb  = 0.75*d.bp_Fcy;                             // ksi allowable (ADM flexure, screening)
+  const postB = d.p_sec.B||6;                              // in, post width
+  const armUp = Math.max(d.p_s/2 - postB/2, 0);            // in, tension anchor distance outside post wall
+  const beff  = Math.max(d.bp_B/2, 1);                     // in, effective plate width per tension side
+  const Mup   = c3.Tdem*armUp;                             // lb-in (tension anchor demand from 4.3)
+  const fbUp  = (beff*d.bp_t*d.bp_t)>0 ? 6*Mup/(beff*d.bp_t*d.bp_t)/1000 : 0;     // ksi
+  const Pcomp = Math.max(post.N_comp,0)*1000;              // lb gravity axial
+  const fp    = Pcomp/Math.max(d.bp_B*d.bp_N,1e-6);        // psi bearing pressure on grout/concrete
+  const mCant = Math.max((d.bp_B - 0.95*postB)/2, 0);      // in cantilever (AISC m)
+  const Mbr   = fp*mCant*mCant/2;                          // lb-in per unit width
+  const fbBr  = (d.bp_t*d.bp_t)>0 ? 6*Mbr/(d.bp_t*d.bp_t)/1000 : 0;               // ksi
+  const treqUp= (beff*bpFb*1000)>0 ? Math.sqrt(6*Mup/(beff*bpFb*1000)) : 0;       // in
+  const treqBr= (bpFb*1000)>0 ? Math.sqrt(6*Mbr/(bpFb*1000)) : 0;                 // in
+  const basePlate = {bpFb,postB,armUp,beff,Tanch:c3.Tdem,Mup,fbUp,Pcomp,fp,mCant,Mbr,fbBr,treqUp,treqBr,treq:Math.max(treqUp,treqBr)};
+
+  return {wind, rafter, beam, post, footing, basePlate, c1, c2, c3};
+}
+
+// ====================== FORM DATA ======================
+const NUM=['len','wid','nPostL','nPostW','bayL','bayW','htClear','htOverall',
+  'V','Kd','Ke','Kzt','G','eps','CNd','CNu','Cf','Aproj','dl','rll',
+  'r_sp','r_span','r_spans','b_span','b_trib','b_spans','p_ht','p_K','p_s',
+  'c1_n','c1_d','c1_omega','c1_fbu','c2_n','c2_omega','c2_V','c2_T',
+  'c3_n','c3_d','c3_L','c3_omega','c3_V','c3_T','bp_B','bp_N','bp_t','bp_Fcy',
+  'ft_W','ft_L','ft_D','ft_den','ft_mu','fty','fsy','fu',
+  'cr_B','cr_H','cr_A','cr_I','cr_Iy','cr_S','cb_B','cb_H','cb_A','cb_I','cb_Iy','cb_S','cp_B','cp_H','cp_A','cp_I','cp_Iy','cp_S'];
+const TXT=['project','sys','risk','exp','method','roofflow','c1_mat','c2_d','alloy',
+  'cr_name','cb_name','cp_name'];
+const SECSEL=['r_sec','b_sec','p_sec'];
+
+function readForm(){
+  const d={};
+  NUM.forEach(k=>{ d[k]=parseFloat(document.getElementById('f_'+k).value)||0; });
+  TXT.forEach(k=>{ d[k]=document.getElementById('f_'+k).value; });
+  d.date=document.getElementById('f_date').value;
+  d.b_double=document.getElementById('f_b_double').checked;
+  d.r_sec=memSec('f_r_sec', d.cr_A, d.cr_I, d.cr_S, d.cr_Iy, d.cr_name, d.cr_B, d.cr_H);
+  d.b_sec=memSec('f_b_sec', d.cb_A, d.cb_I, d.cb_S, d.cb_Iy, d.cb_name, d.cb_B, d.cb_H);
+  d.p_sec=memSec('f_p_sec', d.cp_A, d.cp_I, d.cp_S, d.cp_Iy, d.cp_name, d.cp_B, d.cp_H);
+  return d;
+}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(x,dp){return (x).toFixed(dp==null?2:dp);}
+function sgn(x,dp){const v=(x).toFixed(dp==null?2:dp); return (x>=0?'+':'')+v;}
+function fmtDateUpper(iso){
+  const d=iso?(()=>{const[y,m,dd]=iso.split('-');return new Date(+y,+m-1,+dd);})():new Date();
+  return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+}
+function saveState(){
+  const state={version:'PERGOLA-V1.0',timestamp:new Date().toISOString(),fields:{},sections:{},flags:{}};
+  NUM.concat(TXT).forEach(k=>{const el=document.getElementById('f_'+k); if(el) state.fields[k]=el.value;});
+  state.fields.date=document.getElementById('f_date').value;
+  state.flags.b_double=document.getElementById('f_b_double').checked;
+  SECSEL.forEach(k=>{state.sections[k]=document.getElementById('f_'+k).value;});
+  const slug=(state.fields.projNo||'pergola').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`pergola_${slug}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function loadState(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const s=JSON.parse(e.target.result);
+      if(s.fields){Object.entries(s.fields).forEach(([k,v])=>{const el=document.getElementById('f_'+k); if(el)el.value=v;});}
+      if(s.sections){Object.entries(s.sections).forEach(([k,v])=>{const el=document.getElementById('f_'+k); if(el)el.value=v;});}
+      if(s.flags&&typeof s.flags.b_double==='boolean'){document.getElementById('f_b_double').checked=s.flags.b_double;}
+      render();
+    }catch(err){ alert('Failed to parse file: '+err.message); }
+  };
+  r.readAsText(file);
+}
+
+// ====================== VECTOR DIAGRAMS ======================
+function boltPattern(cx,cy,n,colGap,rowGap,r){
+  const cols=n>=2?2:1, rows=Math.ceil(n/cols);
+  let out='',placed=0;
+  const x0=cx-(cols-1)*colGap/2, y0=cy-(rows-1)*rowGap/2;
+  for(let rI=0;rI<rows;rI++)for(let cI=0;cI<cols;cI++){ if(placed>=n)break;
+    out+=`<circle class="bolt" cx="${(x0+cI*colGap).toFixed(1)}" cy="${(y0+rI*rowGap).toFixed(1)}" r="${r}"/>`; placed++; }
+  return out;
+}
+function dimLine(x1,y,x2,label){
+  return `<line class="dl" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+    <line class="dl" x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+    <line class="dl" x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+    <text class="dtxt" x="${(x1+x2)/2}" y="${y-5}" text-anchor="middle">${label}</text>`;
+}
+function vDim(x,y1,y2,label){
+  return `<line class="dl" x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+    <line class="dl" x1="${x-4}" y1="${y1}" x2="${x+4}" y2="${y1}"/>
+    <line class="dl" x1="${x-4}" y1="${y2}" x2="${x+4}" y2="${y2}"/>
+    <text class="dtxt sm" x="${x-6}" y="${(y1+y2)/2}" text-anchor="end" transform="rotate(-90 ${x-6} ${(y1+y2)/2})">${label}</text>`;
+}
+function planSVG(d){
+  const W=300,H=430, mL=46,mR=276,mT=30,mB=400, drawW=mR-mL, drawH=mB-mT;
+  const nL=Math.max(2,Math.round(d.nPostL)), nW=Math.max(2,Math.round(d.nPostW));
+  let s='';
+  // purlins (run across width, dense along length)
+  const nPur=Math.min(60,Math.max(4,Math.round(d.len*12/Math.max(d.r_sp,1))));
+  for(let i=0;i<=nPur;i++){ const y=mT+drawH*i/nPur; s+=`<line class="slat" x1="${mL}" y1="${y.toFixed(1)}" x2="${mR}" y2="${y.toFixed(1)}"/>`; }
+  // beams (lengthwise along the 2 post lines)
+  for(let j=0;j<nW;j++){ const x=mL+(nW>1?drawW*j/(nW-1):drawW/2); s+=`<rect class="beam" x="${(x-3).toFixed(1)}" y="${mT}" width="6" height="${drawH}"/>`; }
+  // posts
+  for(let i=0;i<nL;i++)for(let j=0;j<nW;j++){
+    const x=mL+(nW>1?drawW*j/(nW-1):drawW/2), y=mT+(nL>1?drawH*i/(nL-1):drawH/2);
+    s+=`<rect class="post" x="${(x-5).toFixed(1)}" y="${(y-5).toFixed(1)}" width="10" height="10"/>`;
+  }
+  s+=dimLine(mL,mB+14,mR,`${num(d.wid,1)} ft`);
+  s+=vDim(mL-12,mT,mB,`${num(d.len,1)} ft (length)`);
+  s+=`<text class="dtxt sm" x="${(mL+mR)/2}" y="18" text-anchor="middle" fill="#5c7a70">purlins @ ${num(d.r_sp,2)}" o.c.</text>`;
+  s+=`<text class="dtxt sm" x="${mR-2}" y="${mB+28}" text-anchor="end" fill="#1a5c4c">■ post  ▮ carrier beam</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+function elevSVG(d){
+  const W=420,H=250, L=42,Rr=406,drawW=Rr-L, gy=210, roofY=64;
+  const nL=Math.max(2,Math.round(d.nPostL));
+  let s='';
+  s+=`<rect class="grnd" x="0" y="${gy}" width="${W}" height="${H-gy}"/>`;
+  // beam band
+  s+=`<rect class="beam" x="${L}" y="${roofY}" width="${drawW}" height="14"/>`;
+  // purlins on top
+  for(let i=0;i<=40;i++){ const x=L+drawW*i/40; s+=`<line class="slat" x1="${x.toFixed(1)}" y1="${roofY-10}" x2="${x.toFixed(1)}" y2="${roofY}"/>`; }
+  // posts
+  const xs=[];
+  for(let i=0;i<nL;i++){ const x=L+(nL>1?drawW*i/(nL-1):drawW/2); xs.push(x);
+    s+=`<rect class="post" x="${(x-4).toFixed(1)}" y="${roofY+14}" width="8" height="${gy-(roofY+14)}"/>`;
+    s+=`<rect class="plate" x="${(x-9).toFixed(1)}" y="${gy-2}" width="18" height="5"/>`;
+  }
+  // bay dims
+  for(let i=0;i<nL-1;i++){ s+=dimLine(xs[i],roofY-16,xs[i+1],i===1?`${num(d.bayL===9?8.5:d.bayL,1)} ft`:`${num(d.bayL,1)} ft`); }
+  s+=dimLine(L,gy+22,Rr,`${num(d.len,1)} ft overall`);
+  s+=vDim(Rr+12,roofY+14,gy,`${num(d.htClear,1)} ft clr`);
+  s+=`<text class="dtxt sm" x="${L+4}" y="${roofY-2}" fill="#5c7a70">purlins</text>`;
+  s+=`<text class="dtxt sm" x="${Rr-2}" y="${roofY+11}" text-anchor="end" fill="#1a5c4c">carrier beam (4×6)</text>`;
+  s+=`<text class="dtxt sm" x="${xs[0]+6}" y="${(gy+roofY)/2}" fill="#1a5c4c">6×6 post</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+function sectSVG(d){
+  const W=300,H=250, L=60,Rr=250,drawW=Rr-L, gy=210, roofY=70;
+  const nW=Math.max(2,Math.round(d.nPostW));
+  let s='';
+  s+=`<rect class="grnd" x="0" y="${gy}" width="${W}" height="${H-gy}"/>`;
+  for(let j=0;j<nW;j++){ const x=L+(nW>1?drawW*j/(nW-1):drawW/2);
+    s+=`<rect class="post" x="${(x-4).toFixed(1)}" y="${roofY}" width="8" height="${gy-roofY}"/>`;
+    s+=`<rect class="beam" x="${(x-7).toFixed(1)}" y="${roofY-6}" width="14" height="16"/>`;
+    s+=`<rect class="plate" x="${(x-9).toFixed(1)}" y="${gy-2}" width="18" height="5"/>`;
+    s+=`<rect class="ftg" x="${(x-14).toFixed(1)}" y="${gy+3}" width="28" height="22"/>`;
+    s+=boltPattern(x,gy-6,2,8,0,1.4);
+  }
+  // purlins across
+  for(let i=0;i<=18;i++){ const x=L+drawW*i/18; s+=`<line class="slat" x1="${x.toFixed(1)}" y1="${roofY-14}" x2="${x.toFixed(1)}" y2="${roofY-6}"/>`; }
+  s+=dimLine(L,gy+34,Rr,`${num(d.bayW,1)} ft post c/c`);
+  s+=vDim(L-14,roofY,gy,`${num(d.htClear,1)} ft`);
+  s+=`<text class="dtxt sm" x="${(L+Rr)/2}" y="${roofY-18}" text-anchor="middle" fill="#5c7a70">purlins</text>`;
+  s+=`<text class="dtxt sm" x="${(L+Rr)/2}" y="${gy+18}" text-anchor="middle" fill="#8a7a5a">footing</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+
+function basePlateSVG(d){
+  const W=240,H=200, cx=110, cy=92;
+  const scale=Math.min(140/Math.max(d.bp_B,1), 120/Math.max(d.bp_N,1));
+  const pw=d.bp_B*scale, ph=d.bp_N*scale, postB=(d.p_sec?d.p_sec.B:6)||6, ps=postB*scale, g=d.p_s*scale/2;
+  let s='';
+  s+=`<rect class="plate" x="${(cx-pw/2).toFixed(1)}" y="${(cy-ph/2).toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" rx="2"/>`;
+  s+=`<rect class="post" x="${(cx-ps/2).toFixed(1)}" y="${(cy-ps/2).toFixed(1)}" width="${ps.toFixed(1)}" height="${ps.toFixed(1)}"/>`;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(p=>{ s+=`<circle class="bolt" cx="${(cx+p[0]*g).toFixed(1)}" cy="${(cy+p[1]*g).toFixed(1)}" r="3"/>`; });
+  s+=dimLine(cx-pw/2, cy+ph/2+16, cx+pw/2, `${num(d.bp_B,1)}" plate`);
+  s+=`<text class="dtxt sm" x="${cx}" y="${(cy+3).toFixed(1)}" text-anchor="middle" fill="#1a5c4c">${num(postB,0)}" post</text>`;
+  s+=`<text class="dtxt sm" x="${(cx+pw/2+2).toFixed(1)}" y="${(cy-ph/2+8).toFixed(1)}" text-anchor="start" fill="#2b2b2b">${num(d.c3_n,0)}×${num(d.c3_d,3)}"\u2300</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+
+// ====================== REPORT HELPERS ======================
+function footer(d,pageNo){
+  return `<div class="page-footer">
+    <div class="footer-text">
+      <div class="left"><div><strong>PRELIMINARY — not for construction or permit</strong></div><div>${esc(d.project||'')}</div></div>
+      <div class="right"><div><strong>windcalculations.com</strong></div><div>Aluminum Pergola Wind &amp; Structure Check</div></div>
+    </div>
+    <div class="swoosh"></div>
+    <div class="pageno">Page [${pageNo}]</div>
+  </div>`;
+}
+function checkLine(label,demand,dunit,allowable,aunit,demDisp,allowDisp){
+  const ok=Math.abs(demand)<=Math.abs(allowable)+1e-9;
+  return `<div class="check-line"><span class="formula">${label}: <strong>${demDisp}</strong> ${dunit} &nbsp;&lt;&nbsp; ${allowDisp} ${aunit}</span>
+    <span class="verdict ${ok?'pass':'fail'}">${ok?'[Satisfactory]':'[CHECK]'}</span></div>`;
+}
+function ratioLine(label,ratio,limit,disp){
+  const ok=ratio<=limit+1e-9;
+  return `<div class="check-line"><span class="formula">${label}: <strong>${disp}</strong></span>
+    <span class="verdict ${ok?'pass':'fail'}">${ok?'[Satisfactory]':'[CHECK]'}</span></div>`;
+}
+
+function flexBlock(title,m,sec,d,spans,note){
+  const al=alloyFor(sec,d), allowFb=0.75*al.Fty, allowFv=0.6*al.Fsy;
+  const blankWarn=sec.blank?` <span style="color:#c0392b;font-weight:700;">⚠ A/I/S not entered — result invalid</span>`:'';
+  const secLine=`${sec.name} → A=${num(sec.A,3)} in², I=${num(sec.I,3)} in⁴, S=${num(sec.Sb,3)} in³, t=${sec.t}, ${num(sec.B,2)}×${num(sec.H,2)} in`+blankWarn;
+  const loadRows=`
+    <tr><td class="l">Span L</td><td class="v">${num(m.span||0,1)}</td><td class="u">ft</td></tr>
+    <tr><td class="l">Spans</td><td class="v">${spans}</td><td class="u">${spans>1?'continuous':'simple'}</td></tr>
+    <tr><td class="l">Trib width</td><td class="v">${num(m.trib,2)}</td><td class="u">ft</td></tr>
+    <tr><td class="l">DL w</td><td class="v">${num(m.dl,1)}</td><td class="u">plf</td></tr>
+    <tr><td class="l">Wind↓ w</td><td class="v">${num(m.wDn,1)}</td><td class="u">plf</td></tr>
+    <tr><td class="l">Wind↑ w</td><td class="v">${num(m.wUp,1)}</td><td class="u">plf</td></tr>
+    <tr><td class="l">q+ (D+0.6W↓)</td><td class="v">${num(m.qPlus,1)}</td><td class="u">plf</td></tr>
+    <tr><td class="l">q− (0.6W↑−0.6D)</td><td class="v">${num(m.qMinus,1)}</td><td class="u">plf</td></tr>
+    <tr class="hl"><td class="l">M governing</td><td class="v">${num(m.Mgov,3)}</td><td class="u">kip·ft</td></tr>
+    <tr class="hl"><td class="l">Shear V</td><td class="v">${num(m.Vmax,3)}</td><td class="u">kip</td></tr>`;
+  const checks=
+    checkLine(`F<sub>b</sub> = M/S = ${num(m.Fb,2)}`, m.Fb,'ksi',allowFb,'ksi',num(m.Fb,2),`0.75 F<sub>cy</sub> = ${num(allowFb,1)}`)+
+    checkLine(`F<sub>v</sub> = V/A = ${num(m.Fv,2)}`, m.Fv,'ksi',allowFv,'ksi',num(m.Fv,2),`0.6 F<sub>sy</sub> = ${num(allowFv,1)}`)+
+    ratioLine(`Deflection δ = ${num(m.defl,3)}" → L/${num(m.ratio,0)}`, 180, m.ratio, `L/${num(m.ratio,0)} vs limit L/180`);
+  return `<div class="member-block"><h4>${title}</h4>
+    <div class="twocol">
+      <div><div class="panel-label">Calculation of loads</div><table class="ld-table">${loadRows}</table></div>
+      <div><div class="panel-label" style="background:#234;">Load: D+0.6W / 0.6W−0.6D</div>
+        <div class="section-props">${secLine}</div>
+        <div class="note" style="margin:0.2rem 0;">F<sub>ty</sub>=F<sub>cy</sub>=${num(al.Fty,0)} ksi (${al.label}) · F<sub>sy</sub>=${num(al.Fsy,0)} ksi · E=10100 ksi <span class="hint">— auto from section alloy</span></div>
+      </div>
+    </div>
+    <div class="note">Check capacities (ADM F.8 flexure; G.2 shear); deflection ≤ L/180 under service wind. ${note||''}</div>
+    ${checks}</div>`;
+}
+
+// ====================== RENDER ======================
+function render(){
+  const d=readForm();
+  if(!d.V||!d.htOverall){ document.getElementById('report').innerHTML='<div class="empty-state">Enter wind speed and overall height to render.</div>'; return; }
+  const R=computeAll(d), w=R.wind;
+  R.rafter.span=d.r_span; R.beam.span=d.b_span;
+
+  // live diagrams
+  document.getElementById('vizPlan').innerHTML=planSVG(d);
+  document.getElementById('vizElev').innerHTML=elevSVG(d);
+  document.getElementById('vizSect').innerHTML=sectSVG(d);
+  document.getElementById('vizReadout').innerHTML=
+    `<span>Plan: <b>${num(d.len,1)}×${num(d.wid,1)} ft</b></span>`+
+    `<span>Posts: <b>${Math.round(d.nPostL)}×${Math.round(d.nPostW)} = ${R.post.nPost}</b></span>`+
+    `<span>Clear ht: <b>${num(d.htClear,1)} ft</b></span>`+
+    `<span>qz: <b>${num(w.qz,1)} psf</b></span>`+
+    `<span>Net p: <b>${sgn(w.pDn,1)}/${sgn(w.pUp,1)}</b></span>`+
+    `<span>Base shear: <b>${num(w.Flat,0)} lb</b></span>`;
+
+  document.getElementById('liveResult').innerHTML=
+    `<strong>qz</strong>=${num(w.qz,2)} psf · net <strong>${sgn(w.pDn,1)}</strong>/<strong>${sgn(w.pUp,1)}</strong> psf · F<sub>lat</sub>=${num(w.Flat,0)} lb<br>`+
+    `Rafter Fb=${num(R.rafter.Fb,2)} · Beam Fb=${num(R.beam.Fb,2)} ksi<br>`+
+    `Post: f<sub>a</sub>/F<sub>a</sub>+f<sub>b</sub>/F<sub>b</sub>=<strong>${num(R.post.interC,2)}</strong> · OT FS=<strong>${num(R.footing.FS_OT,2)}</strong>`;
+
+  const wb=document.getElementById('warnBanner');
+  const blanks=[d.r_sec,d.b_sec,d.p_sec].some(x=>x&&x.blank);
+  if(blanks){ wb.classList.add('active'); wb.innerHTML='<strong>⚠ Missing section properties:</strong> a member uses a Custom section with blank A/I/S — enter values. Placeholder 0.01 used; result invalid.'; }
+  else if(R.post.interC>1||R.footing.FS_OT<1.5){ wb.classList.add('active'); wb.innerHTML='<strong>⚠ Demand exceeds capacity:</strong> post interaction or footing overturning does not pass — revise member size, K, or footing.'; }
+  else if(Math.round(d.nPostW)>2 && d.b_trib < 0.9*d.bayW){ wb.classList.add('active'); wb.innerHTML='<strong>⚠ Beam tributary:</strong> with '+Math.round(d.nPostW)+' posts across the width, interior carrier beams carry a full bay (~'+num(d.bayW,1)+' ft), not a half-bay — set the beam trib width accordingly.'; }
+  else { wb.classList.remove('active'); wb.innerHTML=''; }
+
+  const date=fmtDateUpper(d.date), pal=R.post.al;
+
+  const p1=`<div class="report-page">
+    <div class="cover-band"><div class="title">ALUMINUM&nbsp; PERGOLA</div><div class="sub">WIND &amp; STRUCTURE CHECK</div></div>
+    <div class="cover-meta"><strong>${date}</strong>${d.project?'<br>'+esc(d.project):''}</div>
+    <div class="cover-products" style="margin-top:0.6rem;">${d.sys==='free'?'Freestanding':'Attached'} aluminum pergola — ${num(d.len,1)}′ × ${num(d.wid,1)}′ × ${num(d.htOverall,1)}′</div>
+    <div style="margin-top:1.4in;border:2px solid #b85c00;border-radius:8px;padding:0.7rem 0.9rem;background:#fff7ee;">
+      <p style="font-weight:700;color:#b85c00;margin:0 0 0.4rem;font-size:12pt;">PRELIMINARY SCREENING — NOT FOR CONSTRUCTION OR PERMIT</p>
+      <p style="margin:0 0 0.5rem;font-size:10pt;">This document is an automated, preliminary screening check of an aluminum pergola under wind, gravity, and overturning per the cited codes. It is <strong>not</strong> a sealed engineering calculation, is not signed by a licensed Professional Engineer, and must not be relied upon for permitting, fabrication, or construction. All inputs, section properties, anchor allowables, foundation design, and code interpretations must be independently verified by a qualified engineer.</p>
+      <p style="margin:0;font-size:10pt;"><strong>No warranty is made and no liability is assumed</strong> for any use of this output. For a project-specific, sealed calculation, contact <strong>windcalculations.com</strong>.</p>
+    </div>
+    <div class="cover-code" style="margin-top:1rem;">Code basis: FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19</div>
+    ${footer(d,'')}
+  </div>`;
+
+  const p2=`<div class="report-page">
+    <h3 style="margin-top:0;">DESIGN CRITERIA:</h3><p>FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19</p>
+    <h3>OVERVIEW &amp; CONFIGURATION:</h3>
+    <div class="fig-row">
+      <div class="fig compact">${elevSVG(d)}<div class="cap">Long Elevation</div></div>
+      <div class="fig compact">${sectSVG(d)}<div class="cap">End Section</div></div>
+    </div>
+    <div class="fig plan">${planSVG(d)}<div class="cap">Roof Framing Plan — purlins on carrier beams, beams on posts</div></div>
+    <table class="data-grid">
+      <tr><td class="lbl">Structural system</td><td class="eq">=</td><td class="val">${d.sys==='free'?'Freestanding':'Attached'}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Overall plan</td><td class="eq">=</td><td class="val">${num(d.len,1)} × ${num(d.wid,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Posts</td><td class="eq">=</td><td class="val">${Math.round(d.nPostL)} × ${Math.round(d.nPostW)} = ${R.post.nPost}</td><td class="unit">ea</td></tr>
+      <tr><td class="lbl">Governing length bay</td><td class="eq">=</td><td class="val">${num(d.bayL,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Width post spacing</td><td class="eq">=</td><td class="val">${num(d.bayW,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Clear / overall height</td><td class="eq">=</td><td class="val">${num(d.htClear,1)} / ${num(d.htOverall,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Purlin spacing</td><td class="eq">=</td><td class="val">${num(d.r_sp,2)}</td><td class="unit">in o.c.</td></tr>
+    </table>
+    <h3>MATERIAL DATA:</h3>
+    <table class="data-grid">
+      <tr><td class="group">Aluminium:</td><td colspan="4" class="grade">${esc(d.alloy)} (HSS); per-member alloy auto-derived from section</td></tr>
+      <tr><td class="lbl">Tensile strength</td><td class="sym">f<sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.fu,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Yield strength</td><td class="sym">f<sub>ty</sub>=f<sub>cy</sub></td><td class="eq">=</td><td class="val">${num(d.fty,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Shear yield</td><td class="sym">f<sub>sy</sub></td><td class="eq">=</td><td class="val">${num(d.fsy,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Modulus</td><td class="sym">E</td><td class="eq">=</td><td class="val">10100</td><td class="unit">ksi</td></tr>
+    </table>
+    ${footer(d,'1')}
+  </div>`;
+
+  const p3=`<div class="report-page">
+    <h2 class="center" style="border:none;background:#dcd6c3;padding:0.3rem;">TABLE OF CONTENTS</h2>
+    <div style="text-align:right;font-style:italic;color:#555;">Page</div>
+    <div class="toc-line"><span>1. Wind Loading (ASCE 7-22 open roof)</span><span>3</span></div>
+    <div class="toc-line"><span>2. Rafter / Slat &amp; Beam Analysis</span><span>4</span></div>
+    <div class="toc-line"><span>3. Post (column) — interaction + buckling</span><span>5</span></div>
+    <div class="toc-line"><span>4. Connections + Footing / Overturning</span><span>6</span></div>
+    <div class="toc-line"><span>4.5 Post Base Plate</span><span>7</span></div>
+    <div class="toc-line"><span>5. Code Basis &amp; Assumptions</span><span>8</span></div>
+    ${footer(d,'2')}
+  </div>`;
+
+  const p4=`<div class="report-page">
+    <h3 style="margin-top:0;">1. Wind loading</h3>
+    <p class="note">ASCE 7-22 — open structure. ${d.method==='cn'?'Net pressure coefficients C<sub>N</sub> (Fig 27.3-4 monoslope / 27.3-6 flat) for the open free roof.':'Open-frame force method (C<sub>f</sub> × solidity ε), Fig 29.4-1.'} Both wind directions and ± cases considered.</p>
+    <table class="data-grid">
+      <tr><td class="group" colspan="5">General wind requirements</td></tr>
+      <tr><td class="lbl">Mean roof height</td><td class="sym">h</td><td class="eq">=</td><td class="val">${num(d.htOverall,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Basic wind speed</td><td class="sym">V</td><td class="eq">=</td><td class="val">${num(d.V,0)}</td><td class="unit">mph</td></tr>
+      <tr><td class="lbl">Risk / Exposure</td><td class="sym"></td><td class="eq"></td><td class="val">${esc(d.risk)} / ${esc(d.exp)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Directionality</td><td class="sym">K<sub>d</sub></td><td class="eq">=</td><td class="val">${num(d.Kd,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Ground elev. / topo</td><td class="sym">K<sub>e</sub>/K<sub>zt</sub></td><td class="eq">=</td><td class="val">${num(d.Ke,2)} / ${num(d.Kzt,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Velocity coef.</td><td class="sym">K<sub>z</sub></td><td class="eq">=</td><td class="val">${num(w.kz,3)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Gust factor</td><td class="sym">G</td><td class="eq">=</td><td class="val">${num(d.G,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Frame solidity (lateral)</td><td class="sym">&epsilon;</td><td class="eq">=</td><td class="val">${num(d.eps*100,0)}</td><td class="unit">%</td></tr>
+    </table>
+    <p style="font-family:var(--font-mono);font-size:9.5pt;">q<sub>z</sub> = 0.00256 · K<sub>z</sub> · K<sub>zt</sub> · K<sub>d</sub> · K<sub>e</sub> · V²</p>
+    <table class="calc-table"><thead><tr><th>z (ft)</th><th>K<sub>z</sub></th><th>q<sub>z</sub> (psf)</th></tr></thead>
+      <tbody><tr><td>${num(d.htOverall,1)}</td><td>${num(w.kz,3)}</td><td>${num(w.qz,2)}</td></tr></tbody></table>
+    <h4 style="color:var(--green);">Net roof pressures (member design): p = q<sub>z</sub>·G·C<sub>N</sub></h4>
+    <table class="calc-table"><thead><tr><th>Case</th><th>C<sub>N</sub></th><th>p (psf)</th></tr></thead>
+      <tbody>
+        <tr><td class="left">Downward (max +)</td><td>${sgn(d.CNd,2)}</td><td>${sgn(w.pDn,1)}</td></tr>
+        <tr><td class="left">Uplift (max −)</td><td>${sgn(d.CNu,2)}</td><td>${sgn(w.pUp,1)}</td></tr>
+      </tbody></table>
+    <h4 style="color:var(--green);">Lateral wind on frame (overturning): F = q<sub>z</sub>·G·C<sub>f</sub>·A<sub>proj</sub></h4>
+    <table class="calc-table"><thead><tr><th>C<sub>f</sub></th><th>A<sub>proj</sub> (ft²)</th><th>F base shear (lb)</th><th>per post (lb)</th></tr></thead>
+      <tbody><tr><td>${num(d.Cf,2)}</td><td>${num(w.Aproj,1)}</td><td>${num(w.Flat,0)}</td><td>${num(w.Flat/R.post.nPost,0)}</td></tr></tbody></table>
+    <p class="note">A<sub>proj</sub> ${d.Aproj>0?'(user input)':'auto = ε·L·h = '+num(d.eps,2)+'·'+num(d.len,1)+'·'+num(d.htOverall,1)} ft². Lateral force governs freestanding overturning &amp; post bending.</p>
+    ${footer(d,'3')}
+  </div>`;
+
+  const p5=`<div class="report-page">
+    <h3 style="margin-top:0;">2. Rafter / slat &amp; beam analysis</h3>
+    ${flexBlock('2.1 — Rafter / slat (purlin)', R.rafter, d.r_sec, d, Math.max(1,Math.round(d.r_spans)), 'Span = beam spacing; trib = purlin spacing.')}
+    ${flexBlock('2.2 — Carrier beam'+(d.b_double?' (double — load shared 2 ways)':''), R.beam, d.b_sec, d, Math.max(1,Math.round(d.b_spans)), 'Span = post bay; trib ≈ ½ rafter span each side.'+(d.b_double?' Double beam: tributary load split between the two beams per Detail #2.':''))}
+    ${footer(d,'4')}
+  </div>`;
+
+  const P=R.post;
+  const p6=`<div class="report-page">
+    <h3 style="margin-top:0;">3. Post (column) — combined axial + bending</h3>
+    <p class="note">The governing check for ${d.sys==='free'?'a freestanding':'an attached'} pergola. ADM interaction f<sub>a</sub>/F<sub>a</sub> + f<sub>b</sub>/F<sub>b</sub> ≤ 1.0 with column buckling about the weak axis (K = ${num(d.p_K,2)}, ${d.sys==='free'?'base fixed / top free':'top braced'}).</p>
+    <div class="twocol">
+      <div><div class="panel-label">Axial &amp; lateral demands / post</div><table class="ld-table">
+        <tr><td class="l">Trib roof area</td><td class="v">${num(P.tribAreaPost,1)}</td><td class="u">ft²</td></tr>
+        <tr><td class="l">Dead P<sub>D</sub></td><td class="v">${num(P.P_D,0)}</td><td class="u">lb</td></tr>
+        <tr><td class="l">Roof live P<sub>Lr</sub></td><td class="v">${num(P.P_Lr,0)}</td><td class="u">lb</td></tr>
+        <tr><td class="l">Wind↓ axial</td><td class="v">${num(P.P_Wdn,0)}</td><td class="u">lb</td></tr>
+        <tr><td class="l">Wind↑ axial</td><td class="v">${num(P.P_Wup,0)}</td><td class="u">lb</td></tr>
+        <tr class="hl"><td class="l">N comp (D+Lr+0.6W↓)</td><td class="v">${num(P.N_comp,3)}</td><td class="u">kip</td></tr>
+        <tr class="hl"><td class="l">N tens (0.6W↑−0.6D)</td><td class="v">${num(P.N_tens,3)}</td><td class="u">kip</td></tr>
+        <tr class="hl"><td class="l">Shear / post</td><td class="v">${num(P.Vpost,3)}</td><td class="u">kip</td></tr>
+        <tr class="hl"><td class="l">Moment 0.6W (K-mod)</td><td class="v">${num(P.Mpost,2)}</td><td class="u">kip·in</td></tr>
+      </table></div>
+      <div><div class="panel-label" style="background:#234;">Section &amp; allowables</div>
+        <div class="section-props">${d.p_sec.name} → A=${num(d.p_sec.A,3)} in², I<sub>min</sub>=${num(P.Imin,2)} in⁴, r<sub>min</sub>=${num(P.rmin,3)} in, S=${num(d.p_sec.Sb,3)} in³</div>
+        <div class="note">F<sub>ty</sub>=${num(pal.Fty,0)} ksi (${pal.label}). KL/r=${num(P.KLr,0)}, C<sub>c</sub>=${num(P.buck.Cc,0)} → F<sub>cr</sub>=${num(P.buck.Fcr,1)}, <strong>F<sub>a</sub>=F<sub>cr</sub>/1.65=${num(P.Fa,1)} ksi</strong> (${P.buck.elastic?'elastic/Euler':'inelastic'}). F<sub>b</sub>=0.75F<sub>cy</sub>=${num(P.Fb,1)}, F<sub>t</sub>=0.6F<sub>ty</sub>=${num(P.Ft,1)} ksi.</div>
+      </div>
+    </div>
+    <div class="note">Stresses: f<sub>a,c</sub>=${num(P.fa_c,2)}, f<sub>a,t</sub>=${num(P.fa_t,2)}, f<sub>b</sub>=${num(P.fb,2)} ksi (ADM Ch. E buckling, H.1 interaction):</div>
+    ${checkLine('Slenderness KL/r', P.KLr,'',200,'(≤200 pref.)',num(P.KLr,0),'200')}
+    ${ratioLine('Compression+bending  f<sub>a</sub>/F<sub>a</sub> + f<sub>b</sub>/F<sub>b</sub>', P.interC, 1.0, num(P.interC,3)+' ≤ 1.0')}
+    ${P.N_tens>0?ratioLine('Net uplift tension+bending  f<sub>a</sub>/F<sub>t</sub> + f<sub>b</sub>/F<sub>b</sub>', P.interT, 1.0, num(P.interT,3)+' ≤ 1.0'):'<div class="note">No net uplift on post under governing combo (gravity holds it in compression).</div>'}
+    ${footer(d,'5')}
+  </div>`;
+
+  const c1=R.c1,c2=R.c2,c3=R.c3,F=R.footing;
+  const p7=`<div class="report-page">
+    <h3 style="margin-top:0;">4. Connections &amp; footing / overturning</h3>
+    <h4>4.1 — Beam → Post bolts (Detail #2/#3)</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">n bolts / dia</td><td class="eq">=</td><td class="val">${num(d.c1_n,0)} @ ${num(d.c1_d,3)}"</td><td class="unit">${esc(d.c1_mat)}</td></tr>
+      <tr><td class="lbl">R<sub>n</sub>=0.45F<sub>bu</sub>A<sub>b</sub> / R<sub>t</sub>=0.75F<sub>bu</sub>A<sub>b</sub></td><td class="eq">=</td><td class="val">${num(c1.Rn,0)} / ${num(c1.Rt,0)}</td><td class="unit">lb</td></tr>
+    </table>
+    ${checkLine('Shear / bolt (beam reaction)', c1.Vdem,'lb',c1.Vallow,'lb (R<sub>n</sub>/Ω)',num(c1.Vdem,0),num(c1.Vallow,0))}
+    <h4>4.2 — Purlin → Beam Tek screw (Detail #4)</h4>
+    ${checkLine('Shear / screw', c2.Vdem,'lb',c2.Vallow,'lb',num(c2.Vdem,0),num(c2.Vallow,0))}
+    ${checkLine('Uplift withdrawal / screw', c2.Tdem,'lb',c2.Tallow,'lb',num(c2.Tdem,0),num(c2.Tallow,0))}
+    <p class="note">${esc(d.c2_d)} SS Tek, Ω=${num(d.c2_omega,1)}. Allowables per manufacturer ESR for substrate/gauge — confirm before sealing.</p>
+    <h4>4.3 — Post base anchors (Detail #1, ${num(d.c3_n,0)}×${num(d.c3_d,3)}" wedge @ ${num(d.c3_L,2)}" embed)</h4>
+    ${checkLine('Shear / anchor', c3.Vdem,'lb',c3.Vallow,'lb',num(c3.Vdem,0),num(c3.Vallow,0))}
+    ${checkLine('Tension / anchor (net direct uplift)', c3.Tdem,'lb',c3.Tallow,'lb',num(c3.Tdem,0),num(c3.Tallow,0))}
+    ${ratioLine('Anchor interaction T/T<sub>a</sub> + V/V<sub>a</sub>', c3.inter, 1.0, num(c3.inter,3)+' ≤ 1.0')}
+    <p class="note"><strong>Load path:</strong> for a freestanding post the base overturning moment is resisted by the embedded footing (§4.4), so these surface anchors carry <strong>shear + net direct uplift only</strong> — on the same ~${num(R.post.N_comp,1)} kip scale as the column, not the full moment couple. For reference, if the base were instead a fixed moment plate bolted to a slab, the couple over the ${num(d.p_s,2)}" anchor gage would demand ≈ ${num(R.c3.T_couple,0)} lb/anchor (small lever arm → very large force) and would need a full ACI 318 Ch. 17 base-plate / anchor design. Allowables must be ASD-level (apply Ω to ultimate ESR values); confirm against the product ESR for the exact embed / f′<sub>c</sub>.</p>
+    <h4>4.4 — Footing overturning &amp; sliding (per post, freestanding)</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Footing ${num(d.ft_W,2)}×${num(d.ft_L,2)}×${num(d.ft_D,2)} ft</td><td class="sym">W<sub>ftg</sub></td><td class="eq">=</td><td class="val">${num(F.Wfoot,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Nominal overturning (full W)</td><td class="sym">M<sub>OT,n</sub></td><td class="eq">=</td><td class="val">${num(F.M_OT_n,0)}</td><td class="unit">lb·ft</td></tr>
+      <tr><td class="lbl">Nominal resisting (full D)</td><td class="sym">M<sub>R,n</sub></td><td class="eq">=</td><td class="val">${num(F.M_R_n,0)}</td><td class="unit">lb·ft</td></tr>
+    </table>
+    ${ratioLine('Overturning nominal FS = M<sub>R,n</sub>/M<sub>OT,n</sub>', 1.5/Math.max(F.FS_OT,1e-6), 1.0, 'FS = '+num(F.FS_OT,2)+'  (target ≥ 1.5)')}
+    ${ratioLine('Sliding nominal FS = μ·D/V<sub>post</sub>', 1.5/Math.max(F.FS_sl,1e-6), 1.0, 'FS = '+num(F.FS_sl,2)+'  (target ≥ 1.5)')}
+    ${ratioLine('ASD strength  0.6·M<sub>R,n</sub> ≥ 0.6·M<sub>OT,n</sub>', F.M_OT/Math.max(F.M_R,1e-6), 1.0, num(F.M_R,0)+' ≥ '+num(F.M_OT,0)+' lb·ft')}
+    ${ratioLine('Direct uplift  weight ≥ net uplift', F.uplift_nom>0?(1.5*F.uplift_nom/Math.max(F.Wfoot+F.Wstr,1e-6)):0, 1.0, F.uplift_nom>0?('FS = '+num(F.FS_up,2)+'  (W='+num(F.Wfoot+F.Wstr,0)+' lb vs uplift '+num(F.uplift_nom,0)+' lb, target ≥ 1.5)'):'no net uplift on footing')}
+    <p class="note">Two views shown for clarity: the <strong>classical nominal factor of safety</strong> (unfactored D vs unfactored W, target ≥ 1.5 for municipal review) and the <strong>ASD strength limit state</strong> (0.6D + 0.6W). Increase footing size/depth if FS &lt; 1.5. Soil μ=${num(d.ft_mu,2)}; verify allowable bearing &amp; reinforcement separately (EOR).</p>
+    ${footer(d,'6')}
+  </div>`;
+
+  const p8=`<div class="report-page">
+    <h3 style="margin-top:0;">5. Code basis &amp; assumptions</h3>
+    <h4 style="color:var(--green);">Codes</h4>
+    <p>FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19. Wind per ASCE 7-22 open-structure provisions (Ch. 27 net-pressure C<sub>N</sub> for open free roofs and/or Ch. 29 open-frame force method). Aluminum members per the Aluminum Design Manual (ADM) allowable-stress design. Concrete footings/anchorage per ACI 318 and the anchor manufacturer's evaluation report.</p>
+    <h4 style="color:var(--green);">Load combinations (ASD)</h4>
+    <p style="font-family:var(--font-mono);font-size:9pt;">Gravity: D + L<sub>r</sub> + 0.6W↓ &nbsp; | &nbsp; Uplift / overturning: 0.6D + 0.6W↑ &nbsp; | &nbsp; Members: D + 0.6W and 0.6W − 0.6D.</p>
+    <h4 style="color:var(--green);">Member checks</h4>
+    <p>Rafter/slat &amp; beam: F<sub>b</sub>=M/S ≤ 0.75F<sub>ty</sub>, F<sub>v</sub>=V/A ≤ 0.6F<sub>sy</sub>, deflection ≤ L/180. Post: combined axial + bending interaction with weak-axis column buckling (ADM Ch. E). Tributary areas are real plan areas, never a 1-ft strip.</p>
+    <h4 style="color:var(--green);">Assumptions &amp; limits (screening-level)</h4>
+    <p class="note">• Self-weight (dead) is true aluminum weight, not padded — low dead is conservative for uplift.<br>
+    • C<sub>N</sub>/C<sub>f</sub> defaults must be confirmed against ASCE 7-22 Fig 27.3-4/27.3-6 and 29.4-1 for the actual roof slope, blockage and slat solidity ε.<br>
+    • Connection demands are derived from member forces; no prying, weld, or block-shear design beyond the stated allowable. Bolt/anchor allowables editable — use the product ESR for the exact embed/substrate.<br>
+    • Footing overturning/sliding is per isolated post footing; global stability, bearing pressure and reinforcement to be confirmed by the EOR. Drawing requires concrete footings at mounting level "to meet engineering."<br>
+    • Each member's alloy (F<sub>ty</sub>) is auto-derived from its section name (6063-T6→25 ksi, 6061-T6→35 ksi); HSS/custom use the global material fields.</p>
+    <p class="note" style="margin-top:1.2rem;">Prepared by ${esc(d.engName)}, License #${esc(d.engLic)} — ${esc(d.firm)}, ${esc(d.coaLabel)} ${esc(d.coa)}.</p>
+    ${footer(d,'8')}
+  </div>`;
+
+  const BP=R.basePlate;
+  const p7b=`<div class="report-page">
+    <h3 style="margin-top:0;">4.5. Post base plate (flat bar)</h3>
+    <p class="note">${num(d.bp_B,1)}"×${num(d.bp_N,1)}"×${num(d.bp_t,3)}" aluminum flat bar (F<sub>cy</sub>=${num(d.bp_Fcy,0)} ksi) welded to the ${num(BP.postB,0)}" post and anchored with ${num(d.c3_n,0)}×${num(d.c3_d,3)}" wedge bolts (Detail #1). Plate bending checked both ways — anchor-tension cantilever (uplift / overturning) and concrete-bearing cantilever (gravity).</p>
+    <div class="fig-row">
+      <div class="fig compact">${basePlateSVG(d)}<div class="cap">Base plate — plan</div></div>
+      <div><table class="data-grid">
+        <tr><td class="lbl">Plate B×N×t</td><td class="eq">=</td><td class="val">${num(d.bp_B,1)}×${num(d.bp_N,1)}×${num(d.bp_t,3)}</td><td class="unit">in</td></tr>
+        <tr><td class="lbl">Allowable F<sub>b</sub>=0.75F<sub>cy</sub></td><td class="eq">=</td><td class="val">${num(BP.bpFb,1)}</td><td class="unit">ksi</td></tr>
+        <tr><td class="lbl">Anchor gage s</td><td class="eq">=</td><td class="val">${num(d.p_s,2)}</td><td class="unit">in</td></tr>
+        <tr><td class="lbl">Uplift cantilever arm a</td><td class="eq">=</td><td class="val">${num(BP.armUp,2)}</td><td class="unit">in</td></tr>
+        <tr><td class="lbl">Tension/anchor T (4.3)</td><td class="eq">=</td><td class="val">${num(BP.Tanch,0)}</td><td class="unit">lb</td></tr>
+        <tr><td class="lbl">Bearing pressure f<sub>p</sub></td><td class="eq">=</td><td class="val">${num(BP.fp,1)}</td><td class="unit">psi</td></tr>
+        <tr><td class="lbl">Bearing cantilever m</td><td class="eq">=</td><td class="val">${num(BP.mCant,2)}</td><td class="unit">in</td></tr>
+      </table></div>
+    </div>
+    <div class="note">Flat-plate cantilever: f<sub>b</sub> = 6M/(b·t²); required t = √(6M/(b·F<sub>b</sub>)). Governing t<sub>req</sub> = ${num(BP.treq,3)}" vs furnished ${num(d.bp_t,3)}".</div>
+    ${checkLine('Uplift cantilever  f<sub>b</sub> = 6·T·a/(b·t²)', BP.fbUp,'ksi',BP.bpFb,'ksi',num(BP.fbUp,2),'0.75F<sub>cy</sub> = '+num(BP.bpFb,1))}
+    ${checkLine('Bearing cantilever  f<sub>b</sub> = 3·f<sub>p</sub>·m²/t²', BP.fbBr,'ksi',BP.bpFb,'ksi',num(BP.fbBr,2),'0.75F<sub>cy</sub> = '+num(BP.bpFb,1))}
+    ${ratioLine('Furnished thickness  t ≥ t<sub>req</sub>', BP.treq/Math.max(d.bp_t,1e-6), 1.0, 't = '+num(d.bp_t,3)+'" vs t<sub>req</sub> = '+num(BP.treq,3)+'"')}
+    <p class="note">Screening flat-plate cantilever model (steel base-plate analogue; aluminum allowable per ADM). ${BP.armUp<=0?'<strong>Anchors fall inboard of the post wall</strong> — uplift cantilever ≈ 0, so bearing governs the plate.':''} The post-to-plate weld, plate washers / edge distance, and concrete breakout under the plate are <strong>not</strong> included — verify separately. Tension demand carried from 4.3 (same freestanding caveat: overturning is normally resisted by the embedded footing, not surface anchors).</p>
+    ${footer(d,'7')}
+  </div>`;
+  document.getElementById('report').innerHTML=p1+p2+p3+p4+p5+p6+p7+p7b+p8;
+}
+
+function resetForm(){ if(!confirm('Reset all fields to defaults?')) return; location.reload(); }
+
+window.addEventListener('DOMContentLoaded',()=>{
+  populateSectionSelect('f_r_sec','HSS 1" x 1" x 1/8" (purlin)');
+  populateSectionSelect('f_b_sec','HSS 4" x 6" x 1/8" (beam)');
+  populateSectionSelect('f_p_sec','HSS 6" x 6" x 1/4" (post)');
+  const _d=document.getElementById('f_date'); if(_d&&!_d.value){_d.value=new Date().toISOString().slice(0,10);}
+  // Field-mutating selects: run their helper on change (helper updates fields then re-renders once).
+  const _ff=document.getElementById('f_roofflow'); if(_ff) _ff.addEventListener('change',applyFlow);
+  const _ps=document.getElementById('f_c3_ps');   if(_ps) _ps.addEventListener('change',applyAnchorPS);
+  render();
+  // Single delegated listener: 'input' fires for text, number, select and checkbox changes - no duplicate change->render.
+  const _p=document.querySelector('.form-panel');
+  if(_p){ _p.addEventListener('input',render); }
+});
+</script>
+</body>
+</html>
