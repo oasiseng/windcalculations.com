@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canopy Calculator — windcalculations.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1a5c4c;
+    --green-dark:#13463a;
+    --green-soft:rgba(26,92,76,0.08);
+    --bg:#f5f3ef;
+    --surface:#ffffff;
+    --text:#1a1714;
+    --muted:#5c5955;
+    --border:#e2dfd8;
+    --error:#d93025;
+    --warn:#b85c00;
+    --pass:#1e7a3b;
+    --fail:#c0392b;
+    --pending:#7a6d4f;
+    --font-body:'Plus Jakarta Sans',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.5;}
+  .app{display:grid;grid-template-columns:minmax(440px,500px) 1fr;gap:0;min-height:100vh;}
+  .form-panel{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;max-height:100vh;position:sticky;top:0;}
+  .preview-panel{padding:2rem 1rem;background:linear-gradient(180deg,#e8e6df 0%,#f5f3ef 100%);overflow-x:auto;}
+  .form-panel h1{color:var(--green);font-size:1.2rem;margin:0 0 0.25rem;}
+  .form-panel .subtitle{font-size:0.78rem;color:var(--muted);margin:0 0 1.2rem;font-family:var(--font-mono);}
+  fieldset{border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem 1rem;margin:0 0 1rem;background:#faf9f7;}
+  fieldset legend{font-weight:700;color:var(--green);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;padding:0 0.4rem;}
+  .field{margin-bottom:0.7rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-weight:600;font-size:0.8rem;margin-bottom:0.25rem;}
+  .field input,.field select,.field textarea{width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;background:#fff;color:var(--text);transition:border-color 0.15s;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,76,0.12);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;}
+  .hint{color:var(--muted);font-weight:400;font-size:0.72rem;}
+  .sub-legend{font-weight:700;color:var(--green-dark);font-size:0.78rem;margin:0.6rem 0 0.4rem;border-bottom:1px dashed var(--border);padding-bottom:0.2rem;}
+  .actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent 0%,var(--surface) 30%);padding:1rem 0 0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{flex:1 1 calc(50% - 0.2rem);min-width:0;padding:0.65rem 0.5rem;border:none;border-radius:6px;font-family:var(--font-body);font-weight:600;font-size:0.84rem;cursor:pointer;transition:background 0.15s,transform 0.05s;}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-primary:active{transform:scale(0.98);}
+  .btn-secondary{background:#fff;border:1.5px solid var(--border);color:var(--text);}
+  .btn-secondary:hover{border-color:var(--green);color:var(--green);}
+  .live-result{background:var(--green-soft);border:1px solid rgba(26,92,76,0.2);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.8rem;font-family:var(--font-mono);font-size:0.74rem;color:var(--text);line-height:1.6;}
+  .live-result strong{color:var(--green);}
+  .warn-banner{background:rgba(184,92,0,0.08);border:1px solid rgba(184,92,0,0.3);border-left:3px solid var(--warn);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.8rem;font-size:0.74rem;color:var(--warn);display:none;}
+  .warn-banner.active{display:block;}
+  .version-badge{display:inline-block;font-family:var(--font-mono);font-size:0.68rem;background:var(--green);color:#fff;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.4rem;letter-spacing:0.05em;}
+
+  /* live diagram (sticky on top of preview) */
+  .viz-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem 0.9rem;margin:0 auto 1.4rem;max-width:8.5in;box-shadow:0 4px 16px rgba(0,0,0,0.07);}
+  .viz-card h2{margin:0 0 0.2rem;font-size:0.95rem;color:var(--green);}
+  .viz-card .viz-sub{font-size:0.72rem;color:var(--muted);font-family:var(--font-mono);margin:0 0 0.6rem;}
+  .viz-grid{display:grid;grid-template-columns:1.9fr 1fr;gap:0.6rem;align-items:start;}
+  .viz-box{border:1px solid #e6e2da;border-radius:6px;padding:0.4rem;background:#fcfcfa;}
+  .viz-box .vlabel{font-size:0.7rem;font-weight:700;color:#234;text-align:center;margin-bottom:0.2rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .viz-readout{display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.72rem;color:#333;margin-top:0.6rem;}
+  .viz-readout b{color:var(--green);}
+
+  /* ---------- REPORT PAGES ---------- */
+  .report{max-width:8.5in;margin:0 auto;}
+  .report-page{background:#fff;width:8.5in;min-height:11in;padding:0.85in 0.8in 1.1in;margin:0 auto 1.5rem;box-shadow:0 6px 24px rgba(0,0,0,0.08);position:relative;font-size:10.5pt;line-height:1.4;color:#1a1714;}
+  .report-page h1{color:var(--green);font-size:20pt;margin:0 0 0.2rem;font-weight:700;letter-spacing:0.06em;}
+  .report-page h2{color:var(--green);font-size:13pt;margin:1.1rem 0 0.5rem;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:0.2rem;}
+  .report-page h3{font-size:11pt;margin:0.8rem 0 0.35rem;font-weight:700;color:var(--green);}
+  .report-page h4{font-size:10pt;margin:0.6rem 0 0.3rem;font-weight:700;color:#b1322a;}
+  .report-page p{margin:0 0 0.5rem;}
+  .report-page .center{text-align:center;}
+
+  /* cover */
+  .cover-band{background:#dcd6c3;padding:1.4in 0.4in 0.5in;text-align:right;margin:-0.85in -0.8in 0;}
+  .cover-band .title{font-size:26pt;font-weight:700;color:#234;letter-spacing:0.12em;line-height:1.1;}
+  .cover-band .sub{font-size:18pt;font-weight:700;color:#234;letter-spacing:0.2em;}
+  .cover-meta{text-align:right;font-style:italic;color:#555;margin:0.6rem 0 0;}
+  .cover-table{width:100%;border-collapse:collapse;margin-top:2.2in;font-size:11pt;}
+  .cover-table td{padding:0.35rem 0.2rem;border-bottom:1px solid #bbb;color:#234;}
+  .cover-table td:first-child{color:var(--green);width:1.6in;}
+  .cover-products{margin-top:1rem;font-size:10pt;}
+  .cover-products .lbl{font-weight:700;}
+  .cover-code{margin-top:1.2rem;font-weight:700;color:var(--green-dark);}
+
+  /* data tables */
+  .data-grid{width:100%;border-collapse:collapse;font-size:10pt;margin:0.3rem 0 0.6rem;}
+  .data-grid td{padding:0.12rem 0.3rem;vertical-align:top;}
+  .data-grid td.lbl{font-weight:600;}
+  .data-grid td.sym{font-family:var(--font-mono);text-align:right;width:1.1in;color:#234;}
+  .data-grid td.eq{text-align:center;width:0.3in;color:#888;}
+  .data-grid td.val{font-family:var(--font-mono);text-align:right;width:1in;font-weight:700;}
+  .data-grid td.unit{font-style:italic;color:#555;width:0.7in;}
+  .data-grid .group{font-weight:700;color:#234;padding-top:0.35rem;}
+  .data-grid .grade{font-style:italic;color:var(--green-dark);}
+
+  .calc-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:9pt;margin:0.4rem 0 0.7rem;}
+  .calc-table th,.calc-table td{border:1px solid #999;padding:0.22rem 0.4rem;text-align:center;}
+  .calc-table th{background:var(--green);color:#fff;font-weight:700;}
+  .calc-table td.left{text-align:left;font-weight:600;}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;align-items:start;}
+  .panel-label{background:var(--green);color:#fff;font-weight:700;text-align:center;padding:0.2rem;font-size:9.5pt;border-radius:4px 4px 0 0;}
+  .ld-table{width:100%;border-collapse:collapse;font-size:9pt;font-family:var(--font-mono);}
+  .ld-table td{padding:0.12rem 0.3rem;}
+  .ld-table td.l{text-align:left;color:#234;}
+  .ld-table td.v{text-align:right;font-weight:700;}
+  .ld-table td.u{font-style:italic;color:#555;width:0.9in;}
+  .ld-table tr.hl td{font-weight:700;color:var(--green-dark);}
+
+  .check-line{font-family:var(--font-mono);font-size:9.5pt;display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem;padding:0.2rem 0.4rem;margin:0.2rem 0;border-left:3px solid var(--green);background:#f7f6f2;}
+  .check-line .formula{flex:1;}
+  .check-line .verdict{font-weight:700;white-space:nowrap;}
+  .check-line .verdict.pass{color:var(--pass);}
+  .check-line .verdict.fail{color:var(--fail);}
+  .section-props{font-family:var(--font-mono);font-size:9pt;background:#eef3f1;border:1px solid #cdddd6;border-radius:4px;padding:0.3rem 0.5rem;margin:0.3rem 0;}
+  .note{font-size:9pt;font-style:italic;color:#555;margin:0.3rem 0;}
+
+  .fig{text-align:center;margin:0.5rem 0;}
+  .fig svg{max-width:100%;height:auto;}
+  .fig .cap{font-size:9pt;font-style:italic;color:#555;margin-top:0.2rem;}
+  .fig-row{display:grid;grid-template-columns:1.9fr 1fr;gap:0.5rem;align-items:start;}
+
+  .toc-line{display:flex;justify-content:space-between;border-bottom:1px dotted #bbb;padding:0.3rem 0;font-size:11pt;}
+
+  .page-footer{position:absolute;bottom:0;left:0;right:0;height:0.85in;padding:0 0.8in 0.3in;}
+  .page-footer .footer-text{display:flex;justify-content:space-between;font-size:8pt;color:#222;margin-bottom:0.12rem;}
+  .page-footer .footer-text .left{font-weight:600;}
+  .page-footer .footer-text .right{text-align:right;font-style:italic;}
+  .page-footer .footer-text .right strong{font-style:normal;font-weight:600;}
+  .page-footer .pageno{position:absolute;bottom:0.3in;right:0.8in;font-style:italic;font-size:9pt;color:#444;}
+  .page-footer .swoosh{width:100%;height:0.35in;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 50' preserveAspectRatio='none'><path d='M0,25 Q200,5 400,25 T800,25' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.55'/><path d='M0,30 Q200,12 400,30 T800,30' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.4'/><path d='M0,35 Q200,18 400,35 T800,35' stroke='%237fa8c5' stroke-width='1' fill='none' opacity='0.4'/></svg>") no-repeat center / 100% 100%;}
+
+  .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-style:italic;}
+
+  /* SVG drawing primitives */
+  .dl{stroke:#444;stroke-width:0.8;}
+  .dtxt{font-family:var(--font-mono);font-size:10px;fill:#234;}
+  .dtxt.sm{font-size:8.5px;}
+  .alum{fill:#e8eeec;stroke:#1a5c4c;stroke-width:1.4;}
+  .wall{fill:#d8d2bf;stroke:#8a8470;stroke-width:1;}
+  .plate{fill:#9aa7a2;stroke:#46524e;stroke-width:1;}
+  .bolt{fill:#2b2b2b;}
+  .strut{stroke:#b1322a;stroke-width:3;fill:none;}
+  .slat{stroke:#8aa39a;stroke-width:1.2;}
+  .post{stroke:#1a5c4c;stroke-width:2.4;}
+
+  .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;border-radius:50%;background:var(--green);color:#fff;font-size:9.5px;font-weight:700;cursor:pointer;vertical-align:middle;user-select:none;font-family:var(--font-body);text-transform:none;letter-spacing:0;}
+  .help:hover{background:var(--green-dark);}
+  #tipBubble{display:none;position:fixed;max-width:240px;background:#1a1714;color:#fff;font-family:var(--font-body);font-weight:400;font-size:0.74rem;line-height:1.45;padding:0.5rem 0.62rem;border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,0.32);z-index:9999;pointer-events:none;}
+  @media print{ .help,#tipBubble{display:none !important;} }
+  .disclaimer-banner{background:rgba(217,48,37,0.08);border:1px solid rgba(217,48,37,0.35);border-left:3px solid var(--error);border-radius:6px;padding:0.5rem 0.65rem;margin:0.2rem 0 1rem;font-size:0.72rem;color:#9a2018;line-height:1.45;}
+  .cover-disclaimer{border:1.5px solid #c0392b;background:#fbeeec;border-radius:6px;padding:0.55rem 0.7rem;margin:1rem 0 0;font-size:8.5pt;color:#7a1d15;line-height:1.42;}
+  .footer-disc{font-size:6.8pt;color:#777;text-align:center;margin-bottom:0.12rem;}
+  @page{size:letter;margin:0;}
+  @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .form-panel{display:none;}
+    .preview-panel{padding:0;background:#fff;overflow:visible;}
+    .app{display:block;}
+    .viz-card{display:none;}
+    .report-page{box-shadow:none;margin:0;page-break-after:always;break-inside:avoid;width:8.5in;height:11in;min-height:11in;max-height:11in;overflow:hidden;}
+    .report-page:last-child{page-break-after:auto;}
+    .page-footer,.page-footer .swoosh,.page-footer .footer-text{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+    .member-block,.check-line,.twocol{break-inside:avoid;page-break-inside:avoid;}
+    .no-print{display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="tipBubble"></div>
+<div class="app">
+
+<aside class="form-panel">
+  <h1>Canopy Calculator <span class="version-badge">windcalculations.com</span></h1>
+  <p class="subtitle">ASCE 7-22 · ADM-I · Arm-supported sunshade OR direct-bolt cantilever (no-arm) · Practice / QA-QC tool</p>
+  <p class="subtitle" style="color:var(--green);margin-top:-0.7rem;">Hover or tap the green <b>?</b> next to any field for a plain-English explanation.</p>
+  <div class="disclaimer-banner">⚠ <strong>Educational / practice tool only.</strong> Output is <strong>not</strong> a signed &amp; sealed engineering document, is not reviewed by a licensed engineer, and must not be used for permitting, fabrication, or construction. No warranty; no liability assumed. Have a licensed PE verify &amp; seal any real design.</div>
+
+  <div class="live-result" id="liveResult">Fill in wind &amp; geometry to see live results.</div>
+  <div class="warn-banner" id="warnBanner"></div>
+
+  <fieldset>
+    <legend>Project / Letterhead</legend>
+    <div class="field"><label>Report date</label><input type="date" id="f_date"></div>
+    <div class="row-2">
+      <div class="field"><label>Project number</label><input type="text" id="f_projNo" value="DEMO-001"></div>
+      <div class="field"><label>Engineer file no.</label><input type="text" id="f_fileNo" value=""></div>
+    </div>
+    <div class="field"><label>Project name</label><input type="text" id="f_project" value="Sample Project"></div>
+    <div class="field"><label>Client / address</label><input type="text" id="f_client" value="Sample Client / Site Address"></div>
+    <div class="field"><label>Product(s) designed</label><input type="text" id="f_product" value="Sample Canopy"></div>
+    <div class="row-2">
+      <div class="field"><label>Revision</label><input type="text" id="f_rev" value="0"></div>
+      <div class="field"><label>Code reference</label><input type="text" id="f_code" value="FBC 2023; ASCE 7-22; ACI 318-16; ADM -2010"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Engineer / Firm</legend>
+    <div class="field"><label>Firm name</label><input type="text" id="f_firm" value="windcalculations.com"></div>
+    <div class="row-2">
+      <div class="field"><label>Engineer name</label><input type="text" id="f_engName" value=""></div>
+      <div class="field"><label>License #</label><input type="text" id="f_engLic" value=""></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>COA label</label><input type="text" id="f_coaLabel" value=""></div>
+      <div class="field"><label>COA #</label><input type="text" id="f_coa" value=""></div>
+    </div>
+    <div class="field"><label>Firm website</label><input type="text" id="f_web" value="windcalculations.com"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Canopy Layout (Diagram)</legend>
+    <div class="field"><label>Mounting / support type</label>
+      <select id="f_support_type" onchange="applySupportType()">
+        <option value="arm" selected>Arm-supported (open-style — angled wall bracket below)</option>
+        <option value="cantilever">Direct-bolt cantilever to concrete beam (no-arm)</option>
+      </select>
+    </div>
+    <p class="hint" style="margin:0 0 0.5rem;">Drives the live drawing. <strong>#&nbsp;Sections</strong> = roof-panel divisions (interior intermediate frames + gutter-fascia edges). <strong>#&nbsp;Support arms</strong> = angled wall brackets, independent of sections. Wall anchors = arms × bolts/bracket.</p>
+    <div class="row-3">
+      <div class="field"><label>Overall length (ft)</label><input type="number" id="f_total_len" value="25" step="0.1"></div>
+      <div class="field"><label># Sections</label><input type="number" id="f_nSec" value="3" min="1" step="1"></div>
+      <div class="field"><label>Projection (in)</label><input type="number" id="f_depth_in" value="24" step="0.5"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label># Support arms</label><input type="number" id="f_n_arms" value="2" min="1" step="1"></div>
+      <div class="field"><label>Bolts per wall bracket</label><input type="number" id="f_bolts_bracket" value="4" min="1" step="1"></div>
+    </div>
+  </fieldset>
+
+  <fieldset id="fs_cantilever" style="display:none;">
+    <legend>Direct-Bolt Cantilever — Back Anchorage (no-arm)</legend>
+    <p class="hint" style="margin:0 0 0.5rem;">Back gutter fascia bolts directly to a concrete / CMU beam; the canopy cantilevers out the projection. Wind &amp; dead on the projection create a cantilever moment at the back, resisted by a tension / bearing couple across the anchor row plus vertical shear. Set anchor count, diameter &amp; embedment in <strong>Connections &rarr; 3 (Wall / Substrate Anchor)</strong>.</p>
+    <div class="row-3">
+      <div class="field"><label>Anchor spacing O.C. (in)</label><input type="number" id="f_anchor_spacing" value="24" step="1"><span class="hint">As detailed: 24" (2'-0") max.</span></div>
+      <div class="field"><label>Moment arm j&middot;d (in)</label><input type="number" id="f_anchor_jd" value="6.0" step="0.25"><span class="hint">Bolt line &rarr; fascia bearing; &asymp; fascia height.</span></div>
+      <div class="field"><label>Substrate</label><select id="f_substrate" onchange="render()"><option value="concrete" selected>Concrete</option><option value="masonry">Grout-filled CMU</option></select></div>
+    </div>
+    <div class="field"><label>Auto-fill wedge-bolt allowables <span class="hint">(representative ASD &mdash; confirm vs. current ICC-ES report for the embedment used)</span></label>
+      <select id="f_c3_sub" onchange="applyAnchorSub()">
+        <option value="">&mdash; manual / keep Connection-3 values &mdash;</option>
+        <option value="masonry|0.375|2.375|445|595">CMU 3/8" @ f'm=1500 &rarr; T=445, V=595 (emb 2.375")</option>
+        <option value="masonry|0.375|2.375|535|715">CMU 3/8" @ f'm=2000 &rarr; T=535, V=715 (emb 2.375")</option>
+        <option value="concrete|0.375|2.0|600|1000">Concrete 3/8" @ 2" emb, f'c&asymp;2500 &rarr; T=600, V=1000</option>
+        <option value="concrete|0.375|2.5|910|1280">Concrete 3/8" @ 2.5" emb, f'c&asymp;2500 &rarr; T=910, V=1280</option>
+        <option value="concrete|0.375|3.25|1145|1610">Concrete 3/8" @ 3.25" emb, f'c&asymp;4000 &rarr; T=1145, V=1610</option>
+        <option value="concrete|0.5|3.25|1600|2400">Concrete 1/2" @ 3.25" emb, f'c&asymp;4000 &rarr; T=1600, V=2400</option>
+      </select>
+    </div>
+    <p class="hint" style="margin:0.4rem 0 0;">In this mode the panel below labeled <strong>Tie-Back Arm</strong> checks the 2"&times;2" tie member as a supplementary axial element (conservatively carries the full tributary reaction &mdash; actual sharing with the anchor couple is indeterminate).</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Wind Data (ASCE 7-22)</legend>
+    <div class="row-3">
+      <div class="field"><label>V (mph)</label><input type="number" id="f_V" value="160" step="1"></div>
+      <div class="field"><label>Risk Cat</label><select id="f_risk"><option>I</option><option selected>II</option><option>III</option><option>IV</option></select></div>
+      <div class="field"><label>Exposure</label><select id="f_exp"><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Kd</label><input type="number" id="f_Kd" value="0.85" step="0.01"></div>
+      <div class="field"><label>Ke</label><input type="number" id="f_Ke" value="1.00" step="0.01"></div>
+      <div class="field"><label>Kzt</label><input type="number" id="f_Kzt" value="1.00" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Iw</label><input type="number" id="f_Iw" value="1.00" step="0.01"></div>
+      <div class="field"><label>Gf</label><input type="number" id="f_Gf" value="0.90" step="0.01"></div>
+      <div class="field"><label>&epsilon; solid/gross</label><input type="number" id="f_eps" value="0.65" step="0.01"></div>
+    </div>
+    <div class="field"><label>Roof type</label>
+      <select id="f_roof" onchange="applyRoof()">
+        <option value="open" selected>Open / slatted sunshade (&epsilon; ≈ 0.6–0.7)</option>
+        <option value="solid">Solid roof pans (sets &epsilon; = 1.0)</option>
+      </select>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>GCp upper surf</label><input type="number" id="f_gcpUp" value="0.65" step="0.01"></div>
+      <div class="field"><label>GCp lower surf</label><input type="number" id="f_gcpLo" value="-0.85" step="0.01"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Heights &amp; Loads</legend>
+    <div class="row-3">
+      <div class="field"><label>Bldg height h (ft)</label><input type="number" id="f_h" value="72" step="0.1"></div>
+      <div class="field"><label>Eave he (ft)</label><input type="number" id="f_he" value="72" step="0.1"></div>
+      <div class="field"><label>Canopy hgt hc (ft)</label><input type="number" id="f_hc" value="12" step="0.1"></div>
+    </div>
+    <div class="field"><label>Self weight / dead load (psf)</label><input type="number" id="f_dl" value="5.0" step="0.1"><span class="hint">Aluminum is light (~2.5–5 psf). Don't pad it — higher dead reduces net uplift (unconservative for arms/anchors).</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Vertical Frame</legend>
+    <div class="row-3">
+      <div class="field"><label>Trib width (ft)</label><input type="number" id="f_v_trib" value="4.0" step="0.1"></div>
+      <div class="field"><label>Beam length (ft)</label><input type="number" id="f_v_len" value="2.0" step="0.1"></div>
+      <div class="field"><label>Spans</label><input type="number" id="f_v_span" value="1" step="1"></div>
+    </div>
+    <div class="field"><label>Section</label><select id="f_v_sec" data-sec="v"></select></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Horizontal Frame</legend>
+    <div class="row-3">
+      <div class="field"><label>Trib width (ft)</label><input type="number" id="f_h_trib" value="1.0" step="0.1"></div>
+      <div class="field"><label>Beam length (ft)</label><input type="number" id="f_h_len" value="25.0" step="0.1"></div>
+      <div class="field"><label>Spans</label><input type="number" id="f_h_span" value="1" step="1"></div>
+    </div>
+    <div class="field"><label>Section</label><select id="f_h_sec" data-sec="h"></select></div>
+  </fieldset>
+
+  <fieldset>
+    <legend id="strutLegend">Strut / Support Arm</legend>
+    <p class="hint" id="strutHint" style="margin:0 0 0.5rem;">Arm reaction is derived from canopy area ÷ # support arms (each arm carries ½ the canopy at 2 arms). Enter arm length &amp; angle for geometry/buckling.</p>
+    <div class="row-3">
+      <div class="field"><label>Arm length (ft)</label><input type="number" id="f_s_len" value="3.8" step="0.1"></div>
+      <div class="field"><label>Angle from vert (°)</label><input type="number" id="f_s_angle" value="32" step="0.5"></div>
+      <div class="field"><label>Section</label><select id="f_s_sec" data-sec="s"></select></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Connections</legend>
+    <div class="sub-legend">1 — Bracket Bolt (member → bracket)</div>
+    <div class="row-3">
+      <div class="field"><label>n bolts</label><input type="number" id="f_c1_n" value="1" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_c1_d" value="0.5" step="0.0625"></div>
+      <div class="field"><label>&Omega;</label><input type="number" id="f_c1_omega" value="2.0" step="0.1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Material</label><input type="text" id="f_c1_mat" value="ASTM-A307"></div>
+      <div class="field"><label>Fbu (psi)</label><input type="number" id="f_c1_fbu" value="60000" step="1000"></div>
+    </div>
+
+    <div class="sub-legend">2 — Secondary Fastener (screw / metal-to-metal)</div>
+    <div class="row-3">
+      <div class="field"><label>Max spacing (in)</label><input type="number" id="f_c2_sp" value="48" step="1"></div>
+      <div class="field"><label>dia</label><input type="text" id="f_c2_d" value="1/4 (#14)"></div>
+      <div class="field"><label>&Omega;</label><input type="number" id="f_c2_omega" value="2.0" step="0.1"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Embed L (in)</label><input type="number" id="f_c2_L" value="1.5" step="0.25"></div>
+      <div class="field"><label>Allow V (lb)</label><input type="number" id="f_c2_V" value="125" step="5"></div>
+      <div class="field"><label>Allow T (lb)</label><input type="number" id="f_c2_T" value="250" step="5"></div>
+    </div>
+
+    <div class="sub-legend">3 — Wall / Substrate Anchor (wedge/expansion)</div>
+    <div class="row-3">
+      <div class="field"><label>n anchors</label><input type="number" id="f_c3_n" value="4" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_c3_d" value="0.375" step="0.0625"></div>
+      <div class="field"><label>Embed L (in)</label><input type="number" id="f_c3_L" value="4.0" step="0.25"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>&Omega;</label><input type="number" id="f_c3_omega" value="2.0" step="0.1"></div>
+      <div class="field"><label>Allow V (lb)</label><input type="number" id="f_c3_V" value="595" step="5"></div>
+      <div class="field"><label>Allow T (lb)</label><input type="number" id="f_c3_T" value="445" step="5"></div>
+    </div>
+    <div class="field"><label>Auto-fill — Power-Stud+ SD1, grout-filled CMU (ESR-2966)</label>
+      <select id="f_c3_ps" onchange="applyAnchorPS()">
+        <option value="">— manual / keep values above —</option>
+        <option value="0.25|1500">1/4" @ f'm=1500 → T=195, V=180 (embed 1.75")</option>
+        <option value="0.25|2000">1/4" @ f'm=2000 → T=215, V=196 (embed 1.75")</option>
+        <option value="0.375|1500">3/8" @ f'm=1500 → T=445, V=595 (embed 2.375")</option>
+        <option value="0.375|2000">3/8" @ f'm=2000 → T=535, V=715 (embed 2.375")</option>
+        <option value="0.5|1500">1/2" @ f'm=1500 → T=530, V=560 (embed 2.5")</option>
+        <option value="0.5|2000">1/2" @ f'm=2000 → T=635, V=670 (embed 2.5")</option>
+        <option value="0.625|1500">5/8" @ f'm=1500 → T=705, V=685 (embed 3.375")</option>
+        <option value="0.625|2000">5/8" @ f'm=2000 → T=845, V=820 (embed 3.375")</option>
+        <option value="0.75|1500">3/4" @ f'm=1500 → T=1515, V=1770 (embed 3.375")</option>
+        <option value="0.75|2000">3/4" @ f'm=2000 → T=1635, V=1875 (embed 3.375")</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Materials (display)</legend>
+    <div class="row-2">
+      <div class="field"><label>Aluminum alloy</label><input type="text" id="f_alloy" value="6061-T6"></div>
+      <div class="field"><label>Fty=Fcy (ksi)</label><input type="number" id="f_fty" value="35" step="1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Fsy (ksi)</label><input type="number" id="f_fsy" value="24" step="1"></div>
+      <div class="field"><label>Fu (ksi)</label><input type="number" id="f_fu" value="42" step="1"></div>
+    </div>
+  </fieldset>
+
+
+  <fieldset>
+    <legend>Custom / EMS Section Properties</legend>
+    <p class="hint" style="margin:0 0 0.5rem;">Used only when a member's Section is an EMS extrusion or "Custom". EMS open fascia/pan shapes aren't auto-computed — enter A (in²), I (in⁴, strong axis), S (in³) from the EMS engineering sheet. EMS extrusions are 6063-T6: set Fty/Fcy = 25 ksi.</p>
+    <div class="sub-legend">Vertical frame</div>
+    <div class="row-3">
+      <div class="field"><label>A (in²)</label><input type="number" id="f_cv_A" value="0" step="0.01"></div>
+      <div class="field"><label>I (in⁴)</label><input type="number" id="f_cv_I" value="0" step="0.01"></div>
+      <div class="field"><label>S (in³)</label><input type="number" id="f_cv_S" value="0" step="0.01"></div>
+    </div>
+    <div class="sub-legend">Horizontal frame (gutter fascia)</div>
+    <div class="row-3">
+      <div class="field"><label>A (in²)</label><input type="number" id="f_ch_A" value="0" step="0.01"></div>
+      <div class="field"><label>I (in⁴)</label><input type="number" id="f_ch_I" value="0" step="0.01"></div>
+      <div class="field"><label>S (in³)</label><input type="number" id="f_ch_S" value="0" step="0.01"></div>
+    </div>
+    <div class="sub-legend">Strut / support arm</div>
+    <div class="row-3">
+      <div class="field"><label>A (in²)</label><input type="number" id="f_cs_A" value="0" step="0.01"></div>
+      <div class="field"><label>I (in⁴)</label><input type="number" id="f_cs_I" value="0" step="0.01"></div>
+      <div class="field"><label>S (in³)</label><input type="number" id="f_cs_S" value="0" step="0.01"></div>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('loadFileInput').click()">📂 Load</button>
+    <input type="file" id="loadFileInput" accept=".json" style="display:none" onchange="if(this.files[0]) loadState(this.files[0]); this.value='';">
+    <button class="btn btn-secondary" onclick="saveState()">💾 Save</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 Print / PDF</button>
+  </div>
+</aside>
+
+<main class="preview-panel">
+  <div class="viz-card no-print" id="vizCard">
+    <h2>Live Canopy Diagram</h2>
+    <p class="viz-sub">Updates as you type — visually verify length, posts, brackets, bolts &amp; projection before printing.</p>
+    <div class="viz-grid">
+      <div class="viz-box"><div class="vlabel">Front Elevation</div><div id="vizElev"></div></div>
+      <div class="viz-box"><div class="vlabel">Side Section</div><div id="vizSide"></div></div>
+    </div>
+    <div class="viz-readout" id="vizReadout"></div>
+  </div>
+
+  <div class="report" id="report">
+    <div class="empty-state">Fill the form. The report renders here in real time.</div>
+  </div>
+</main>
+
+</div>
+
+<script>
+// SECTION LIBRARY — Aluminum rectangular/square HSS (extruded tube)
+function rectTube(B,H,t){
+  const A = B*H - (B-2*t)*(H-2*t);
+  const Ix = (B*Math.pow(H,3) - (B-2*t)*Math.pow(H-2*t,3))/12;  // Strong axis (Ix)
+  const Iy = (H*Math.pow(B,3) - (H-2*t)*Math.pow(B-2*t,3))/12;  // Rectified weak axis void core (Iy)
+  const S = Ix/(H/2);
+  return {A:+A.toFixed(3), I:+Ix.toFixed(2), Iy:+Iy.toFixed(2), Sb:+S.toFixed(2), St:+S.toFixed(2), t, H};
+}
+const SECTIONS = [
+  {name:'HSS 2" x 8" x 1/8"',  A:2.44, I:17.45, Iy:1.64, Sb:3.82, St:3.82, t:0.125, H:8.00, exact:true},
+  {name:'HSS 2" x 2" x 1/8"',  A:0.94, I:0.55,  Iy:0.55, Sb:0.44, St:0.44, t:0.125, H:2.00, exact:true},
+  {name:'HSS 2" x 4" x 1/8"',  ...rectTube(2,4,0.125)},
+  {name:'HSS 2" x 6" x 1/8"',  ...rectTube(2,6,0.125)},
+  {name:'HSS 2" x 8" x 3/16"', ...rectTube(2,8,0.1875)},
+  {name:'HSS 2" x 8" x 1/4"',  ...rectTube(2,8,0.25)},
+  {name:'HSS 3" x 3" x 1/8"',  ...rectTube(3,3,0.125)},
+  {name:'HSS 3" x 6" x 1/8"',  ...rectTube(3,6,0.125)},
+  {name:'HSS 4" x 4" x 1/8"',  ...rectTube(4,4,0.125)},
+  {name:'HSS 2" x 2" x 1/4"',  ...rectTube(2,2,0.25)},
+  {name:'HSS 1.5" x 1.5" x 1/8"', ...rectTube(1.5,1.5,0.125)},
+  // EMS architectural-canopy extrusions — props from EMS catalog CSV (thin-wall approx; I=Ix, Sb=St=min(Sx_top,Sx_bottom)). 6063-T6 unless noted -> set Fty=25.
+  {name:'EMS 19-61-340 — 3"x3"x1/4" Sq Support Beam (6061-T6)', ...rectTube(3,3,0.25)},
+  {name:'EMS 56-63-016 — 4"x8"x1/8" Gutter Fascia (6063-T6)', A:2.227, I:15.31, Iy:6.93, Sb:3.00, St:3.00, t:0.125, H:8.00},
+  {name:'EMS 56-63-039 — 4"x8"x3x1/8" Gutter Fascia (6063-T6)', A:2.125, I:18.19, Iy:5.44, Sb:3.70, St:3.70, t:0.125, H:8.00},
+  {name:'EMS 56-63-033 — 4"x6"x.093 Gutter Fascia (6063-T6)', A:1.279, I:5.47, Iy:3.54, Sb:1.37, St:1.37, t:0.093, H:6.00},
+  {name:'EMS 56-63-043 — 4"x10"x4x.140 Gutter Fascia (6063-T6)', A:2.80, I:35.07, Iy:7.59, Sb:5.75, St:5.75, t:0.140, H:10.00},
+  {name:'EMS 56-63-042 — 4"x12"x5x.160 Gutter Fascia (6063-T6)', A:3.68, I:63.01, Iy:10.38, Sb:8.65, St:8.65, t:0.160, H:12.00},
+  {name:'EMS 21929-025M — 3"x8"x1/8" Gutter Fascia (6063-T6)', A:1.875, I:13.96, Iy:2.91, Sb:2.77, St:2.77, t:0.125, H:8.00},
+  {name:'EMS 56-63-047 — 4"x8"x3x.135 Fascia Channel (6063-T6)', A:2.547, I:28.62, Iy:5.83, Sb:6.80, St:6.80, t:0.135, H:8.00},
+  {name:'EMS 52-63-14715 — 10" Industrial Channel Fascia (6063-T6)', A:1.106, I:14.48, Iy:0.33, Sb:2.90, St:2.90, t:0.079, H:10.00},
+  {name:'EMS 52-63-14284 — 12" Industrial Channel Fascia (6063-T6)', A:1.264, I:22.75, Iy:0.34, Sb:3.79, St:3.79, t:0.079, H:12.00},
+  {name:'EMS 56-63-015 — 3"x6"x.065 Roof Pan V-Deck (6063-T6)', A:0.774, I:0.70, Iy:4.63, Sb:0.31, St:0.31, t:0.065, H:3.00},
+  {name:'EMS 56-63-046 — 2"x8"x.080 Roof Pan (6063-T6)', A:0.96, I:0.32, Iy:8.53, Sb:0.19, St:0.19, t:0.080, H:2.00},
+  {name:'EMS 52-61-5085 — 6.014"x1.755" Self-Mating Gutter Pan (6005A-T61)', A:0.618, I:0.17, Iy:3.22, Sb:0.12, St:0.12, t:0.065, H:1.76},
+  {name:'EMS 52-61-5086/87/88 — 8"x4" Datum Gutter (6063-T6) — enter A/I/S', custom:true, H:8.0},
+  {name:'EMS 52-61-5092 — 5.25"x3.935" Datum Beam (6063-T6) — enter A/I/S', custom:true, H:3.94},
+  {name:'— Custom (enter A, I, S below) —', custom:true, H:0},
+];
+
+function secByName(name){ return SECTIONS.find(s=>s.name===name) || SECTIONS[0]; }
+function memSec(selId, cA, cI, cS){
+  const base = secByName(document.getElementById(selId).value);
+  if(base.custom){
+    const blank = !(cA>0 && cI>0 && cS>0);
+    const A=cA>0?cA:0.01, I=cI>0?cI:0.01, S=cS>0?cS:0.01;
+    return {name:base.name, A, I, Iy:I, Sb:S, St:S, t:0, H:base.H||0, custom:true, blank};
+  }
+  return base;
+}
+// Per-member alloy from the section name: EMS 6063 -> Fty 25, 6061 -> 35; HSS/custom -> global Materials fields.
+function alloyFor(sec, d){
+  const n=(sec&&sec.name)||'';
+  if(/6063/.test(n)) return {Fty:25, Fsy:15, Fu:30, label:'6063-T6'};
+  if(/6061/.test(n)) return {Fty:35, Fsy:24, Fu:42, label:'6061-T6'};
+  return {Fty:d.fty, Fsy:d.fsy, Fu:d.fu, label:(d.alloy||'global')};
+}
+function applyRoof(){
+  const r=document.getElementById('f_roof').value;
+  document.getElementById('f_eps').value=(r==='solid')?'1.00':'0.65';
+  render();
+}
+const ANCHOR_PS={
+  '0.25|1500':{d:0.25,L:1.75,T:195,V:180},  '0.25|2000':{d:0.25,L:1.75,T:215,V:196},
+  '0.375|1500':{d:0.375,L:2.375,T:445,V:595},'0.375|2000':{d:0.375,L:2.375,T:535,V:715},
+  '0.5|1500':{d:0.5,L:2.5,T:530,V:560},      '0.5|2000':{d:0.5,L:2.5,T:635,V:670},
+  '0.625|1500':{d:0.625,L:3.375,T:705,V:685},'0.625|2000':{d:0.625,L:3.375,T:845,V:820},
+  '0.75|1500':{d:0.75,L:3.375,T:1515,V:1770},'0.75|2000':{d:0.75,L:3.375,T:1635,V:1875}
+};
+function applyAnchorPS(){
+  const k=document.getElementById('f_c3_ps').value; if(!k) return;
+  const a=ANCHOR_PS[k]; if(!a) return;
+  document.getElementById('f_c3_d').value=a.d;
+  document.getElementById('f_c3_L').value=a.L;
+  document.getElementById('f_c3_T').value=a.T;
+  document.getElementById('f_c3_V').value=a.V;
+  render();
+}
+function applyAnchorSub(){
+  const k=document.getElementById('f_c3_sub').value; if(!k){ return; }
+  const p=k.split('|');
+  const sub=document.getElementById('f_substrate'); if(sub) sub.value=p[0];
+  document.getElementById('f_c3_d').value=p[1];
+  document.getElementById('f_c3_L').value=p[2];
+  document.getElementById('f_c3_T').value=p[3];
+  document.getElementById('f_c3_V').value=p[4];
+  render();
+}
+function applySupportType(){
+  const t=document.getElementById('f_support_type').value;
+  const isCanti=(t==='cantilever');
+  const fc=document.getElementById('fs_cantilever'); if(fc) fc.style.display=isCanti?'':'none';
+  const lg=document.getElementById('strutLegend'); const ht=document.getElementById('strutHint');
+  if(lg) lg.textContent=isCanti?'Tie-Back Arm (supplementary member)':'Strut / Support Arm';
+  if(ht) ht.innerHTML=isCanti
+    ? 'No-arm mode: this member is the 2"×2" tie-back arm, checked as an axial tie/strut carrying the tributary reaction (length = tie length, angle from vertical of the tie). The primary load path is the back anchor couple.'
+    : 'Arm reaction is derived from canopy area ÷ # support arms (each arm carries ½ the canopy at 2 arms). Enter arm length &amp; angle for geometry/buckling.';
+  render();
+}
+function populateSectionSelect(id, defaultName){
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  sel.innerHTML = SECTIONS.map(s=>`<option value="${esc(s.name)}"${s.name===defaultName?' selected':''}>${esc(s.name)}</option>`).join('');
+}
+
+// WIND ENGINE  (ASCE 7-22 Directional Design Method)
+const EXP = {
+  B:{coef:2.01, alpha:7.0,  zg:1200},
+  C:{coef:2.01, alpha:9.5,  zg:900},
+  D:{coef:2.01, alpha:11.5, zg:700}
+};
+function Kz(z, exp){ const e=EXP[exp]||EXP.C; return e.coef*Math.pow(Math.max(z, 15)/e.zg, 2/e.alpha); }
+function computeWind(d){
+  const kz = Kz(d.hc, d.exp);
+  const qz = 0.00256 * kz * d.Kzt * d.Ke * d.V * d.V;
+  const pUp = qz * d.Kd * d.gcpUp * d.eps * d.Iw;
+  const pLo = qz * d.Kd * d.gcpLo * d.eps * d.Iw;
+  return {kz, qz, pUp, pLo};
+}
+
+function beamMV(w, L, spans){
+  let mCoef = 0.125, vCoef = 0.500;
+  if(spans === 2){ mCoef = 0.125; vCoef = 0.625; }
+  else if(spans >= 3){ mCoef = 0.100; vCoef = 0.600; }
+  return {M: Math.abs(mCoef*w*L*L), V: Math.abs(vCoef*w*L)};
+}
+
+function analyzeFlexural(d, trib, L, sec, spans, dlPlf, windPlusPlf, windMinusPlf){
+  const qPlus  = dlPlf + 0.6*windPlusPlf;
+  const qMinus = 0.6*dlPlf + 0.6*windMinusPlf;
+  const mvPlus  = beamMV(qPlus, L, spans);
+  const mvMinus = beamMV(qMinus, L, spans);
+  const Mpos = mvPlus.M, Mneg = mvMinus.M;
+  const Vmax = Math.max(Math.abs(mvPlus.V), Math.abs(mvMinus.V));
+  const Mgov = Math.max(Math.abs(Mpos), Math.abs(Mneg));
+  const Mkipin = Mgov/1000*12;
+  const N = 0;
+  const Fb = (N/sec.A) + (Mkipin/sec.Sb);
+  const Ft = (N/sec.A) + (Mkipin/sec.St);
+  const Fv = (Vmax/1000)/sec.A;
+  return {qPlus, qMinus, Mpos:Mpos/1000, Mneg:Mneg/1000, Vmax:Vmax/1000, Vuplift:Math.abs(mvMinus.V)/1000, Fb, Ft, Fv};
+}
+
+function computeAll(d){
+  const wind = computeWind(d);
+  const v_dl=d.dl*d.v_trib, v_wUp=wind.pUp*d.v_trib, v_wLo=wind.pLo*d.v_trib;
+  const vert = analyzeFlexural(d, d.v_trib, d.v_len, d.v_sec, Math.max(1, Math.round(d.v_span)), v_dl, v_wUp, v_wLo);
+  vert.dl=v_dl; vert.wUp=v_wUp; vert.wLo=v_wLo;
+
+  const h_dl=d.dl*d.h_trib, h_wUp=wind.pUp*d.h_trib, h_wLo=wind.pLo*d.h_trib;
+  const horiz = analyzeFlexural(d, d.h_trib, d.h_len, d.h_sec, Math.max(1, Math.round(d.h_span)), h_dl, h_wUp, h_wLo);
+  horiz.dl=h_dl; horiz.wUp=h_wUp; horiz.wLo=h_wLo;
+
+  // SUPPORT ARM — reaction from canopy tributary AREA per arm: each arm carries (width / n_arms) x
+  // projection of the canopy. ASD combos: D+0.6W (down, gravity governs tension) vs 0.6W-0.6D (uplift -> compression).
+  const nArm = Math.max(1, Math.round(d.n_arms));
+  const tribArea = (d.total_len/nArm) * (d.depth_in/12);    // ft^2 carried by one arm
+  const q_down = d.dl + 0.6*Math.abs(wind.pUp);             // psf (gravity + downward wind)
+  const q_up   = 0.6*Math.abs(wind.pLo) - 0.6*d.dl;         // psf (net uplift)
+  const isCompression = q_up > q_down;                      // uplift governs -> arm compression
+  const Rv = Math.max(q_down, q_up) * tribArea;             // lb vertical reaction per arm
+  const axial = (Rv/1000) / Math.cos(d.s_angle*Math.PI/180);// kip
+  const Fc = axial / d.s_sec.A;
+  const weakI = d.s_sec.Iy ? Math.min(d.s_sec.I, d.s_sec.Iy) : d.s_sec.I;
+  const slender = Math.sqrt(weakI / d.s_sec.A);
+  const KLr = slender > 0 ? (1.0 * d.s_len * 12) / slender : 0;
+  const sAl = alloyFor(d.s_sec, d);
+  const Ey = 10100;
+  const Bc = sAl.Fty*(1 + Math.sqrt(sAl.Fty/2250));
+  const Dc = (Bc/10)*Math.sqrt(Bc/Ey);
+  const Cc = 0.41*Bc/Dc;
+  const Fcr = KLr <= Cc ? (Bc - Dc*KLr) : (Math.PI*Math.PI*Ey/(KLr*KLr));
+  const Fca = Fcr/1.65;
+  const strut = {tribArea, q_down, q_up, qGov:Math.max(q_down,q_up), Rv:Rv/1000, axial, Fc, isCompression, KLr, Bc, Dc, Cc, Fcr, Fca};
+
+  const Ab = Math.PI/4 * d.c1_d * d.c1_d;
+  const Rn = 0.45 * d.c1_fbu * Ab;
+  const Rt = 0.75 * d.c1_fbu * Ab;
+  
+  // Track continuous structural vector translations
+  const dynamicTensionPullout = isCompression ? Math.abs(strut.axial * 1000 * Math.sin(d.s_angle * Math.PI / 180)) : 0;
+
+  const c1 = {Ab, Rn, Rt, Vallow:Rn/d.c1_omega, Tallow:Rt/d.c1_omega, Vdem:Math.abs(strut.axial)*1000, Tdem: dynamicTensionPullout};
+  const c2 = {Vallow:d.c2_V, Tallow:d.c2_T, Vdem:Math.abs(vert.Vmax)*1000, Tdem: isCompression ? Math.abs(vert.Vuplift)*1000 : 0};
+
+  // ---- CANTILEVER (no-arm) back anchorage ----
+  const P = d.depth_in/12;                                   // projection (ft)
+  const qc_down = d.dl + 0.6*Math.abs(wind.pUp);             // psf gravity
+  const qc_up   = 0.6*Math.abs(wind.pLo) - 0.6*d.dl;         // psf net uplift
+  const cUplift = Math.abs(qc_up) > qc_down;
+  const qcGov = Math.max(qc_down, Math.abs(qc_up));          // psf governing
+  const sFt = Math.max(0.1, (d.anchor_spacing||24)/12);      // anchor spacing (ft)
+  const Vc_perft = qcGov * P;                                // lb/ft vertical shear at back
+  const Mc_perft = qcGov * P * P / 2;                        // lb*ft per ft cantilever moment
+  const jd = Math.max(1, d.anchor_jd||6);                    // in moment arm
+  const Vc_anchor = Vc_perft * sFt;                          // lb shear / anchor (trib = spacing)
+  const Mc_anchor = Mc_perft * sFt * 12;                     // lb*in moment / anchor trib
+  const Tc_anchor = Mc_anchor / jd;                          // lb tension / anchor (couple)
+  const nSpacing = Math.max(2, Math.ceil(d.total_len/sFt)+1);// suggested count from spacing
+  const canti = {P, q_down:qc_down, q_up:qc_up, qGov:qcGov, isUplift:cUplift,
+    sFt, Vc_perft, Mc_perft, jd, Vc_anchor, Mc_anchor, Tc_anchor, nSpacing};
+
+  let c3;
+  if(d.support_type==='cantilever'){
+    // Direct-bolt to concrete/CMU beam: shear = vertical reaction / anchor, tension = moment couple / anchor.
+    c3 = {Vallow:d.c3_V, Tallow:d.c3_T, Vdem:Vc_anchor, Tdem:Tc_anchor,
+      interaction:(Math.abs(Vc_anchor)/Math.max(1,d.c3_V))+(Math.abs(Tc_anchor)/Math.max(1,d.c3_T))};
+  } else {
+    // Angled wall bracket resolves the arm axial: shear = N*cos(theta), pull-out = N*sin(theta), per anchor.
+    const theta = d.s_angle*Math.PI/180;
+    c3 = {Vallow:d.c3_V, Tallow:d.c3_T,
+      Vdem: Math.abs(strut.axial)*1000*Math.cos(theta)/Math.max(1,d.c3_n),
+      Tdem: Math.abs(strut.axial)*1000*Math.sin(theta)/Math.max(1,d.c3_n)};
+  }
+
+  return {wind, vert, horiz, strut, canti, c1, c2, c3};
+}
+
+// FORM DATA CONFIGURATION BOUNDRIES
+const NUM = ['V','Kd','Ke','Kzt','Iw','Gf','eps','gcpUp','gcpLo','h','he','hc','dl',
+  'total_len','nSec','n_arms','depth_in','bolts_bracket','anchor_spacing','anchor_jd',
+  'v_trib','v_len','v_span','h_trib','h_len','h_span','s_len','s_angle',
+  'c1_n','c1_d','c1_omega','c1_fbu','c2_sp','c2_omega','c2_L','c2_V','c2_T',
+  'c3_n','c3_d','c3_L','c3_omega','c3_V','c3_T','fty','fsy','fu',
+  'cv_A','cv_I','cv_S','ch_A','ch_I','ch_S','cs_A','cs_I','cs_S'];
+const TXT = ['projNo','fileNo','project','client','product','rev','code','firm','engName','engLic',
+  'coaLabel','coa','web','risk','exp','c1_mat','c2_d','alloy','roof','support_type','substrate'];
+const SECSEL = ['v_sec','h_sec','s_sec'];
+
+function readForm(){
+  const d={};
+  NUM.forEach(k=>{ d[k]=parseFloat(document.getElementById('f_'+k).value)||0; });
+  TXT.forEach(k=>{ d[k]=document.getElementById('f_'+k).value; });
+  d.date=document.getElementById('f_date').value;
+  d.v_sec=memSec('f_v_sec', d.cv_A, d.cv_I, d.cv_S);
+  d.h_sec=memSec('f_h_sec', d.ch_A, d.ch_I, d.ch_S);
+  d.s_sec=memSec('f_s_sec', d.cs_A, d.cs_I, d.cs_S);
+  return d;
+}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(x,dp){return (x).toFixed(dp==null?2:dp);}
+function sgn(x,dp){const v=(x).toFixed(dp==null?2:dp); return (x>=0?'+':'')+v;}
+function fmtDateUpper(iso){
+  const d=iso?(()=> {const[y,m,dd]=iso.split('-');return new Date(+y,+m-1,+dd);})():new Date();
+  return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+}
+
+// FILE INTEGRITY RETRIEVAL MANAGEMENT
+function saveState(){
+  const state={version:'CANOPY-V1.1', timestamp:new Date().toISOString(), fields:{}, sections:{}};
+  NUM.concat(TXT).forEach(k=>{ const el=document.getElementById('f_'+k); if(el) state.fields[k]=el.value; });
+  state.fields.date=document.getElementById('f_date').value;
+  SECSEL.forEach(k=>{ state.sections[k]=document.getElementById('f_'+k).value; });
+  const slug=(state.fields.projNo||'canopy').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`canopy_${slug}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function loadState(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const s=JSON.parse(e.target.result);
+      if(s.fields){ Object.entries(s.fields).forEach(([k,v])=>{const el=document.getElementById('f_'+k); if(el)el.value=v;}); }
+      if(s.sections){ Object.entries(s.sections).forEach(([k,v])=>{const el=document.getElementById('f_'+k); if(el)el.value=v;}); }
+      applySupportType();
+      render();
+    }catch(err){ alert('Failed to parse load structure: '+err.message); }
+  };
+  r.readAsText(file);
+}
+
+// VECTOR GRAPHICS
+function boltPattern(cx, cy, n, colGap, rowGap, r){
+  const cols = n>=2 ? 2 : 1;
+  const rows = Math.ceil(n/cols);
+  let out='', placed=0;
+  const x0 = cx - (cols-1)*colGap/2;
+  const y0 = cy - (rows-1)*rowGap/2;
+  for(let rI=0;rI<rows;rI++){
+    for(let cI=0;cI<cols;cI++){
+      if(placed>=n) break;
+      out+=`<circle class="bolt" cx="${(x0+cI*colGap).toFixed(1)}" cy="${(y0+rI*rowGap).toFixed(1)}" r="${r}"/>`;
+      placed++;
+    }
+  }
+  return out;
+}
+
+function dimLine(x1,y,x2,label){
+  return `<line class="dl" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+    <line class="dl" x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+    <line class="dl" x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+    <text class="dtxt" x="${(x1+x2)/2}" y="${y-5}" text-anchor="middle">${label}</text>`;
+}
+
+function elevationSVG(d){
+  const W=720, H=276;
+  const L=80, Rr=662, drawW=Rr-L;
+  const top=82, bot=168;
+  const nSec=Math.max(1, Math.round(d.nSec));
+  const nArm=Math.max(1, Math.round(d.n_arms));
+  const bpb=Math.max(1, Math.round(d.bolts_bracket));
+  const secLenFt = d.total_len/nSec;
+  let s='';
+  // perimeter = gutter fascia
+  s+=`<rect class="alum" x="${L}" y="${top}" width="${drawW}" height="${bot-top}" rx="2"/>`;
+  // roof pans
+  for(let i=1;i<=8;i++){ const y=top+(bot-top)*i/9; s+=`<line class="slat" x1="${L+8}" y1="${y}" x2="${Rr-8}" y2="${y}"/>`; }
+  // interior dividers = intermediate frames (nSec-1)
+  for(let i=1;i<nSec;i++){ const x=L+drawW*i/nSec; s+=`<line class="post" x1="${x.toFixed(1)}" y1="${top}" x2="${x.toFixed(1)}" y2="${bot}"/>`; }
+  // support arms + wall brackets (independent of sections)
+  const armXs=[];
+  if(nArm===1){ armXs.push(L+drawW/2); }
+  else { const m=drawW*0.10; for(let i=0;i<nArm;i++) armXs.push(L+m+(drawW-2*m)*i/(nArm-1)); }
+  armXs.forEach(x=>{
+    s+=`<line class="strut" x1="${(x-24).toFixed(1)}" y1="38" x2="${x.toFixed(1)}" y2="${top}"/>`;
+    const pw=14, ph=18, px=Math.min(Math.max(x-24-pw/2,2),W-pw-2);
+    s+=`<rect class="plate" x="${px.toFixed(1)}" y="26" width="${pw}" height="${ph}" rx="1.5"/>`;
+    s+=boltPattern(px+pw/2, 35, bpb, 5, 5, 1.6);
+  });
+  // dimensions
+  s+=dimLine(L, 188, Rr, `Overall length = ${num(d.total_len,1)} ft`);
+  for(let i=0;i<nSec;i++){ s+=dimLine(L+drawW*i/nSec, 208, L+drawW*(i+1)/nSec, `${num(secLenFt,2)} ft`); }
+  // member labels
+  s+=`<text class="dtxt sm" x="${(armXs[0]-24).toFixed(1)}" y="16" text-anchor="middle" fill="#b1322a">support arm → wall bracket (×${bpb})</text>`;
+  s+=`<text class="dtxt sm" x="${Rr}" y="${top-5}" text-anchor="end" fill="#1a5c4c">gutter fascia (perimeter)</text>`;
+  s+=`<text class="dtxt sm" x="${(L+drawW*0.72).toFixed(1)}" y="${((top+bot)/2).toFixed(1)}" text-anchor="middle" fill="#5c7a70">roof pan</text>`;
+  // legend / member key
+  s+=`<text class="dtxt sm" x="${L}" y="232" fill="#234">${nSec} roof sections @ ${num(secLenFt,2)} ft · ${nArm} support arms · wall anchors = ${nArm}×${bpb} = ${nArm*bpb}</text>`;
+  s+=`<text class="dtxt sm" x="${L}" y="248" fill="#234">interior lines = intermediate frame(s) (HSS 2×2) · perimeter = gutter fascia · ╱ = support arm</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+
+function sideSVG(d){
+  const W=320, H=280;
+  const wallX=46, wallTop=20, wallBot=250;
+  const bpb=Math.max(1,Math.round(d.bolts_bracket));
+  let s='';
+  s+=`<rect class="wall" x="26" y="${wallTop}" width="${wallX-26}" height="${wallBot-wallTop}"/>`;
+  const pxPerIn = Math.min(7, 170/Math.max(d.depth_in,1));
+  const depthPx = Math.min(180, d.depth_in*pxPerIn);
+  const deckY=165, xEnd=wallX+depthPx;
+  s+=`<rect class="alum" x="${wallX}" y="${deckY-5}" width="${depthPx}" height="10" rx="1.5"/>`;
+  for(let i=1;i<=3;i++){ const lx=wallX+depthPx*i/4; s+=`<line class="slat" x1="${lx-7}" y1="${deckY+4}" x2="${lx+7}" y2="${deckY-4}" stroke-width="2"/>`; }
+  s+=`<line class="post" x1="${xEnd.toFixed(1)}" y1="${deckY-14}" x2="${xEnd.toFixed(1)}" y2="${deckY+10}"/>`;
+  const aRad=d.s_angle*Math.PI/180;
+  const rise = Math.min(deckY-wallTop-12, depthPx / Math.tan(aRad));
+  const armTopY = deckY - rise;
+  const tipY = deckY - 6;
+  s+=`<line class="strut" x1="${wallX}" y1="${armTopY.toFixed(1)}" x2="${xEnd.toFixed(1)}" y2="${tipY.toFixed(1)}"/>`;
+  s+=`<text class="dtxt sm" x="${((wallX+xEnd)/2-18).toFixed(1)}" y="${((armTopY+tipY)/2-4).toFixed(1)}" fill="#b1322a">support arm ${num(d.s_len,1)} ft</text>`;
+  s+=`<rect class="plate" x="${wallX-10}" y="${(armTopY-16).toFixed(1)}" width="14" height="32" rx="1.5"/>`;
+  s+=boltPattern(wallX-3, armTopY, bpb, 6, 8, 1.8);
+  s+=`<text class="dtxt sm" x="${wallX+3}" y="${(armTopY-20).toFixed(1)}" fill="#46524e">wall bracket (×${bpb})</text>`;
+  s+=`<circle class="bolt" cx="${xEnd.toFixed(1)}" cy="${tipY.toFixed(1)}" r="2.4"/>`;
+  s+=`<text class="dtxt sm" x="${(xEnd-4).toFixed(1)}" y="${(deckY-15).toFixed(1)}" text-anchor="end" fill="#1a5c4c">gutter fascia</text>`;
+  s+=`<text class="dtxt sm" x="${(wallX+depthPx/2).toFixed(1)}" y="${(deckY+21).toFixed(1)}" text-anchor="middle" fill="#5c7a70">roof pan</text>`;
+  s+=`<text class="dtxt sm" x="${wallX+6}" y="${(armTopY+14).toFixed(1)}" fill="#b1322a">${num(d.s_angle,0)}° from vert</text>`;
+  s+=dimLine(wallX, deckY+34, xEnd, `${num(d.depth_in,0)}" projection`);
+  s+=`<text class="dtxt sm" x="10" y="${(wallTop+wallBot)/2}" fill="#555" transform="rotate(-90 14 ${(wallTop+wallBot)/2})">WALL</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+
+function elevationCanti(d){
+  const W=720,H=300, L=80,Rr=662,drawW=Rr-L;
+  const beamTop=20,beamBot=52, top=58,bot=150;
+  const nSec=Math.max(1,Math.round(d.nSec));
+  const sFt=Math.max(0.1,(d.anchor_spacing||24)/12);
+  const nB=Math.max(2,Math.ceil(d.total_len/sFt)+1);
+  const secLenFt=d.total_len/nSec;
+  let s='';
+  s+=`<rect class="wall" x="${L}" y="${beamTop}" width="${drawW}" height="${beamBot-beamTop}"/>`;
+  s+=`<text class="dtxt sm" x="${L+4}" y="${beamTop+13}" fill="#5c5955">CONCRETE / CMU BEAM (by others)</text>`;
+  for(let i=0;i<nB;i++){ const x=L+(nB>1?drawW*i/(nB-1):drawW/2); s+=`<circle class="bolt" cx="${x.toFixed(1)}" cy="${(beamBot-8).toFixed(1)}" r="2.2"/>`; }
+  s+=`<rect class="alum" x="${L}" y="${top}" width="${drawW}" height="${bot-top}" rx="2"/>`;
+  for(let i=1;i<=6;i++){ const y=top+(bot-top)*i/7; s+=`<line class="slat" x1="${L+8}" y1="${y}" x2="${Rr-8}" y2="${y}"/>`; }
+  for(let i=1;i<nSec;i++){ const x=L+drawW*i/nSec; s+=`<line class="post" x1="${x.toFixed(1)}" y1="${top}" x2="${x.toFixed(1)}" y2="${bot}"/>`; }
+  s+=dimLine(L,170,Rr,`Overall length = ${num(d.total_len,1)} ft`);
+  for(let i=0;i<nSec;i++){ s+=dimLine(L+drawW*i/nSec,190,L+drawW*(i+1)/nSec,`${num(secLenFt,2)} ft`); }
+  s+=`<text class="dtxt sm" x="${L}" y="214" fill="#b1322a">${nB} × ${num(d.c3_d,3)}" wedge bolts @ ${num(d.anchor_spacing,0)}" O.C. into ${esc(d.substrate==='masonry'?'grout-filled CMU':'concrete')} beam</text>`;
+  s+=`<text class="dtxt sm" x="${L}" y="230" fill="#234">${nSec} roof section(s) @ ${num(secLenFt,2)} ft · 8"×4" gutter fascia · no support arm (cantilever)</text>`;
+  s+=`<text class="dtxt sm" x="${Rr}" y="${top-4}" text-anchor="end" fill="#1a5c4c">gutter fascia (back, bolted to beam)</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+function sideCanti(d){
+  const W=320,H=300, beamTop=20,beamBot=250,beamFace=70;
+  let s='';
+  s+=`<rect class="wall" x="26" y="${beamTop}" width="${beamFace-26}" height="${beamBot-beamTop}"/>`;
+  s+=`<text class="dtxt sm" x="12" y="${(beamTop+beamBot)/2}" fill="#555" transform="rotate(-90 16 ${(beamTop+beamBot)/2})">CONCRETE / CMU BEAM</text>`;
+  const pxPerIn=Math.min(7,170/Math.max(d.depth_in,1));
+  const depthPx=Math.min(180,d.depth_in*pxPerIn);
+  const deckY=150,xEnd=beamFace+depthPx;
+  const fasciaH=44, fy0=deckY-fasciaH+8;
+  s+=`<rect class="alum" x="${beamFace}" y="${fy0}" width="14" height="${fasciaH}"/>`;
+  s+=`<line class="dl" x1="${beamFace}" y1="${fy0+8}" x2="${beamFace-30}" y2="${fy0+8}" stroke-width="2.2"/>`;
+  s+=`<circle class="bolt" cx="${beamFace-30}" cy="${fy0+8}" r="2.4"/>`;
+  s+=`<line class="dl" x1="${beamFace}" y1="${fy0+fasciaH-10}" x2="${beamFace-30}" y2="${fy0+fasciaH-10}" stroke-width="2.2"/>`;
+  s+=`<circle class="bolt" cx="${beamFace-30}" cy="${fy0+fasciaH-10}" r="2.4"/>`;
+  s+=`<text class="dtxt sm" x="${beamFace-34}" y="${fy0+4}" text-anchor="end" fill="#b1322a">wedge bolt (T)</text>`;
+  s+=`<rect class="alum" x="${beamFace+14}" y="${deckY-5}" width="${depthPx-14}" height="10" rx="1.5"/>`;
+  for(let i=1;i<=3;i++){ const lx=beamFace+depthPx*i/4; s+=`<line class="slat" x1="${lx-7}" y1="${deckY+4}" x2="${lx+7}" y2="${deckY-4}" stroke-width="2"/>`; }
+  const armTopY=Math.max(beamTop+20, fy0-40);
+  s+=`<line class="strut" x1="${beamFace}" y1="${armTopY.toFixed(1)}" x2="${(beamFace+depthPx*0.55).toFixed(1)}" y2="${(deckY-6).toFixed(1)}"/>`;
+  s+=`<text class="dtxt sm" x="${(beamFace+depthPx*0.28).toFixed(1)}" y="${(armTopY+(deckY-armTopY)*0.42-3).toFixed(1)}" fill="#b1322a">2"×2" tie-back arm</text>`;
+  s+=`<circle class="bolt" cx="${beamFace}" cy="${armTopY.toFixed(1)}" r="2.2"/>`;
+  s+=`<line class="dl" x1="${beamFace-46}" y1="${fy0+8}" x2="${beamFace-46}" y2="${fy0+fasciaH-10}"/>`;
+  s+=`<text class="dtxt sm" x="${beamFace-50}" y="${(fy0+fasciaH/2).toFixed(1)}" text-anchor="end" fill="#234">j·d</text>`;
+  s+=dimLine(beamFace,deckY+34,xEnd,`${num(d.depth_in,0)}" projection`);
+  s+=`<text class="dtxt sm" x="${(xEnd-4).toFixed(1)}" y="${(deckY-12).toFixed(1)}" text-anchor="end" fill="#1a5c4c">gutter fascia</text>`;
+  s+=`<text class="dtxt sm" x="${(beamFace+depthPx/2).toFixed(1)}" y="${(deckY+20).toFixed(1)}" text-anchor="middle" fill="#5c7a70">roof pan</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+function elevPick(d){ return d.support_type==='cantilever'?elevationCanti(d):elevationSVG(d); }
+function sidePick(d){ return d.support_type==='cantilever'?sideCanti(d):sideSVG(d); }
+
+// PRINT DESIGN SCHEMATICS
+function footer(d, pageNo){
+  return `<div class="page-footer">
+    <div class="footer-text">
+      <div class="left">
+        <div>${esc(d.project)}</div>
+        <div>${esc(d.product)}</div>
+        <div>Project No. ${esc(d.projNo)} · File ${esc(d.fileNo)}</div>
+      </div>
+      <div class="right">
+        <div><strong>${esc(d.firm)}</strong></div>
+        <div>${esc(d.coaLabel)} ${esc(d.coa)}</div>
+        <div>${esc(d.web)}</div>
+      </div>
+    </div>
+    <div class="footer-disc">Generated with windcalculations.com — educational / practice tool. NOT a signed &amp; sealed engineering document. No liability assumed.</div>
+    <div class="swoosh"></div>
+    <div class="pageno">Page [${pageNo}]</div>
+  </div>`;
+}
+function checkLine(label, demand, dunit, allowable, aunit, demDisp, allowDisp){
+  const ok = Math.abs(demand) <= Math.abs(allowable) + 1e-9;
+  return `<div class="check-line">
+    <span class="formula">${label}: <strong>${demDisp}</strong> ${dunit} &nbsp;&lt;&nbsp; ${allowDisp} ${aunit}</span>
+    <span class="verdict ${ok?'pass':'fail'}">${ok?'[Satisfactory]':'[CHECK]'}</span>
+  </div>`;
+}
+
+function render(){
+  const d=readForm();
+  if(!d.V||!d.hc){ document.getElementById('report').innerHTML='<div class="empty-state">Enter wind speed and canopy height to render.</div>'; return; }
+  const R=computeAll(d);
+  const w=R.wind;
+
+  document.getElementById('vizElev').innerHTML=elevPick(d);
+  document.getElementById('vizSide').innerHTML=sidePick(d);
+  const secLenFt=d.total_len/Math.max(1,Math.round(d.nSec));
+  document.getElementById('vizReadout').innerHTML=
+    `<span>Overall: <b>${num(d.total_len,1)} ft</b></span>`+
+    `<span>Sections: <b>${Math.round(d.nSec)} @ ${num(secLenFt,2)} ft</b></span>`+
+    `<span>Support arms: <b>${Math.round(d.n_arms)}</b></span>`+
+    `<span>Bolts/bracket: <b>${Math.round(d.bolts_bracket)}</b></span>`+
+    `<span>Wall anchors: <b>${Math.round(d.n_arms)*Math.round(d.bolts_bracket)}</b></span>`+
+    `<span>Projection: <b>${num(d.depth_in,0)} in</b></span>`+
+    `<span>Strut angle: <b>${num(d.s_angle,0)}°</b></span>`;
+
+  document.getElementById('liveResult').innerHTML =
+    `<strong>Kz</strong>=${num(w.kz,3)} · <strong>qz</strong>=${num(w.qz,2)} psf · net <strong>+${num(w.pUp,1)}</strong>/<strong>${num(w.pLo,1)}</strong> psf<br>`+
+    `Vert M=${num(Math.max(Math.abs(R.vert.Mpos),Math.abs(R.vert.Mneg)),3)} k·ft, Fb=${num(R.vert.Fb,2)} · `+
+    `Horiz M=${num(Math.max(Math.abs(R.horiz.Mpos),Math.abs(R.horiz.Mneg)),3)} k·ft, Fb=${num(R.horiz.Fb,2)}<br>`+
+    `Strut N=${num(R.strut.axial,2)} k, Fc=${num(R.strut.Fc,2)} ksi`;
+  const wb=document.getElementById('warnBanner');
+  const blankSecs=[d.v_sec,d.h_sec,d.s_sec].some(x=>x&&x.blank);
+  if(blankSecs){ wb.classList.add('active'); wb.innerHTML='<strong>⚠ Missing section properties:</strong> a member uses a Custom/EMS section with blank A/I/S — enter values in the Custom / EMS panel. That member uses a 0.01 placeholder and its result is invalid.'; }
+  else if(d.h>60){ wb.classList.add('active'); wb.innerHTML='<strong>Note:</strong> building height h &gt; 60 ft — confirm the canopy wind method is appropriate for this elevation before sealing.'; }
+  else { wb.classList.remove('active'); wb.innerHTML=''; }
+
+  const date=fmtDateUpper(d.date);
+  const Fcy=d.fty, allowFb=0.75*Fcy, allowFv=0.6*d.fsy;
+
+  const p1=`<div class="report-page">
+    <div class="cover-band"><div class="title">STRUCTURAL&nbsp; REPORT</div><div class="sub">CALCULATION</div></div>
+    <div class="cover-meta"><strong>${date}</strong><br>Revision: ${esc(d.rev)}</div>
+    <table class="cover-table">
+      <tr><td>Client:</td><td>${esc(d.client)}</td></tr>
+      <tr><td>Project:</td><td>${esc(d.project)}</td></tr>
+      <tr><td>Engineer File No:</td><td>${esc(d.fileNo)} &nbsp;&nbsp;&nbsp; Project Number: ${esc(d.projNo)}</td></tr>
+    </table>
+    <div class="cover-products"><span class="lbl">PRODUCTS DESIGNED:</span><br>${esc(d.product)}</div>
+    <div class="cover-code">Code Reference: ${esc(d.code)}</div>
+    <div class="cover-disclaimer"><strong>DISCLAIMER:</strong> This report was produced with windcalculations.com, a free educational / practice tool. It is <strong>NOT</strong> a signed or sealed engineering document, has <strong>NOT</strong> been reviewed by a licensed professional engineer, and must <strong>NOT</strong> be used for permitting, fabrication, or construction. No representation or warranty is made regarding accuracy or code compliance. windcalculations.com and its authors assume <strong>no liability</strong> for any use of this tool or its output. Always engage a licensed PE to verify and seal any design.</div>
+    ${footer(d,'')}
+  </div>`;
+
+  const p2=`<div class="report-page">
+    <h3 style="margin-top:0;">DESIGN CRITERIA:</h3>
+    <p>${esc(d.code)}</p>
+    <h3>OVERVIEW &amp; CONFIGURATION:</h3>
+    <div class="fig-row">
+      <div class="fig">${elevPick(d)}<div class="cap">${d.support_type==='cantilever'?'Direct-Bolt Cantilever Canopy — Elevation View':'Rectangular Aluminum Open Style Sunshade — Elevation View'}</div></div>
+      <div class="fig">${sidePick(d)}<div class="cap">Side Section View</div></div>
+    </div>
+    <table class="data-grid">
+      <tr><td class="lbl">Overall length</td><td class="eq">=</td><td class="val">${num(d.total_len,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Sections</td><td class="eq">=</td><td class="val">${Math.round(d.nSec)} @ ${num(secLenFt,2)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Canopy projection</td><td class="eq">=</td><td class="val">${num(d.depth_in,0)}</td><td class="unit">in</td></tr>
+      ${d.support_type==='cantilever'
+        ? `<tr><td class="lbl">Support type</td><td class="eq">=</td><td class="val">Cantilever</td><td class="unit">no arm</td></tr>
+           <tr><td class="lbl">Back anchors</td><td class="eq">=</td><td class="val">${R.canti.nSpacing}</td><td class="unit">ea (${num(d.c3_d,3)}" ⌀ @ ${num(d.anchor_spacing,0)}" O.C.)</td></tr>
+           <tr><td class="lbl">Substrate</td><td class="eq">=</td><td class="val">${esc(d.substrate==='masonry'?'Grout-filled CMU':'Concrete')}</td><td class="unit"></td></tr>
+           <tr><td class="lbl">Tie-back arms</td><td class="eq">=</td><td class="val">${Math.round(d.n_arms)}</td><td class="unit">ea (2"×2")</td></tr>`
+        : `<tr><td class="lbl">Support arms / wall brackets</td><td class="eq">=</td><td class="val">${Math.round(d.n_arms)}</td><td class="unit">ea</td></tr>
+           <tr><td class="lbl">Bolts per wall bracket</td><td class="eq">=</td><td class="val">${Math.round(d.bolts_bracket)}</td><td class="unit">ea (${num(d.c3_d,3)}" ⌀)</td></tr>
+           <tr><td class="lbl">Support arm angle</td><td class="eq">=</td><td class="val">${num(d.s_angle,0)}</td><td class="unit">° from vert</td></tr>`}
+    </table>
+
+    <h3>MATERIAL DATA:</h3>
+    <table class="data-grid">
+      <tr><td class="group">Aluminium:</td><td colspan="4" class="grade">${esc(d.alloy)}</td></tr>
+      <tr><td class="lbl">Tensile strength</td><td class="sym">f<sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.fu,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Yield strength</td><td class="sym">f<sub>ty</sub>=f<sub>cy</sub></td><td class="eq">=</td><td class="val">${num(d.fty,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Shear yield strength</td><td class="sym">f<sub>sy</sub></td><td class="eq">=</td><td class="val">${num(d.fsy,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Modulus of elasticity</td><td class="sym">E<sub>y</sub></td><td class="eq">=</td><td class="val">10100</td><td class="unit">ksi</td></tr>
+    </table>
+    ${footer(d,'1')}
+  </div>`;
+
+  const p3=`<div class="report-page">
+    <h2 class="center" style="border:none;background:#dcd6c3;padding:0.3rem;">TABLE OF CONTENTS</h2>
+    <div style="text-align:right;font-style:italic;color:#555;">Page</div>
+    <div class="toc-line"><span>1. Aluminum Sunshade — Wind Loading</span><span>3</span></div>
+    <div class="toc-line"><span>1.2 Result of Analysis (${d.support_type==='cantilever'?'Frames / Back Anchorage / Tie-Back':'Vertical / Horizontal / Strut'})</span><span>4</span></div>
+    <div class="toc-line"><span>1.3 Connection Design</span><span>5</span></div>
+    ${footer(d,'2')}
+  </div>`;
+
+  const p4=`<div class="report-page">
+    <h3 style="margin-top:0;">1. Aluminum Sunshade</h3>
+    <h4 style="color:var(--green);">1.1. Wind loading</h4>
+    <p class="note">In accordance with ASCE 7-22 (incl. Errata 1 &amp; 2), directional design method.</p>
+    <table class="data-grid">
+      <tr><td class="group" colspan="5">General wind load requirements</td></tr>
+      <tr><td class="lbl">Type of roof</td><td class="sym"></td><td class="eq"></td><td class="val">Canopies</td><td></td></tr>
+      <tr><td class="lbl">Mean building roof height</td><td class="sym">h</td><td class="eq">=</td><td class="val">${num(d.h,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Mean eave height</td><td class="sym">h<sub>e</sub></td><td class="eq">=</td><td class="val">${num(d.he,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Mean canopy height</td><td class="sym">h<sub>c</sub></td><td class="eq">=</td><td class="val">${num(d.hc,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Basic wind speed</td><td class="sym">V</td><td class="eq">=</td><td class="val">${num(d.V,1)}</td><td class="unit">mph</td></tr>
+      <tr><td class="lbl">Directionality (Table 26.6-1)</td><td class="sym">K<sub>d</sub></td><td class="eq">=</td><td class="val">${num(d.Kd,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Ground elevation (Table 26.9-1)</td><td class="sym">K<sub>e</sub></td><td class="eq">=</td><td class="val">${num(d.Ke,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Exposure category (26.7.3)</td><td class="sym"></td><td class="eq"></td><td class="val">${esc(d.exp)}</td><td></td></tr>
+      <tr><td class="lbl">Enclosure (26.10)</td><td class="sym"></td><td class="eq"></td><td class="val">Open</td><td></td></tr>
+      <tr><td class="lbl">Gust effect factor (26.11-10)</td><td class="sym">G<sub>f</sub></td><td class="eq">=</td><td class="val">${num(d.Gf,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Wind importance factor</td><td class="sym">I<sub>w</sub></td><td class="eq">=</td><td class="val">${num(d.Iw,2)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Ratio solid/gross area</td><td class="sym">&epsilon;</td><td class="eq">=</td><td class="val">${num(d.eps*100,0)}</td><td class="unit">%</td></tr>
+      <tr><td class="lbl">Topography factor</td><td class="sym">K<sub>zt</sub></td><td class="eq">=</td><td class="val">${num(d.Kzt,2)}</td><td class="unit"></td></tr>
+    </table>
+    <p style="font-family:var(--font-mono);font-size:9.5pt;">Peak velocity pressure at height z: &nbsp; q<sub>z</sub> = 0.00256 · K<sub>z</sub> · K<sub>zt</sub> · K<sub>e</sub> · V²</p>
+    <table class="calc-table">
+      <thead><tr><th>z (ft)</th><th>K<sub>z</sub> (Table 26.10-1)</th><th>q<sub>z</sub> (psf)</th></tr></thead>
+      <tbody><tr><td>${num(d.hc,1)}</td><td>${num(w.kz,2)}</td><td>${num(w.qz,2)}</td></tr></tbody>
+    </table>
+    <h4 style="color:var(--green);">Pressures and forces</h4>
+    <p style="font-family:var(--font-mono);font-size:9.5pt;">Net pressure: &nbsp; p = q<sub>z</sub> · K<sub>d</sub> · (GC<sub>p</sub>) · &epsilon; · I<sub>w</sub></p>
+    <table class="calc-table">
+      <thead><tr><th>Zone (net on roof)</th><th>GC<sub>p</sub></th><th>p·&epsilon; (psf)</th></tr></thead>
+      <tbody>
+        <tr><td class="left">Upper surface</td><td>${sgn(d.gcpUp,2)}</td><td>${sgn(w.pUp,1)}</td></tr>
+        <tr><td class="left">Lower surface</td><td>${sgn(d.gcpLo,2)}</td><td>${sgn(w.pLo,1)}</td></tr>
+      </tbody>
+    </table>
+    <p class="note">"Upr &amp; Lwr Surf" considers simultaneous contribution from both upper and lower surfaces.</p>
+    ${footer(d,'3')}
+  </div>`;
+
+  function memberBlock(title, m, sec, trib, L, isStrut, spans){
+    const al = alloyFor(sec, d);
+    const allowFb = 0.75*al.Fty;
+    const allowFv = 0.6*al.Fsy;
+    const sImin = sec.Iy ? Math.min(sec.I, sec.Iy) : sec.I;
+    const blankWarn = sec.blank ? ` <span style="color:#c0392b;font-weight:700;">⚠ A/I/S not entered — placeholder used, result invalid</span>` : '';
+    const secLine = (isStrut
+      ? `${sec.name} → A=${num(sec.A,2)} in², I<sub>min</sub>=${num(sImin,2)} in⁴ (weak axis), S=${num(sec.Sb,2)} in³, t=${sec.t}, H=${num(sec.H,2)} in`
+      : `${sec.name} → A=${num(sec.A,2)} in², I=${num(sec.I,2)} in⁴, S<sub>b</sub>=${num(sec.Sb,2)} in³, S<sub>t</sub>=${num(sec.St,2)} in³, t=${sec.t}, H=${num(sec.H,2)} in`) + blankWarn;
+    let loadRows, checks;
+    if(isStrut){
+      loadRows=`
+        <tr><td class="l">Arm length</td><td class="v">${num(L,1)}</td><td class="u">ft</td></tr>
+        <tr><td class="l">Trib. area / arm</td><td class="v">${num(m.tribArea,1)}</td><td class="u">ft²</td></tr>
+        <tr><td class="l">D + 0.6W (down)</td><td class="v">${num(m.q_down,1)}</td><td class="u">psf</td></tr>
+        <tr><td class="l">0.6W − 0.6D (uplift)</td><td class="v">${num(m.q_up,1)}</td><td class="u">psf</td></tr>
+        <tr class="hl"><td class="l">Vert. reaction R<sub>v</sub> (gov)</td><td class="v">${num(m.Rv,3)}</td><td class="u">kip</td></tr>
+        <tr class="hl"><td class="l">Axial (R<sub>v</sub>/cos α)</td><td class="v">${num(m.axial,2)}</td><td class="u">kip</td></tr>`;
+      if(!m.isCompression){
+        checks=checkLine(`F<sub>t</sub> = N/A = ${num(m.Fc,1)} <span style="color:#b1322a;">(tension)</span>`, m.Fc, 'ksi', allowFb, 'ksi', num(m.Fc,1), `0.75 F<sub>ty</sub> = ${num(allowFb,1)}`);
+      } else {
+        const govAllow = Math.min(allowFb, m.Fca);
+        checks=checkLine(`F<sub>c</sub> = N/A = ${num(m.Fc,1)} <span style="color:#b1322a;">(compression)</span>`, m.Fc, 'ksi', govAllow, 'ksi', num(m.Fc,1), `min(0.75F<sub>cy</sub>=${num(allowFb,1)}, F<sub>ca</sub>=${num(m.Fca,1)}) = ${num(govAllow,1)}`);
+        checks+=`<div class="note">ADM-I Ch. E column buckling (K=1, weak axis): KL/r=${num(m.KLr,0)}, C<sub>c</sub>=${num(m.Cc,0)}, B<sub>c</sub>=${num(m.Bc,1)}, D<sub>c</sub>=${num(m.Dc,3)} → F<sub>cr</sub>=${num(m.Fcr,1)} ksi, F<sub>ca</sub>=F<sub>cr</sub>/1.65=${num(m.Fca,1)} ksi (${m.KLr>m.Cc?'elastic / Euler':'inelastic'} range). Buckling ${m.Fca<allowFb?'<strong>governs</strong>':'does not govern'}.</div>`;
+      }
+    } else {
+      loadRows=`
+        <tr><td class="l">Length of beam</td><td class="v">${num(L,1)}</td><td class="u">ft</td></tr>
+        <tr><td class="l">Spans</td><td class="v">${spans}</td><td class="u">${spans>1?'continuous':'simple'}</td></tr>
+        <tr><td class="l">Trib_Canopy</td><td class="v">${num(trib,1)}</td><td class="u">ft</td></tr>
+        <tr><td class="l">DL</td><td class="v">${num(m.dl,1)}</td><td class="u">plf</td></tr>
+        <tr><td class="l">Wind+</td><td class="v">${num(m.wUp,1)}</td><td class="u">plf</td></tr>
+        <tr><td class="l">Wind−</td><td class="v">${num(m.wLo,1)}</td><td class="u">plf</td></tr>
+        <tr><td class="l">Uniform q+</td><td class="v">${num(m.qPlus,1)}</td><td class="u">lbs/ft</td></tr>
+        <tr><td class="l">Uniform q−</td><td class="v">${num(m.qMinus,1)}</td><td class="u">lbs/ft</td></tr>
+        <tr class="hl"><td class="l">Moment+</td><td class="v">${num(m.Mpos,3)}</td><td class="u">kip·ft</td></tr>
+        <tr class="hl"><td class="l">Moment−</td><td class="v">${num(m.Mneg,3)}</td><td class="u">kip·ft</td></tr>
+        <tr class="hl"><td class="l">Shear</td><td class="v">${num(m.Vmax,3)}</td><td class="u">kip</td></tr>`;
+      checks=
+        checkLine(`F<sub>b</sub> = M/S<sub>b</sub> = ${num(m.Fb,1)}`, m.Fb, 'ksi', allowFb, 'ksi', num(m.Fb,1), `0.75 F<sub>cy</sub> = ${num(allowFb,1)}`)+
+        checkLine(`F<sub>t</sub> = M/S<sub>t</sub> = ${num(m.Ft,1)}`, m.Ft, 'ksi', allowFb, 'ksi', num(m.Ft,1), `0.75 F<sub>ty</sub> = ${num(allowFb,1)}`)+
+        checkLine(`F<sub>v</sub> = V/A = ${num(m.Fv,2)}`, m.Fv, 'ksi', allowFv, 'ksi', num(m.Fv,2), `0.6 F<sub>sy</sub> = ${num(allowFv,1)}`);
+      if(spans>1){ checks += `<div class="note">Continuous beam: ${spans}-span ACI-style coefficients (equal spans, uniform load) — M = ${spans>=3?'wL²/10':'wL²/8'}, V = ${spans>=3?'0.60':'0.625'}·wL.</div>`; }
+    }
+    return `<div class="member-block"><h4>${title}</h4>
+      <div class="twocol">
+        <div><div class="panel-label">Calculation of loads</div><table class="ld-table">${loadRows}</table></div>
+        <div>
+          <div class="panel-label" style="background:#234;">Load: DL + 0.6W / 0.6DL + 0.6W</div>
+          <div class="section-props">${secLine}</div>
+          <div class="note" style="margin:0.2rem 0;">F<sub>ty</sub>=F<sub>cy</sub>=${num(al.Fty,0)} ksi (${al.label}) · F<sub>sy</sub>=${num(al.Fsy,0)} ksi <span class="hint">— auto from section alloy</span></div>
+        </div>
+      </div>
+      <div class="note">Check section capacities (ADM-I F.8; ADM-I G.2):</div>
+      ${checks}</div>`;
+  }
+  function cantiBlock(d,R){
+    const m=R.canti, c3=R.c3;
+    const sub = d.substrate==='masonry'?'grout-filled CMU':'concrete';
+    const intOK = c3.interaction<=1+1e-9;
+    return `<div class="member-block"><h4>1.2.3 — Back anchorage (direct-bolt cantilever)</h4>
+      <p class="note">No support arm. The canopy cantilevers off the back gutter fascia, which bolts directly to the ${esc(sub)} beam. Wind &amp; dead on the projection generate a cantilever moment at the back, resisted by a tension / bearing couple across the anchor row, plus vertical shear shared by the anchors.</p>
+      <div class="twocol">
+        <div><div class="panel-label">Cantilever demand (per anchor trib.)</div><table class="ld-table">
+          <tr><td class="l">Projection P</td><td class="v">${num(m.P,2)}</td><td class="u">ft</td></tr>
+          <tr><td class="l">D + 0.6W (down)</td><td class="v">${num(m.q_down,1)}</td><td class="u">psf</td></tr>
+          <tr><td class="l">0.6W − 0.6D (uplift)</td><td class="v">${num(m.q_up,1)}</td><td class="u">psf</td></tr>
+          <tr><td class="l">Governing q (${m.isUplift?'uplift':'gravity'})</td><td class="v">${num(m.qGov,1)}</td><td class="u">psf</td></tr>
+          <tr><td class="l">Anchor spacing s</td><td class="v">${num(d.anchor_spacing,0)}</td><td class="u">in O.C.</td></tr>
+          <tr><td class="l">Shear/anchor V = q·P·s</td><td class="v">${num(m.Vc_anchor,0)}</td><td class="u">lb</td></tr>
+          <tr><td class="l">Moment/anchor M = q·P²/2·s</td><td class="v">${num(m.Mc_anchor,0)}</td><td class="u">lb·in</td></tr>
+          <tr><td class="l">Moment arm j·d</td><td class="v">${num(m.jd,2)}</td><td class="u">in</td></tr>
+          <tr class="hl"><td class="l">Tension/anchor T = M/(j·d)</td><td class="v">${num(m.Tc_anchor,0)}</td><td class="u">lb</td></tr>
+        </table></div>
+        <div>
+          <div class="panel-label" style="background:#234;">Anchor capacity (ASD)</div>
+          <div class="section-props">${num(d.c3_d,3)}" ⌀ wedge bolt · embed ${num(d.c3_L,2)}" · ${esc(sub)}<br>Allow V=${num(d.c3_V,0)} lb · Allow T=${num(d.c3_T,0)} lb</div>
+          <div class="note" style="margin:0.2rem 0;">Suggested count from spacing: <strong>${m.nSpacing}</strong> bolts over ${num(d.total_len,1)} ft (entered count = ${Math.round(d.c3_n)}).</div>
+        </div>
+      </div>
+      <div class="note">Check anchor demand vs. capacity (per anchor):</div>
+      ${checkLine('Shear / anchor', c3.Vdem, 'lb', c3.Vallow, 'lb', num(c3.Vdem,0), num(c3.Vallow,0))}
+      ${checkLine('Tension / anchor', c3.Tdem, 'lb', c3.Tallow, 'lb', num(c3.Tdem,0), num(c3.Tallow,0))}
+      <div class="check-line"><span class="formula">Interaction (V/V<sub>a</sub>) + (T/T<sub>a</sub>) = <strong>${num(c3.interaction,2)}</strong> &nbsp;&le;&nbsp; 1.0</span><span class="verdict ${intOK?'pass':'fail'}">${intOK?'[Satisfactory]':'[CHECK]'}</span></div>
+      <div class="note">Representative linear shear+tension interaction; confirm against the anchor's ICC-ES report (combined-load equation &amp; spacing / edge-distance reductions) before sealing. Edge distance, spacing, and ${esc(sub)} thickness must develop the embedment shown.</div>
+    </div>`;
+  }
+  const p5=`<div class="report-page">
+    <h3 style="margin-top:0;">1.2. Result of analysis</h3>
+    ${memberBlock('1.2.1 — Vertical frame', R.vert, d.v_sec, d.v_trib, d.v_len, false, Math.max(1,Math.round(d.v_span)))}
+    ${memberBlock('1.2.2 — Horizontal frame', R.horiz, d.h_sec, d.h_trib, d.h_len, false, Math.max(1,Math.round(d.h_span)))}
+    ${footer(d,'4')}
+  </div>`;
+  const p5b=`<div class="report-page">
+    <h3 style="margin-top:0;">1.2. Result of analysis <span style="font-size:9pt;font-weight:400;color:#666;">(continued)</span></h3>
+    ${d.support_type==='cantilever'
+      ? cantiBlock(d,R) + memberBlock('1.2.4 — Tie-back arm (supplementary)', R.strut, d.s_sec, 0, d.s_len, true, 1)
+      : memberBlock('1.2.3 — Struts frame (support arm)', R.strut, d.s_sec, 0, d.s_len, true, 1)}
+    ${footer(d,'5')}
+  </div>`;
+
+  // PAGE 6 — CONNECTIONS
+  const c1=R.c1, c2=R.c2, c3=R.c3;
+  const p6=`<div class="report-page">
+    <h3 style="margin-top:0;">1.3. Connection design</h3>
+    ${R.strut.isCompression ? `<div class="note" style="color:var(--warn);border-left:3px solid var(--warn);padding-left:0.5rem;">⚠ Net uplift governs — the gutter bracket (1.3.1) and gutter-to-wall (1.3.2) develop <strong>tension / pull-out</strong>, shown below as screening demands from the uplift reaction. These do NOT include prying or connection eccentricity; verify against the actual bracket detail and substrate pull-out before sealing.</div>` : ''}
+    <h4>1.3.1 — Connection 1: Bracket Bolt (member-to-bracket)</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Number of bolts</td><td class="sym">n</td><td class="eq">=</td><td class="val">${num(d.c1_n,0)}</td><td class="unit">piece</td></tr>
+      <tr><td class="lbl">Diameter of anchor</td><td class="sym">d</td><td class="eq">=</td><td class="val">${num(d.c1_d,3)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Factor (ASD)</td><td class="sym">Ω</td><td class="eq">=</td><td class="val">${num(d.c1_omega,1)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Material</td><td class="sym"></td><td class="eq"></td><td class="val">${esc(d.c1_mat)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Tensile strength</td><td class="sym">F<sup>b</sup><sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.c1_fbu,0)}</td><td class="unit">psi</td></tr>
+      <tr><td class="lbl">Bolt area</td><td class="sym">A<sub>b</sub></td><td class="eq">=</td><td class="val">${num(c1.Ab,3)}</td><td class="unit">in²</td></tr>
+      <tr><td class="lbl">R<sub>n</sub> = 0.45 F<sup>b</sup><sub>u</sub> A<sub>b</sub></td><td class="sym"></td><td class="eq">=</td><td class="val">${num(c1.Rn,0)}</td><td class="unit">lbs</td></tr>
+      <tr><td class="lbl">R<sub>t</sub> = 0.75 F<sup>b</sup><sub>u</sub> A<sub>b</sub></td><td class="sym"></td><td class="eq">=</td><td class="val">${num(c1.Rt,0)}</td><td class="unit">lbs</td></tr>
+    </table>
+    ${checkLine('Shear / 1 bolt', c1.Vdem, 'lbs', c1.Vallow, 'lbs (V=R<sub>n</sub>/Ω)', num(c1.Vdem,1), num(c1.Vallow,0))}
+    ${checkLine('Tension / 1 bolt', c1.Tdem, 'lbs', c1.Tallow, 'lbs (T=R<sub>t</sub>/Ω)', c1.Tdem>0?num(c1.Tdem,1):'—', num(c1.Tallow,0))}
+
+    <h4>1.3.2 — Connection 2: Secondary Fastener (screw / metal-to-metal)</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Max bolt spacing</td><td class="sym"></td><td class="eq">=</td><td class="val">${num(d.c2_sp,0)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Diameter</td><td class="sym">d</td><td class="eq">=</td><td class="val">${esc(d.c2_d)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Min. embedment</td><td class="sym">L</td><td class="eq">=</td><td class="val">${num(d.c2_L,2)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Factor (ASD)</td><td class="sym">Ω</td><td class="eq">=</td><td class="val">${num(d.c2_omega,2)}</td><td class="unit"></td></tr>
+    </table>
+    ${checkLine('Shear / 1 bolt', c2.Vdem, 'lbs', c2.Vallow, 'lbs', num(c2.Vdem,1), num(c2.Vallow,0))}
+    ${checkLine('Tension / 1 bolt', c2.Tdem, 'lbs', c2.Tallow, 'lbs', c2.Tdem>0?num(c2.Tdem,1):'—', num(c2.Tallow,0))}
+    <p class="note">Allowable values per manufacturer table (Concrete Anchoring Specialists, hollow/grout-filled block).</p>
+
+    <h4>1.3.3 — Connection 3: Wall / Substrate Anchor</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Number of anchors</td><td class="sym">n</td><td class="eq">=</td><td class="val">${num(d.c3_n,0)}</td><td class="unit">piece</td></tr>
+      <tr><td class="lbl">Diameter of anchor</td><td class="sym">d</td><td class="eq">=</td><td class="val">${num(d.c3_d,3)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Min. embedment</td><td class="sym">L</td><td class="eq">=</td><td class="val">${num(d.c3_L,2)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Factor (ASD)</td><td class="sym">Ω</td><td class="eq">=</td><td class="val">${num(d.c3_omega,2)}</td><td class="unit"></td></tr>
+    </table>
+    ${checkLine('Shear / 1 anchor', c3.Vdem, 'lbs', c3.Vallow, 'lbs', num(c3.Vdem,1), num(c3.Vallow,0))}
+    ${checkLine('Tension / 1 anchor', c3.Tdem, 'lbs', c3.Tallow, 'lbs', num(c3.Tdem,1), num(c3.Tallow,0))}
+    <p class="note">${d.support_type==='cantilever'
+      ? `Direct-bolt cantilever: back gutter fascia anchored to ${esc(d.substrate==='masonry'?'grout-filled CMU':'concrete')} beam with ${R.canti.nSpacing} × ${num(d.c3_d,3)}" wedge bolts @ ${num(d.anchor_spacing,0)}" O.C. (${num(d.c3_L,2)}" embed). Per-anchor demands are the cantilever shear (V=q·P·s) and moment-couple tension (T=M/(j·d)) from §1.2.3. Allowable values editable / from the auto-fill presets — confirm against the anchor's current ICC-ES report.`
+      : `Allowable tension/shear per Power-Stud+ SD1 in grout-filled CMU (f'<sub>m</sub>=1500 psi). Values editable per anchor selection. Total wall anchors (angled arms): ${Math.round(d.n_arms)*Math.round(d.bolts_bracket)} = ${Math.round(d.n_arms)} arm bracket(s) × ${Math.round(d.bolts_bracket)}. Support arms are independent of roof sections; back-fascia-to-wall fasteners are a separate connection.`}</p>
+    ${footer(d,'6')}
+  </div>`;
+
+  document.getElementById('report').innerHTML = p1+p2+p3+p4+p5+p5b+p6;
+}
+
+// PLAIN-ENGLISH FIELD HELP (tooltips)
+const HELP = {
+  f_date:"Date printed on the report cover.",
+  f_projNo:"Your internal project number. Shows in the footer.",
+  f_fileNo:"Engineer's file / job number for your records.",
+  f_project:"Job or site name. Appears on the cover.",
+  f_client:"Client name and site address. Appears on the cover.",
+  f_product:"What you're designing \u2014 the canopy tag or part number.",
+  f_rev:"Revision number. Bump it each time you reissue the report.",
+  f_code:"Building codes this report follows. Usually leave as-is.",
+  f_firm:"Your engineering firm's name (letterhead).",
+  f_engName:"Engineer of record's name.",
+  f_engLic:"Engineer's PE license number.",
+  f_coa:"Firm's Certificate of Authorization number.",
+  f_support_type:"How the canopy is held up. 'Arm-supported' = angled brackets down to a wall. 'Direct-bolt cantilever' = the back edge bolts straight onto a concrete/block beam with no arms (the garage-canopy style).",
+  f_total_len:"How wide the canopy is, end to end (feet).",
+  f_nSec:"How many panel sections across the width. Affects the drawing only.",
+  f_depth_in:"How far the canopy sticks out from the wall (inches). Also called the projection.",
+  f_n_arms:"Number of support arms (arm mode) or tie-back arms (cantilever mode). Use 0 if there are none.",
+  f_bolts_bracket:"How many bolts hold each arm bracket to the wall.",
+  f_anchor_spacing:"Spacing of the back bolts, center to center (inches). The garage detail allowed 24 in (2 ft) max.",
+  f_anchor_jd:"Lever arm of the back joint (inches): the up-and-down distance between the bolt line and where the fascia presses on the beam \u2014 roughly the fascia height. A bigger number = less pull on the bolts.",
+  f_substrate:"What the beam is made of. Bolts in solid concrete hold much more than in hollow block (CMU).",
+  f_c3_sub:"Quick-pick typical bolt strengths for concrete or block \u2014 it fills the allowable shear/tension below. Always confirm against the real anchor's ICC-ES report.",
+  f_V:"Design wind speed for the site (mph), from the local code / ASCE wind maps.",
+  f_risk:"Building Risk Category. II is the usual default; higher = more critical building.",
+  f_exp:"How open the surroundings are: B = town/trees, C = open/flat, D = near open water.",
+  f_Kd:"Wind directionality factor. 0.85 is standard for buildings.",
+  f_Ke:"Ground elevation factor. 1.00 unless you're at high altitude.",
+  f_Kzt:"Topography factor. 1.00 on flat ground; higher on hills / escarpments.",
+  f_Iw:"Wind importance factor. 1.00 for Risk Category II.",
+  f_Gf:"Gust effect factor. About 0.90 is typical.",
+  f_eps:"Solid-to-gross area ratio. 100% = solid roof. Less = open slats. Set this with 'Roof type' below.",
+  f_roof:"Solid roof pans = full wind (100%). Open / slatted = reduced wind. Rule of thumb: if water sheds off it, it's solid.",
+  f_gcpUp:"Wind pressure coefficient on the TOP of the roof, from ASCE. Leave default unless you have specifics.",
+  f_gcpLo:"Wind pressure coefficient on the UNDERSIDE of the roof, from ASCE. Leave default unless you have specifics.",
+  f_h:"Overall building height to the roof (feet).",
+  f_he:"Height to the eave (feet).",
+  f_hc:"Height of the canopy above the ground (feet). Used to size the wind pressure.",
+  f_dl:"Weight of the canopy itself, spread over its area (psf). Aluminum is light (~2.5\u20135). Don't pad it \u2014 a high dead load hides uplift and is unsafe for the anchors.",
+  f_v_trib:"Width of roof this member carries (feet).",
+  f_v_len:"Length / span of this member (feet).",
+  f_v_span:"1 = simple beam (held at both ends). 2 or more = continuous over that many spans.",
+  f_v_sec:"Aluminum shape for this member. Pick from the list or choose Custom/EMS.",
+  f_h_trib:"Width of roof this member carries (feet).",
+  f_h_len:"Length / span of this member (feet).",
+  f_h_span:"1 = simple beam. 2 or more = continuous over that many spans.",
+  f_h_sec:"Aluminum shape for this member.",
+  f_s_len:"Length of the arm (or tie-back) member (feet).",
+  f_s_angle:"Angle of the arm measured from straight up (degrees).",
+  f_s_sec:"Aluminum shape for the arm / tie-back member.",
+  f_c1_n:"Number of bolts at the member-to-bracket joint.",
+  f_c1_d:"Bolt diameter (inches).",
+  f_c1_omega:"Safety factor (ASD). 2.0 is typical.",
+  f_c1_fbu:"Bolt material tensile strength (psi).",
+  f_c2_sp:"Maximum spacing of the small screws / fasteners (inches).",
+  f_c3_n:"Total number of back anchors. For the cantilever, match the count across the width (the report shows a suggested number).",
+  f_c3_d:"Anchor diameter (inches).",
+  f_c3_L:"Embedment \u2014 how deep the anchor sits in the concrete / block (inches).",
+  f_c3_omega:"Safety factor (ASD). 2.0 is typical.",
+  f_c3_V:"Allowable shear per anchor (lb), from the anchor's report.",
+  f_c3_T:"Allowable tension / pull-out per anchor (lb), from the anchor's report.",
+  f_c3_ps:"Quick-pick allowable values for grout-filled block anchors (Power-Stud+ SD1).",
+  f_alloy:"Aluminum alloy. EMS shapes auto-set 6063; 6061 is stronger.",
+  f_fty:"Yield strength of the aluminum (ksi).",
+  f_cv_A:"Only for Custom/EMS shapes: cross-section area A (in\u00b2) from the EMS sheet.",
+  f_cv_I:"Only for Custom/EMS shapes: moment of inertia I (in\u2074) \u2014 the stiffness.",
+  f_cv_S:"Only for Custom/EMS shapes: section modulus S (in\u00b3) \u2014 the bending capacity."
+};
+let TIPEL=null;
+function showTip(t){ if(!TIPEL) return; TIPEL.textContent=t.getAttribute('data-tip'); TIPEL.style.display='block';
+  const r=t.getBoundingClientRect(); const w=TIPEL.offsetWidth||230;
+  let x=r.left; if(x+w>window.innerWidth-8) x=window.innerWidth-w-8; if(x<8) x=8;
+  TIPEL.style.left=x+'px'; TIPEL.style.top=(r.bottom+6)+'px'; }
+function hideTip(){ if(TIPEL) TIPEL.style.display='none'; }
+function attachHelp(){
+  TIPEL=document.getElementById('tipBubble');
+  Object.keys(HELP).forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const field=el.closest('.field'); if(!field) return;
+    const label=field.querySelector('label'); if(!label||label.querySelector('.help')) return;
+    const b=document.createElement('span'); b.className='help'; b.textContent='?';
+    b.setAttribute('data-tip',HELP[id]); b.setAttribute('tabindex','0'); b.setAttribute('role','button');
+    b.setAttribute('aria-label','Help');
+    b.addEventListener('mouseenter',()=>showTip(b));
+    b.addEventListener('mouseleave',hideTip);
+    b.addEventListener('focus',()=>showTip(b));
+    b.addEventListener('blur',hideTip);
+    b.addEventListener('click',e=>{ e.stopPropagation(); if(TIPEL.style.display==='block') hideTip(); else showTip(b); });
+    label.appendChild(b);
+  });
+  const panel=document.querySelector('.form-panel'); if(panel) panel.addEventListener('scroll',hideTip);
+  document.addEventListener('click',hideTip);
+}
+
+// INITIALIZATION & DYNAMIC EVENT LOOP WIRE-UP
+function resetForm(){ if(!confirm('Reset all fields to defaults?')) return; location.reload(); }
+
+// Initialize dropdown selectors safely
+window.addEventListener('DOMContentLoaded', () => {
+  populateSectionSelect('f_v_sec','HSS 2" x 8" x 1/8"');
+  populateSectionSelect('f_h_sec','HSS 2" x 8" x 1/8"');
+  populateSectionSelect('f_s_sec','HSS 2" x 2" x 1/8"');
+
+  const _d = document.getElementById('f_date');
+  if(_d && !_d.value){ _d.value = new Date().toISOString().slice(0,10); }
+
+  applySupportType();
+  // Initial programmatic render cycle
+  render();
+  attachHelp();
+
+  // Attach event loop triggers to the input fields panel
+  const _panel = document.querySelector('.form-panel');
+  if(_panel){
+    _panel.addEventListener('input', render);
+    _panel.addEventListener('change', render);
+  }
+});
+</script>
+</body>
+</html>
