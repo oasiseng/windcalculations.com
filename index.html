@@ -1,1175 +1,923 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WindCalculations ASCE Wind Pressure Reference Calculator</title>
-  <meta name="description" content="Public static client-side wind parameter calculator for ASCE 7-16/7-22 velocity pressure qz and net design pressures.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-1: #f2f7f8;
-      --bg-2: #dfeff3;
-      --ink: #0f1f2b;
-      --ink-soft: #3d5568;
-      --panel: #ffffff;
-      --line: #c8d8df;
-      --brand: #0f7a8a;
-      --brand-deep: #075866;
-      --accent: #d2691e;
-      --ok: #146c43;
-      --error: #b42318;
-      --warn: #8a6d0f;
-      --shadow: 0 18px 40px rgba(10, 28, 43, 0.08);
-      --radius-lg: 18px;
-      --radius-md: 12px;
-      --radius-sm: 8px;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0; color: var(--ink);
-      background:
-        radial-gradient(circle at 12% 8%, rgba(15, 122, 138, 0.13), transparent 40%),
-        radial-gradient(circle at 88% 10%, rgba(210, 105, 30, 0.14), transparent 36%),
-        linear-gradient(140deg, var(--bg-1), var(--bg-2));
-      font-family: "Public Sans", "Trebuchet MS", "Tahoma", sans-serif;
-      line-height: 1.4;
-    }
-    .shell { width: min(1220px, 94vw); margin: 28px auto 56px; }
-    .hero {
-      padding: 28px 30px; border-radius: var(--radius-lg);
-      background: linear-gradient(120deg, #0f7a8a, #11535f 55%, #8c3f14 120%);
-      color: #f8fcff; box-shadow: var(--shadow);
-      position: relative; overflow: hidden; isolation: isolate; margin-bottom: 18px;
-    }
-    .hero::before {
-      content: ""; position: absolute; inset: auto -90px -110px auto;
-      width: 320px; height: 320px; border-radius: 999px;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
-      z-index: -1;
-    }
-    .eyebrow {
-      display: inline-block; font-size: 0.8rem; letter-spacing: 0.08em;
-      text-transform: uppercase; font-weight: 700;
-      border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px;
-      padding: 4px 10px; margin-bottom: 10px;
-    }
-    h1, h2, h3 {
-      margin: 0 0 10px;
-      font-family: "Space Grotesk", "Public Sans", sans-serif;
-      letter-spacing: -0.01em;
-    }
-    h1 { font-size: clamp(1.4rem, 2.6vw, 2.2rem); line-height: 1.15; }
-    .hero p { margin: 0; max-width: 90ch; color: #def5f8; }
-    .brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
-    .brand-row img { height: 56px; width: auto; object-fit: contain; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.22)); }
-    .brand-row .eyebrow { margin-bottom: 0; }
-    .embed-banner {
-      display: none; margin-bottom: 14px;
-      border: 1px solid #91b6c0; background: #eff7fa; color: #0f4753;
-      border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.92rem;
-    }
-    .layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
-    .card {
-      background: var(--panel); border: 1px solid var(--line);
-      border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 18px;
-    }
-    fieldset {
-      border: 1px solid var(--line); border-radius: var(--radius-md);
-      padding: 14px; margin: 0 0 14px; background: #fbfdfe;
-    }
-    legend { padding: 0 8px; font-weight: 700; color: #1a4155; font-size: 0.92rem; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    .field { display: flex; flex-direction: column; gap: 4px; }
-    label { font-weight: 600; font-size: 0.93rem; }
-    .hint { font-size: 0.8rem; color: var(--ink-soft); }
-    input, select, textarea, button { font: inherit; }
-    input, select, textarea {
-      width: 100%; padding: 10px 11px;
-      border: 1px solid #a8c0cb; border-radius: var(--radius-sm);
-      background: #fff; color: var(--ink);
-    }
-    input:focus, select:focus, textarea:focus, button:focus {
-      outline: 3px solid rgba(15, 122, 138, 0.24); outline-offset: 1px; border-color: var(--brand);
-    }
-    input[aria-invalid="true"], select[aria-invalid="true"] {
-      border-color: var(--error); background: #fff7f6;
-    }
-    input:disabled, select:disabled { background: #f4f7fa; color: #5f7381; cursor: not-allowed; }
-    .field-error { min-height: 1rem; font-size: 0.8rem; color: var(--error); margin: 0; }
-    .row-2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .btn {
-      border: 1px solid transparent; border-radius: 10px;
-      padding: 10px 14px; font-weight: 700; cursor: pointer;
-    }
-    .btn-primary { background: var(--brand); color: #fff; }
-    .btn-primary:hover { background: var(--brand-deep); }
-    .btn-secondary { background: #f0f6f8; border-color: #adcad4; color: #194556; }
-    .btn-secondary:hover { background: #e5f0f4; }
-    .status-box {
-      border: 1px solid #f0d27e; background: #fff8e5;
-      border-radius: 12px; padding: 10px 12px; font-size: 0.9rem;
-      color: #684512; margin-bottom: 12px;
-    }
-    .status-box.ok { border-color: #84d0a7; background: #ecf9f1; color: #0f5a35; }
-    .status-box h3 { margin-bottom: 6px; font-size: 0.96rem; }
-    .status-box ul { margin: 8px 0 0; padding-left: 20px; }
-    .warning-box {
-      border: 1px solid #f0d27e; background: #fff8e5;
-      border-radius: 10px; padding: 10px 12px; font-size: 0.87rem;
-      color: #6b4c0a; margin-bottom: 10px;
-    }
-    .warning-box strong { color: #5a3e00; }
-    .kpi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
-    .kpi .item {
-      border: 1px solid #cde0e7; background: #f8fcfd;
-      border-radius: var(--radius-sm); padding: 10px;
-    }
-    .kpi .label { font-size: 0.8rem; color: #3b5f70; margin-bottom: 3px; }
-    .kpi .value { font-size: 1.15rem; font-weight: 800; color: #0d3445; }
-    .subgrid { display: grid; gap: 12px; grid-template-columns: 1fr; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-    th, td {
-      border: 1px solid #cfe0e7; padding: 8px 9px;
-      text-align: left; vertical-align: top;
-    }
-    th { background: #edf6f9; color: #18495a; font-weight: 700; }
-    .formula {
-      background: #f6fafb; border: 1px solid #d3e4ea;
-      border-radius: var(--radius-sm); padding: 10px;
-      margin-bottom: 10px; font-size: 0.87rem; overflow-x: auto;
-    }
-    .formula code { white-space: nowrap; color: #153948; font-family: "Courier New", monospace; }
-    .disclaimer {
-      border-left: 4px solid var(--accent); background: #fff9f2;
-      padding: 10px 12px; border-radius: 6px; color: #6b360f;
-    }
-    .disclaimer strong { display: block; margin-bottom: 6px; font-weight: 800; }
-    .disclaimer ul { margin: 0; padding-left: 18px; font-size: 0.92rem; }
-    .disclaimer li + li { margin-top: 4px; }
-    .citation {
-      border-left: 4px solid #0f7a8a; background: #f0f9fb;
-      padding: 10px 12px; border-radius: 6px; font-size: 0.9rem; color: #184958;
-    }
-    .meta { color: #445f6e; font-size: 0.86rem; margin-bottom: 8px; }
-    .method-links {
-      display: flex; flex-wrap: wrap; gap: 10px 14px;
-      padding-left: 0; margin: 8px 0 0; list-style: none;
-    }
-    .method-links a { color: #075e6d; font-weight: 600; text-decoration-thickness: 2px; text-underline-offset: 2px; }
-    .embed-tools textarea { min-height: 85px; resize: vertical; font-family: "Courier New", monospace; font-size: 0.84rem; }
-    .cta { border: 1px solid #b5d2db; background: linear-gradient(150deg, #f4fbfd, #f8f3eb); border-radius: var(--radius-md); padding: 12px; }
-    .cta a { color: #0a6272; font-weight: 700; }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
-    .calc-note { margin-top: 10px; font-size: 0.84rem; color: #4a6676; }
-    .sign-convention {
-      font-size: 0.84rem; color: #3b5f70; background: #f4fafb;
-      border: 1px solid #d3e4ea; border-radius: var(--radius-sm);
-      padding: 8px 10px; margin-bottom: 12px;
-    }
-    .hidden { display: none; }
-    .checkbox-field { display: flex; align-items: center; gap: 8px; }
-    .checkbox-field input { width: auto; }
-    body.embed-mode .hero, body.embed-mode .embed-tools { display: none; }
-    body.embed-mode .embed-banner { display: block; }
-    @media (min-width: 680px) {
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .subgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (min-width: 1020px) {
-      .layout { grid-template-columns: minmax(380px, 1fr) minmax(420px, 1fr); align-items: start; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aluminum Fence &amp; Railing Wind Check — windcalculations.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1a5c4c; --green-dark:#13463a; --green-soft:rgba(26,92,76,0.08);
+    --bg:#f5f3ef; --surface:#ffffff; --text:#1a1714; --muted:#5c5955; --border:#e2dfd8;
+    --warn:#b85c00; --pass:#1e7a3b; --fail:#c0392b;
+    --font-body:'Plus Jakarta Sans',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.5;}
+  .app{display:grid;grid-template-columns:minmax(440px,500px) 1fr;gap:0;min-height:100vh;}
+  .form-panel{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;max-height:100vh;position:sticky;top:0;}
+  .preview-panel{padding:2rem 1rem;background:linear-gradient(180deg,#e8e6df 0%,#f5f3ef 100%);overflow-x:auto;}
+  .form-panel h1{color:var(--green);font-size:1.15rem;margin:0 0 0.25rem;}
+  .form-panel .subtitle{font-size:0.76rem;color:var(--muted);margin:0 0 1.2rem;font-family:var(--font-mono);}
+  fieldset{border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem 1rem;margin:0 0 1rem;background:#faf9f7;}
+  fieldset legend{font-weight:700;color:var(--green);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;padding:0 0.4rem;}
+  .field{margin-bottom:0.7rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-weight:600;font-size:0.8rem;margin-bottom:0.25rem;}
+  .field input,.field select,.field textarea{width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;background:#fff;color:var(--text);}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,76,0.12);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;}
+  .hint{color:var(--muted);font-weight:400;font-size:0.72rem;}
+  .chk{display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;font-weight:600;}
+  .chk input{width:auto;}
+  .actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent 0%,var(--surface) 30%);padding:1rem 0 0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{flex:1 1 calc(50% - 0.2rem);min-width:0;padding:0.65rem 0.5rem;border:none;border-radius:6px;font-family:var(--font-body);font-weight:600;font-size:0.84rem;cursor:pointer;}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-secondary{background:#fff;border:1.5px solid var(--border);color:var(--text);}
+  .btn-secondary:hover{border-color:var(--green);color:var(--green);}
+  .live-result{background:var(--green-soft);border:1px solid rgba(26,92,76,0.2);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.8rem;font-family:var(--font-mono);font-size:0.74rem;line-height:1.6;}
+  .live-result strong{color:var(--green);}
+  .warn-banner{background:rgba(184,92,0,0.08);border:1px solid rgba(184,92,0,0.3);border-left:3px solid var(--warn);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.8rem;font-size:0.74rem;color:var(--warn);display:none;}
+  .warn-banner.active{display:block;}
+  .version-badge{display:inline-block;font-family:var(--font-mono);font-size:0.6rem;background:var(--green);color:#fff;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.4rem;}
+  .disclaimer-box{background:#fff7ee;border:1px solid #f0c89a;border-left:3px solid #b85c00;border-radius:6px;padding:0.5rem 0.7rem;margin:0 0 1rem;font-size:0.73rem;color:#7a4a10;line-height:1.5;}
+  .disclaimer-box a{color:#b85c00;font-weight:700;white-space:nowrap;}
+  @media (max-width:820px){ .app{grid-template-columns:1fr;} .form-panel{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border);} }
+
+  .viz-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem 0.9rem;margin:0 auto 1.4rem;max-width:8.5in;box-shadow:0 4px 16px rgba(0,0,0,0.07);}
+  .viz-card h2{margin:0 0 0.2rem;font-size:0.95rem;color:var(--green);}
+  .viz-card .viz-sub{font-size:0.72rem;color:var(--muted);font-family:var(--font-mono);margin:0 0 0.6rem;}
+  .viz-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:0.6rem;align-items:start;}
+  .viz-box{border:1px solid #e6e2da;border-radius:6px;padding:0.4rem;background:#fcfcfa;}
+  .viz-box .vlabel{font-size:0.7rem;font-weight:700;color:#234;text-align:center;margin-bottom:0.2rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .viz-readout{display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.72rem;color:#333;margin-top:0.6rem;}
+  .viz-readout b{color:var(--green);}
+
+  .report{max-width:8.5in;margin:0 auto;}
+  .report-page{background:#fff;width:8.5in;min-height:11in;padding:0.85in 0.8in 1.1in;margin:0 auto 1.5rem;box-shadow:0 6px 24px rgba(0,0,0,0.08);position:relative;font-size:10.5pt;line-height:1.4;color:#1a1714;}
+  .report-page h1{color:var(--green);font-size:20pt;margin:0 0 0.2rem;font-weight:700;letter-spacing:0.06em;}
+  .report-page h2{color:var(--green);font-size:13pt;margin:1.1rem 0 0.5rem;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:0.2rem;}
+  .report-page h3{font-size:11pt;margin:0.8rem 0 0.35rem;font-weight:700;color:var(--green);}
+  .report-page h4{font-size:10pt;margin:0.6rem 0 0.3rem;font-weight:700;color:#b1322a;}
+  .report-page p{margin:0 0 0.5rem;}
+  .report-page .center{text-align:center;}
+
+  .cover-band{background:#dcd6c3;padding:1.4in 0.4in 0.5in;text-align:right;margin:-0.85in -0.8in 0;}
+  .cover-band .title{font-size:26pt;font-weight:700;color:#234;letter-spacing:0.12em;line-height:1.1;}
+  .cover-band .sub{font-size:18pt;font-weight:700;color:#234;letter-spacing:0.2em;}
+  .cover-meta{text-align:right;font-style:italic;color:#555;margin:0.6rem 0 0;}
+  .cover-table{width:100%;border-collapse:collapse;margin-top:2.2in;font-size:11pt;}
+  .cover-table td{padding:0.35rem 0.2rem;border-bottom:1px solid #bbb;color:#234;}
+  .cover-table td:first-child{color:var(--green);width:1.6in;}
+  .cover-products{margin-top:1rem;font-size:10pt;}
+  .cover-products .lbl{font-weight:700;}
+  .cover-code{margin-top:1.2rem;font-weight:700;color:var(--green-dark);}
+
+  .data-grid{width:100%;border-collapse:collapse;font-size:10pt;margin:0.3rem 0 0.6rem;}
+  .data-grid td{padding:0.12rem 0.3rem;vertical-align:top;}
+  .data-grid td.lbl{font-weight:600;}
+  .data-grid td.sym{font-family:var(--font-mono);text-align:right;width:1.2in;color:#234;}
+  .data-grid td.eq{text-align:center;width:0.3in;color:#888;}
+  .data-grid td.val{font-family:var(--font-mono);text-align:right;width:1in;font-weight:700;}
+  .data-grid td.unit{font-style:italic;color:#555;width:0.8in;}
+  .data-grid .group{font-weight:700;color:#234;padding-top:0.35rem;}
+  .data-grid .grade{font-style:italic;color:var(--green-dark);}
+
+  .calc-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:9pt;margin:0.4rem 0 0.7rem;}
+  .calc-table th,.calc-table td{border:1px solid #999;padding:0.22rem 0.4rem;text-align:center;}
+  .calc-table th{background:var(--green);color:#fff;font-weight:700;}
+  .calc-table td.left{text-align:left;font-weight:600;}
+
+  .check-line{font-family:var(--font-mono);font-size:9.5pt;display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem;padding:0.2rem 0.4rem;margin:0.2rem 0;border-left:3px solid var(--green);background:#f7f6f2;}
+  .check-line .formula{flex:1;}
+  .check-line .verdict{font-weight:700;white-space:nowrap;}
+  .check-line .verdict.pass{color:var(--pass);}
+  .check-line .verdict.fail{color:var(--fail);}
+  .section-props{font-family:var(--font-mono);font-size:9pt;background:#eef3f1;border:1px solid #cdddd6;border-radius:4px;padding:0.3rem 0.5rem;margin:0.3rem 0;}
+  .note{font-size:9pt;font-style:italic;color:#555;margin:0.3rem 0;}
+  .code-snip{font-size:9pt;background:#f7f6f2;border-left:3px solid var(--green);padding:0.4rem 0.6rem;margin:0.4rem 0;}
+  .code-snip .ref{font-weight:700;color:var(--green-dark);font-family:var(--font-mono);}
+
+  .fig{text-align:center;margin:0.5rem 0;}
+  .fig svg{max-width:100%;height:auto;}
+  .fig .cap{font-size:9pt;font-style:italic;color:#555;margin-top:0.2rem;}
+  .fig-row{display:grid;grid-template-columns:1.5fr 1fr;gap:0.5rem;align-items:start;}
+  .toc-line{display:flex;justify-content:space-between;border-bottom:1px dotted #bbb;padding:0.3rem 0;font-size:11pt;}
+
+  .page-footer{position:absolute;bottom:0;left:0;right:0;height:0.85in;padding:0 0.8in 0.3in;}
+  .page-footer .footer-text{display:flex;justify-content:space-between;font-size:8pt;color:#222;margin-bottom:0.12rem;}
+  .page-footer .footer-text .left{font-weight:600;}
+  .page-footer .footer-text .right{text-align:right;font-style:italic;}
+  .page-footer .footer-text .right strong{font-style:normal;font-weight:600;}
+  .page-footer .pageno{position:absolute;bottom:0.3in;right:0.8in;font-style:italic;font-size:9pt;color:#444;}
+  .page-footer .swoosh{width:100%;height:0.35in;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 50' preserveAspectRatio='none'><path d='M0,25 Q200,5 400,25 T800,25' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.55'/><path d='M0,30 Q200,12 400,30 T800,30' stroke='%231a5c4c' stroke-width='1.2' fill='none' opacity='0.4'/></svg>") no-repeat center / 100% 100%;}
+  .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-style:italic;}
+
+  .dl{stroke:#444;stroke-width:0.8;}
+  .dtxt{font-family:var(--font-mono);font-size:10px;fill:#234;}
+  .dtxt.sm{font-size:8.5px;}
+  .alum{fill:#e8eeec;stroke:#1a5c4c;stroke-width:1.4;}
+  .conc{fill:#cfc9bb;stroke:#8a8470;stroke-width:1;}
+  .plate{fill:#9aa7a2;stroke:#46524e;stroke-width:1;}
+  .bolt{fill:#2b2b2b;}
+  .post{stroke:#1a5c4c;stroke-width:3;fill:#e8eeec;}
+  .rail{stroke:#8aa39a;stroke-width:2;}
+  .picket{stroke:#748a82;stroke-width:1.5;}
+  .loadarrow{stroke:#b1322a;stroke-width:1.6;fill:none;}
+
+  @page{size:letter;margin:0;}
+  @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .form-panel,.viz-card{display:none;}
+    .preview-panel{padding:0;background:#fff;overflow:visible;}
+    .app{display:block;}
+    .report-page{box-shadow:none;margin:0;page-break-after:always;break-inside:avoid;width:8.5in;height:11in;min-height:11in;max-height:11in;overflow:hidden;}
+    .report-page:last-child{page-break-after:auto;}
+    .check-line,.code-snip,.member-block{break-inside:avoid;page-break-inside:avoid;}
+    .page-footer,.page-footer .swoosh{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+    .no-print{display:none;}
+  }
+</style>
 </head>
 <body>
-  <div class="shell">
-    <section class="hero" aria-labelledby="app-title">
-      <div class="brand-row">
-        <img
-          src="https://assets.zyrosite.com/cdn-cgi/image/format%3Dauto%2Cw%3D768%2Cfit%3Dcrop%2Cq%3D95/mv0LOLq49lt1GvqG/windcalculations-logo-design1-SfWY8HFp8d1mSaGl.png"
-          alt="WindCalculations.com logo">
+<div class="app">
+
+<aside class="form-panel">
+  <h1>Aluminum Fence &amp; Railing Wind Check <span class="version-badge">windcalculations.com</span></h1>
+  <p class="subtitle">FBC 2023 · ASCE 7-22 · ADM 2020 — preliminary screening tool</p>
+
+  <div class="disclaimer-box">⚠ <strong>Preliminary screening only.</strong> Order-of-magnitude check of an aluminum fence/railing under wind &amp; guard loads. <strong>Not</strong> a sealed engineering document; not for permit or construction. No warranty or liability — verify all inputs and have a licensed engineer review. <a href="https://windcalculations.com" target="_blank" rel="noopener">Need a sealed calc? →</a></div>
+
+  <div class="live-result" id="liveResult">Fill in member type, height &amp; wind to see live results.</div>
+  <div class="warn-banner" id="warnBanner"></div>
+
+  <fieldset>
+    <legend>Project reference (optional)</legend>
+    <div class="field"><label>Job / project label</label><input type="text" id="f_project" value="" placeholder="e.g. Lot 14 pool fence"></div>
+    <div class="field"><label>Date</label><input type="date" id="f_date"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Member Type &amp; Layout</legend>
+    <div class="field"><label>System Preset Config</label>
+      <select id="f_type" onchange="applyTypePreset()">
+        <option value="fence">Fence (FBC 1616.2.1)</option>
+        <option value="guard">Guard / Balcony Railing (FBC 1607.8.1)</option>
+        <option value="ems_pool" selected>EMS Mechanical Pool Fence (Submittal Layout)</option>
+        <option value="pool">Generic Pool / Barrier Fence</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Height H (in)</label><input type="number" id="f_H" value="53" step="1"></div>
+      <div class="field"><label>Post spacing L (in)</label><input type="number" id="f_L" value="50" step="1"></div>
+      <div class="field"><label>Rail spans</label><input type="number" id="f_spans" value="3" min="1" step="1"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label># Horiz. Rails</label><input type="number" id="f_nrails" value="3" min="0" step="1"></div>
+      <div class="field"><label>Vert. Picket W (in)</label><input type="number" id="f_vert_w" value="1.0" step="0.125"></div>
+      <div class="field"><label>Picket Space c.c. (in)</label><input type="number" id="f_vert_sp" value="4.875" step="0.125"></div>
+    </div>
+    <div class="field"><label>Deflection limit (1616.3)</label>
+      <select id="f_defl"><option value="180" selected>L/180 (Item 6)</option><option value="360">L/360 (Item 5 brittle)</option><option value="80">L/80 (Item 9 screens)</option></select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Live Loads (FBC 1607.8)</legend>
+    <label class="chk"><input type="checkbox" id="f_useGuard" onchange="render()"> Apply guard live loads (200 lb &amp; 50 plf)</label>
+    <p class="hint" style="margin:0.3rem 0 0.5rem;">Standard configuration for safety guards. For on-grade boundary fences, uncheck to apply pure wind pressure design cases.<br><strong style="color:var(--warn);">Caveat: Fences mounted on retaining walls or decks with a drop-off > 30" legally become "Guards" and must resist 200 lb loads.</strong></p>
+    <div class="row-3">
+      <div class="field"><label>Conc. P (lb)</label><input type="number" id="f_P200" value="200" step="10"></div>
+      <div class="field"><label>Uniform (plf)</label><input type="number" id="f_q50" value="50" step="5"></div>
+      <div class="field"><label>Intermed. (lb)</label><input type="number" id="f_P50" value="50" step="5"></div>
+    </div>
+    <div class="field"><label>Self weight / dead (psf)</label><input type="number" id="f_dl" value="2.5" step="0.1"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Wind Data (FBC / ASCE 7-22)</legend>
+    <div class="row-3">
+      <div class="field"><label>V (mph)</label><input type="number" id="f_V" value="160" step="1"></div>
+      <div class="field"><label>Risk Cat</label><select id="f_risk"><option>I</option><option selected>II</option><option>III</option><option>IV</option></select></div>
+      <div class="field"><label>Exposure</label><select id="f_exp"><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Kd</label><input type="number" id="f_Kd" value="0.85" step="0.01"></div>
+      <div class="field"><label>G = Gf</label><input type="number" id="f_Gf" value="0.85" step="0.01"></div>
+      <div class="field"><label>Kzt</label><input type="number" id="f_Kzt" value="1.00" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Iw</label><input type="number" id="f_Iw" value="1.00" step="0.01"></div>
+      <div class="field"><label>ε solid/gross <span id="epsHint" style="font-weight:400;color:var(--muted);font-size:0.6rem;">(Calc: --%)</span></label><input type="number" id="f_eps" value="0.30" step="0.01"></div>
+      <div class="field"><label>Cf (Fig 29.3-1)</label><input type="number" id="f_Cf" value="1.40" step="0.05"></div>
+    </div>
+    <div class="field"><label>Post wind moment distribution</label>
+      <select id="f_windk">
+        <option value="2" selected>Uniform — M = (q/144)·L·H²/2 (standard mechanics)</option>
+        <option value="3">Triangular — M = (q/144)·L·H²/3 (reduced; safety boundary layer profile)</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Top Rail</legend>
+    <div class="field"><label>Rail tributary height (in)</label><input type="number" id="f_railTrib" value="36" step="1"></div>
+    <div class="field"><label>Section</label><select id="f_rail_sec" onchange="toggleCustom('rail')"></select></div>
+    
+    <div id="custom_rail_block" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px dashed var(--border);">
+      <div class="field"><label>Custom Profile Name</label><input type="text" id="f_rail_c_name" value="Custom Rail Shape"></div>
+      <div class="row-3">
+        <div class="field"><label>Area (in²)</label><input type="number" id="f_rail_c_A" value="1.0" step="0.01"></div>
+        <div class="field"><label>I (in⁴)</label><input type="number" id="f_rail_c_I" value="0.5" step="0.01"></div>
+        <div class="field"><label>S (in³)</label><input type="number" id="f_rail_c_S" value="0.5" step="0.01"></div>
       </div>
-      <h1 id="app-title">ASCE Wind Pressure Reference Calculator</h1>
-      <p>
-        Public ASCE 7-16 / 7-22 reference calculator for velocity pressure and low-rise C&amp;C
-        (h &le; 60 ft) net pressure screening using a transparent, browser-only workflow.
-        Validated against third party software for Exposure C reference cases.
-      </p>
-    </section>
-    <div class="embed-banner" id="embed-banner">
-      Embedded mode is active. This compact layout is optimized for iframe usage.
+      <div class="row-2">
+        <div class="field"><label>Height (in)</label><input type="number" id="f_rail_c_H" value="2.0" step="0.1"></div>
+        <div class="field"><label>Wall t (in)</label><input type="number" id="f_rail_c_t" value="0.125" step="0.001"></div>
+      </div>
     </div>
-    <div class="layout">
-      <section class="card" aria-labelledby="input-heading">
-        <h2 id="input-heading">Inputs</h2>
-        <p class="meta">All calculations run in your browser. No backend calls are used.</p>
-        <div id="error-summary" class="status-box hidden" role="status" aria-live="polite"></div>
-        <div id="warning-summary" class="warning-box hidden" role="status" aria-live="polite"></div>
-        <form id="wind-form" novalidate>
-          <fieldset>
-            <legend>Code Edition and Site Parameters</legend>
-            <div class="grid">
-              <div class="field">
-                <label for="edition">ASCE Edition</label>
-                <select id="edition" name="edition" aria-describedby="err-edition">
-                  <option value="7-16">ASCE 7-16</option>
-                  <option value="7-22" selected>ASCE 7-22</option>
-                </select>
-                <p class="hint">7-16 places K<sub>d</sub> inside q<sub>z</sub>. 7-22 takes K<sub>d</sub> out of q<sub>z</sub> and applies it in the pressure equation. Net pressures are equivalent.</p>
-                <p class="field-error" id="err-edition"></p>
-              </div>
-              <div class="field">
-                <label for="risk-category">Risk Category</label>
-                <select id="risk-category" name="risk-category" aria-describedby="err-risk-category">
-                  <option value="I">I</option>
-                  <option value="II" selected>II</option>
-                  <option value="III">III</option>
-                  <option value="IV">IV</option>
-                </select>
-                <p class="hint">Select V from the wind speed map for your Risk Category. No separate importance factor is applied.</p>
-                <p class="field-error" id="err-risk-category"></p>
-              </div>
-              <div class="field">
-                <label for="basic-speed">Basic Wind Speed V (mph)</label>
-                <input id="basic-speed" name="basic-speed" type="number" inputmode="decimal" step="1" min="1" value="140" aria-describedby="err-basic-speed">
-                <p class="hint">3-second gust at 33 ft in Exposure C (ASCE 7 Section 26.5).</p>
-                <p class="field-error" id="err-basic-speed"></p>
-              </div>
-              <div class="field">
-                <label for="exposure">Exposure Category</label>
-                <select id="exposure" name="exposure" aria-describedby="err-exposure">
-                  <option value="B">B (urban/suburban)</option>
-                  <option value="C" selected>C (open terrain)</option>
-                  <option value="D">D (flat, unobstructed coastal)</option>
-                </select>
-                <p class="field-error" id="err-exposure"></p>
-              </div>
-              <div class="field">
-                <label for="mean-roof-height">Mean Roof Height h (ft)</label>
-                <input id="mean-roof-height" name="mean-roof-height" type="number" inputmode="decimal" step="0.1" min="1" value="30" aria-describedby="err-mean-roof-height">
-                <p class="hint">Low-rise C&amp;C provisions (Ch. 30 Figs. 30.3-x) apply when h &le; 60 ft.</p>
-                <p class="field-error" id="err-mean-roof-height"></p>
-              </div>
-              <div class="field">
-                <label for="qz-height">Exposure Height z for q<sub>z</sub> (ft)</label>
-                <input id="qz-height" name="qz-height" type="number" inputmode="decimal" step="0.1" min="1" value="30" aria-describedby="err-qz-height">
-                <p class="hint">q<sub>z</sub> shown for MWFRS reference only. C&amp;C net pressure uses q<sub>h</sub> at mean roof height h.</p>
-                <p class="field-error" id="err-qz-height"></p>
-              </div>
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend>Factors and Pressure Coefficients</legend>
-            <div class="grid">
-              <div class="field">
-                <label for="kzt">Topographic Factor K<sub>zt</sub></label>
-                <input id="kzt" name="kzt" type="number" inputmode="decimal" step="0.01" value="1.00" aria-describedby="err-kzt">
-                <p class="hint">Default 1.00 (flat terrain). See Section 26.8 for hills/escarpments.</p>
-                <p class="field-error" id="err-kzt"></p>
-              </div>
-              <div class="field">
-                <label for="ke">Ground Elevation Factor K<sub>e</sub></label>
-                <input id="ke" name="ke" type="number" inputmode="decimal" step="0.01" value="1.00" aria-describedby="err-ke">
-                <p class="hint">Default 1.00. ASCE 7-22 permits K<sub>e</sub>=1.0 at all elevations; less than 1.0 only at high elevations per Table 26.9-1.</p>
-                <p class="field-error" id="err-ke"></p>
-              </div>
-              <div class="field">
-                <label for="kd-mode">Directionality Factor K<sub>d</sub> Mode</label>
-                <select id="kd-mode" name="kd-mode" aria-describedby="err-kd-mode">
-                  <option value="auto" selected>Auto (buildings C&amp;C default 0.85)</option>
-                  <option value="manual">Manual override</option>
-                </select>
-                <p class="hint">K<sub>d</sub> = 0.85 for buildings per Table 26.6-1.</p>
-                <p class="field-error" id="err-kd-mode"></p>
-              </div>
-              <div class="field">
-                <label for="kd-manual">Manual K<sub>d</sub></label>
-                <input id="kd-manual" name="kd-manual" type="number" inputmode="decimal" step="0.01" value="0.85" disabled aria-describedby="err-kd-manual">
-                <p class="field-error" id="err-kd-manual"></p>
-              </div>
-              <div class="field">
-                <label for="theta">Roof Slope &theta; (degrees)</label>
-                <input id="theta" name="theta" type="number" inputmode="decimal" step="0.1" min="0" value="5" aria-describedby="err-theta">
-                <p class="hint">When &theta; &le; 10&deg;, ASCE Fig. 30.3-1 footnote permits wall GC<sub>p</sub> values (Zones 4 &amp; 5) to be reduced by 10%.</p>
-                <p class="field-error" id="err-theta"></p>
-              </div>
-              <div class="field checkbox-field">
-                <input id="apply-theta-reduction" name="apply-theta-reduction" type="checkbox" checked>
-                <label for="apply-theta-reduction">Apply 10% wall GC<sub>p</sub> reduction when &theta; &le; 10&deg;</label>
-              </div>
-              <div class="field">
-                <label for="gcp-preset">GC<sub>p</sub> Preset</label>
-                <select id="gcp-preset" name="gcp-preset" aria-describedby="err-gcp-preset"></select>
-                <p class="hint">Preset values are base values from ASCE Figs. 30.3-1 / 30.3-2A at the effective wind area noted. Verify against the applicable figure for your zone and area.</p>
-                <p class="field-error" id="err-gcp-preset"></p>
-              </div>
-              <div class="field">
-                <label for="gcp">External Pressure Coefficient GC<sub>p</sub></label>
-                <input id="gcp" name="gcp" type="number" inputmode="decimal" step="0.01" value="-0.90" aria-describedby="err-gcp">
-                <p class="hint">Base value. 10% wall reduction applied separately if checkbox above is on and &theta; &le; 10&deg;.</p>
-                <p class="field-error" id="err-gcp"></p>
-              </div>
-              <div class="field">
-                <label for="gcpi-mode">GC<sub>pi</sub> Input Mode</label>
-                <select id="gcpi-mode" name="gcpi-mode" aria-describedby="err-gcpi-mode">
-                  <option value="standard" selected>Standard values by enclosure</option>
-                  <option value="manual">Manual single value</option>
-                </select>
-                <p class="field-error" id="err-gcpi-mode"></p>
-              </div>
-              <div class="field">
-                <label for="enclosure-class">Enclosure Class (standard GC<sub>pi</sub>)</label>
-                <select id="enclosure-class" name="enclosure-class" aria-describedby="err-enclosure-class">
-                  <option value="enclosed" selected>Enclosed (&plusmn;0.18)</option>
-                  <option value="partially_enclosed">Partially enclosed (&plusmn;0.55)</option>
-                  <option value="open">Open (0.00)</option>
-                </select>
-                <p class="hint">Per Table 26.13-1.</p>
-                <p class="field-error" id="err-enclosure-class"></p>
-              </div>
-              <div class="field">
-                <label for="gcpi-manual">Manual GC<sub>pi</sub></label>
-                <input id="gcpi-manual" name="gcpi-manual" type="number" inputmode="decimal" step="0.01" value="0.18" disabled aria-describedby="err-gcpi-manual">
-                <p class="field-error" id="err-gcpi-manual"></p>
-              </div>
-            </div>
-          </fieldset>
-          <div class="status-box" id="method-note">
-            <strong>Method:</strong> Edition-aware low-rise C&amp;C calculation. The gust effect is already
-            combined into GC<sub>p</sub> and GC<sub>pi</sub>&mdash;no separate G factor is applied. q<sub>z</sub>
-            is shown for MWFRS reference and is not used in the net C&amp;C pressure. Rooftop equipment force
-            design (Ch. 29) is not included.
-          </div>
-          <div class="actions">
-            <button class="btn btn-primary" type="submit">Calculate Wind Pressures</button>
-            <button class="btn btn-secondary" type="button" id="reset-btn">Reset Defaults</button>
-          </div>
-        </form>
-        <section class="embed-tools" aria-labelledby="embed-heading">
-          <h3 id="embed-heading">Embed Snippet</h3>
-          <p class="meta">Use this iframe code to embed the calculator on another page.</p>
-          <textarea id="embed-code" readonly></textarea>
-          <div class="actions">
-            <button class="btn btn-secondary" type="button" id="copy-embed">Copy Embed Code</button>
-            <span id="copy-status" class="meta" aria-live="polite"></span>
-          </div>
-        </section>
-      </section>
-      <section class="card" aria-labelledby="result-heading">
-        <h2 id="result-heading">Results</h2>
-        <div id="result-announcer" class="sr-only" aria-live="polite"></div>
-        <div id="result-placeholder" class="status-box">
-          <h3>No calculation yet</h3>
-          Fill in the form and select <strong>Calculate Wind Pressures</strong>.
-        </div>
-        <div id="result-content" class="hidden">
-          <div id="result-warnings" class="hidden"></div>
-          <div class="sign-convention">
-            <strong>Sign convention:</strong> Positive pressures act <em>toward</em> the surface (inward). Negative pressures act <em>away</em> from the surface (suction/uplift).
-          </div>
-          <div class="kpi">
-            <div class="item">
-              <div class="label">Velocity Pressure q<sub>z</sub> (MWFRS reference)</div>
-              <div class="value" id="qz-value">-</div>
-            </div>
-            <div class="item">
-              <div class="label">Velocity Pressure q<sub>h</sub> (at mean roof height)</div>
-              <div class="value" id="qh-value">-</div>
-            </div>
-            <div class="item">
-              <div class="label">Net Pressure Envelope (min)</div>
-              <div class="value" id="p-min-value">-</div>
-            </div>
-            <div class="item">
-              <div class="label">Net Pressure Envelope (max)</div>
-              <div class="value" id="p-max-value">-</div>
-            </div>
-          </div>
-          <div class="subgrid">
-            <div>
-              <h3>Intermediate Factors</h3>
-              <table aria-label="Intermediate factors table">
-                <tbody id="factor-table-body"></tbody>
-              </table>
-            </div>
-            <div>
-              <h3>Net Pressure Cases</h3>
-              <table aria-label="Net pressure cases table">
-                <thead>
-                  <tr>
-                    <th>GC<sub>pi</sub> case</th>
-                    <th>Net pressure p (psf)</th>
-                  </tr>
-                </thead>
-                <tbody id="case-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-          <h3>Formulas With Substituted Values</h3>
-          <div id="formula-block"></div>
-          <p class="calc-note" id="edition-note"></p>
-        </div>
-        <h3>Methodology and References</h3>
-        <p class="meta">
-          Core wind equations are implemented in-browser for transparency and review.
-          ASCE 7-22 Eq. 26.10-1 for velocity pressure (K<sub>d</sub> excluded from q<sub>z</sub>);
-          Ch. 30 Eq. 30.3-1 for low-rise C&amp;C net pressure (K<sub>d</sub> applied in pressure equation).
-          ASCE 7-16 follows the prior form with K<sub>d</sub> inside q<sub>z</sub>.
-        </p>
-        <ul class="method-links">
-          <li><a href="https://windcalculations.com/wind-pressure-calculator-methodology/" target="_blank" rel="noopener noreferrer">Methodology page</a></li>
-          <li><a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">WindCalculations.com</a></li>
-        </ul>
-        <div class="citation">
-          <strong>Applicable scope:</strong> Low-rise enclosed / partially enclosed / partially open / open
-          buildings with h &le; 60 ft. GC<sub>p</sub> values from Ch. 30 Figures 30.3-1 (walls) and 30.3-2A&ndash;D
-          (roofs) depend on effective wind area and zone. Users must verify the applicable figure, zone,
-          and effective wind area for their project.
-        </div>
-        <div class="disclaimer">
-          <strong>Important Disclaimer</strong>
-          <ul>
-            <li>This calculator is for informational and preliminary screening use only.</li>
-            <li>Use does not create an engineer-client relationship or professional engineering service agreement.</li>
-            <li>Results depend on user-selected coefficients and assumptions and are not a substitute for project-specific code analysis.</li>
-            <li>Users are responsible for confirming adopted code edition, jurisdictional amendments, and governing load cases.</li>
-            <li>Final design and permit decisions must be reviewed and approved by a licensed professional engineer.</li>
-            <li>WindCalculations.com disclaims liability for losses arising from use or misuse of this tool.</li>
-          </ul>
-        </div>
-        <div class="cta">
-          Need stamped design support? Request a professional review at
-          <a href="https://windcalculations.com/" target="_blank" rel="noopener noreferrer">windcalculations.com</a>.
-        </div>
-      </section>
+  </fieldset>
+
+  <fieldset>
+    <legend>Post</legend>
+    <div class="field"><label>Section</label><select id="f_post_sec" onchange="toggleCustom('post')"></select></div>
+    
+    <div id="custom_post_block" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px dashed var(--border);">
+      <div class="field"><label>Custom Profile Name</label><input type="text" id="f_post_c_name" value="Custom Post Shape"></div>
+      <div class="row-3">
+        <div class="field"><label>Area (in²)</label><input type="number" id="f_post_c_A" value="1.5" step="0.01"></div>
+        <div class="field"><label>I (in⁴)</label><input type="number" id="f_post_c_I" value="1.0" step="0.01"></div>
+        <div class="field"><label>S (in³)</label><input type="number" id="f_post_c_S" value="1.0" step="0.01"></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Height (in)</label><input type="number" id="f_post_c_H" value="2.5" step="0.1"></div>
+        <div class="field"><label>Wall t (in)</label><input type="number" id="f_post_c_t" value="0.125" step="0.001"></div>
+      </div>
     </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Composite Snap Assembly</legend>
+    <label class="chk"><input type="checkbox" id="f_composite" onchange="render()"> Composite action — add HR-2 insert stiffness (Path A: ΣI)</label>
+    <p class="hint" style="margin:0.3rem 0;">Top rail = shell + HR-2 insert; post = shell + HR-2 insert. Enter the <strong>insert</strong> (HR-2) I &amp; A from the EMS section data. ΣI feeds deflection AND stress (S=ΣI/c). Valid only if the snap legs develop the shear flow q=VQ/I — otherwise leave OFF (two separate tubes).</p>
+    <div class="row-2">
+      <div class="field"><label>Rail insert I (in⁴)</label><input type="number" id="f_rail_insI" value="0" step="0.01"></div>
+      <div class="field"><label>Rail insert A (in²)</label><input type="number" id="f_rail_insA" value="0" step="0.01"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Post insert I (in⁴)</label><input type="number" id="f_post_insI" value="0" step="0.01"></div>
+      <div class="field"><label>Post insert A (in²)</label><input type="number" id="f_post_insA" value="0" step="0.01"></div>
+    </div>
+    <div class="field"><label>Bending allowable basis (ADM Ch. F)</label>
+      <select id="f_fbfac" onchange="render()">
+        <option value="0.75" selected>0.75 F_cy — compact section</option>
+        <option value="0.66">0.66 F_cy — moderate</option>
+        <option value="0.60">0.60 F_cy — general (Ω=1.65 yield)</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Base Anchorage</legend>
+    <div class="row-3">
+      <div class="field"><label>n anchors</label><input type="number" id="f_a_n" value="4" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_a_d" value="0.25" step="0.0625"></div>
+      <div class="field"><label>spacing a (in)</label><input type="number" id="f_a_sp" value="3.5" step="0.25"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>embed L (in)</label><input type="number" id="f_a_L" value="2.75" step="0.25"></div>
+      <div class="field"><label>Ω</label><input type="number" id="f_a_omega" value="2.0" step="0.1"></div>
+      <div class="field"><label>n in tension</label><input type="number" id="f_a_nt" value="2" step="1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Allow tension [T] (lb)</label><input type="number" id="f_a_T" value="1150" step="10"></div>
+      <div class="field"><label>Allow shear [V] (lb)</label><input type="number" id="f_a_V" value="980" step="10"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Base plate t (in)</label><input type="number" id="f_bp_t" value="0.25" step="0.0625"></div>
+      <div class="field"><label>Base plate width (in)</label><input type="number" id="f_bp_w" value="5.0" step="0.5"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Substrate</label><select id="f_substrate"><option>Concrete f'c=3000</option><option>Grout-filled CMU</option><option>Steel embed</option></select></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Optional Fastener (rail-to-post / cane bracket)</legend>
+    <label class="chk"><input type="checkbox" id="f_useFast" checked onchange="render()"> Include fastener check</label>
+    <div class="row-3" style="margin-top:0.5rem;">
+      <div class="field"><label>n bolts</label><input type="number" id="f_f_n" value="2" step="1"></div>
+      <div class="field"><label>dia (in)</label><input type="number" id="f_f_d" value="0.242" step="0.001"></div>
+      <div class="field"><label>Ω</label><input type="number" id="f_f_omega" value="2.0" step="0.1"></div>
+    </div>
+    <div class="field"><label>Fastener Fu (psi)</label><input type="number" id="f_f_fu" value="65000" step="1000"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Materials</legend>
+    <div class="field"><label>Aluminum alloy</label>
+      <select id="f_alloy" onchange="applyAlloy()"><option value="6061">6061-T6 (Fty 35)</option><option value="6063">6063-T6 (Fty 25)</option></select>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Fty=Fcy (ksi)</label><input type="number" id="f_fty" value="35" step="1"></div>
+      <div class="field"><label>Fsy (ksi)</label><input type="number" id="f_fsy" value="24" step="1"></div>
+      <div class="field"><label>Fu (ksi)</label><input type="number" id="f_fu" value="42" step="1"></div>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('loadFileInput').click()">📂 Load</button>
+    <input type="file" id="loadFileInput" accept=".json" style="display:none" onchange="if(this.files[0]) loadState(this.files[0]); this.value='';">
+    <button class="btn btn-secondary" onclick="saveState()">💾 Save</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 Print / PDF</button>
   </div>
-  <script>
-    (function () {
-      "use strict";
+</aside>
 
-      // ====================================================================
-      // EDITION-AWARE EXPOSURE CONSTANTS
-      //
-      // ASCE 7-16 Table 26.11-1 (Kz formula uses 2.01 multiplier; Kd in qz):
-      //   B: alpha=7.0,  zg=1200 ft, zmin=30 ft (Kz floor at z=30 for Exp B)
-      //   C: alpha=9.5,  zg= 900 ft, zmin=15 ft
-      //   D: alpha=11.5, zg= 700 ft, zmin=15 ft
-      //
-      // ASCE 7-22 Table 26.11-1 (Kz formula uses 2.41 multiplier; Kd in p-eq):
-      //   B: alpha=7.5,  zg=3280 ft, zmin=30 ft
-      //   C: alpha=9.8,  zg=2460 ft, zmin=15 ft
-      //   D: alpha=11.5, zg=1935 ft, zmin=15 ft
-      //
-      // VERIFICATION vs third party software (V=160, Exp C, h=30, ASCE 7-22):
-      //   Kh = 0.9805 (ref table: 0.980)        OK
-      //   qh = 64.26 psf (no Kd, per Eq 26.10-1)     OK
-      //   Wall Z4 pos at A=1 (theta<=10 reduction):  58.99 psf  OK
-      //   Wall Z5 neg at A=1 (theta<=10 reduction): -78.65 psf  OK
-      // ====================================================================
-      var EXPOSURE_CONSTANTS = {
-        "7-16": {
-          mult: 2.01,
-          B: { alpha: 7.0,  zg: 1200, zmin: 30 },
-          C: { alpha: 9.5,  zg:  900, zmin: 15 },
-          D: { alpha: 11.5, zg:  700, zmin: 15 }
-        },
-        "7-22": {
-          mult: 2.41,
-          B: { alpha: 7.5,  zg: 3280, zmin: 30 },
-          C: { alpha: 9.8,  zg: 2460, zmin: 15 },
-          D: { alpha: 11.5, zg: 1935, zmin: 15 }
-        }
-      };
+<main class="preview-panel">
+  <div class="no-print" style="max-width:8.5in;margin:0 auto 1rem;background:var(--green);color:#fff;border-radius:8px;padding:0.7rem 1rem;font-size:0.85rem;line-height:1.5;">
+    This is a <strong>free preliminary check</strong>, not a sealed calculation. For a stamped, project-specific fence, railing, or wind load calculation, visit <a href="https://windcalculations.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">windcalculations.com</a>. Use <strong>Print / PDF</strong> below the form for a shareable copy.
+  </div>
+  <div class="viz-card no-print" id="vizCard">
+    <h2>Live Diagram</h2>
+    <p class="viz-sub">Updates as you type — verify height, spacing, rails, base plate &amp; anchor embedment before printing.</p>
+    <div class="viz-grid">
+      <div class="viz-box"><div class="vlabel">Elevation</div><div id="vizElev"></div></div>
+      <div class="viz-box"><div class="vlabel">Base Section (anchor embedment)</div><div id="vizSide"></div></div>
+    </div>
+    <div class="viz-readout" id="vizReadout"></div>
+  </div>
+  <div class="report" id="report"><div class="empty-state">Fill the form. The report renders here in real time.</div></div>
+</main>
+</div>
 
-      var RISK_CATEGORIES = ["I", "II", "III", "IV"];
+<script>
+// SECTION LIBRARY (aluminum HSS tube & Extrusions).
+function rectTube(B,H,t){
+  const A=B*H-(B-2*t)*(H-2*t);
+  const I=(B*Math.pow(H,3)-(B-2*t)*Math.pow(H-2*t,3))/12;
+  const Iy=(H*Math.pow(B,3)-(H-2*t)*Math.pow(B-2*t,3))/12;
+  const S=I/(H/2);
+  return {A:+A.toFixed(3),I:+I.toFixed(2),Iy:+Iy.toFixed(2),Sb:+S.toFixed(2),St:+S.toFixed(2),t,H};
+}
+function effSec(sec,comp,insI,insA){
+  if(comp && insI>0){ const I=sec.I+insI, A=sec.A+Math.max(insA,0), c=(sec.H||2)/2;
+    return {I:+I.toFixed(3), A:+A.toFixed(3), Sb:+(I/c).toFixed(3), name:sec.name, comp:true}; }
+  return {I:sec.I, A:sec.A, Sb:sec.Sb, name:sec.name, comp:false};
+}
+const SECTIONS=[
+  {name:'HR-14 + HR-2 Composite Rail (Iy=0.448)', A:0.856, I:0.448, Iy:0.132, Sb:0.46, St:0.46, t:0.125, H:1.964, exact:true},
+  {name:'HR-4 + HR-2 Composite Post (Iy=0.578)',  A:0.990, I:0.578, Iy:0.302, Sb:0.58, St:0.58, t:0.125, H:2.00,  exact:true},
+  {name:'HR-14 + HR-2 Composite Rail (Ix=0.132)', A:0.856, I:0.132, Iy:0.448, Sb:0.18, St:0.18, t:0.125, H:1.482, exact:true},
+  {name:'HR-4 + HR-2 Composite Post (Ix=0.302)',  A:0.990, I:0.302, Iy:0.578, Sb:0.30, St:0.30, t:0.125, H:2.00,  exact:true},
+  {name:'HR-14 Top Cap (EMS shell)',  A:0.585, I:0.131, Iy:0.366, Sb:0.18, St:0.18, t:0.125, H:1.482, exact:true},
+  {name:'HR-4 Snap Post (EMS shell)', A:0.719, I:0.301, Iy:0.496, Sb:0.30, St:0.30, t:0.125, H:2.00,  exact:true},
+  {name:'HR-2 Snap Plate (EMS)',      A:0.271, I:0.001, Iy:0.082, Sb:0.01, St:0.01, t:0.125, H:0.25,  exact:true},
+  {name:'HR-3 Channel (1.8" x 0.9" x 0.08")', ...rectTube(1.795, 0.895, 0.08)},
+  {name:'HR-5 Picket (1" x 1" x 0.062")', ...rectTube(1, 1, 0.062)},
+  {name:'HSS 2" x 2" x 1/8"',   A:0.94, I:0.55, Iy:0.55, Sb:0.44, St:0.44, t:0.125, H:2.00, exact:true},
+  {name:'HSS 2" x 2" x 1/4"',   A:1.75, I:0.91, Iy:0.91, Sb:0.77, St:0.77, t:0.25,  H:2.00, exact:true},
+  {name:'HSS 2.5" x 2.5" x 1/8" (post)', A:1.19, I:1.12, Iy:1.12, Sb:0.71, St:0.71, t:0.125, H:2.50, exact:true},
+  {name:'HSS 1.5" x 1.5" x 1/8"', ...rectTube(1.5,1.5,0.125)},
+  {name:'HSS 1" x 4" x 1/8" (infill)', ...rectTube(1,4,0.125)},
+  {name:'HSS 1" x 6" x 1/8" (infill)', ...rectTube(1,6,0.125)},
+  {name:'HSS 3" x 3" x 1/8"',   ...rectTube(3,3,0.125)},
+  {name:'HSS 2" x 3" x 1/8"',   ...rectTube(2,3,0.125)},
+  {name:'HSS 2" x 4" x 1/8"',   ...rectTube(2,4,0.125)},
+  {name:'Custom User Input...', customFlag:true, A:1, I:1, Iy:1, Sb:1, St:1, t:0.125, H:2}
+];
 
-      // ====================================================================
-      // GCp PRESETS (base values from ASCE 7-16/7-22 Figs. 30.3-1, 30.3-2A)
-      // 10% reduction for walls when theta <= 10 is applied separately
-      // via the apply-theta-reduction checkbox.
-      // ====================================================================
-      var PRESETS = [
-        { id: "custom",             label: "Custom manual GCp",                                             gcp: null, zoneType: "custom" },
-        // Walls (Fig. 30.3-1) base values -- EWA = 10 sq ft
-        { id: "wall_zone4_pos_10",  label: "Wall Zone 4 (pos, A\u226410 sf) GCp = +1.0 [base]",             gcp:  1.0, zoneType: "wall" },
-        { id: "wall_zone4_neg_10",  label: "Wall Zone 4 (neg, A\u226410 sf) GCp = \u22121.1 [base]",        gcp: -1.1, zoneType: "wall" },
-        { id: "wall_zone5_pos_10",  label: "Wall Zone 5 (pos, A\u226410 sf) GCp = +1.0 [base]",             gcp:  1.0, zoneType: "wall" },
-        { id: "wall_zone5_neg_10",  label: "Wall Zone 5 (neg, A\u226410 sf) GCp = \u22121.4 [base]",        gcp: -1.4, zoneType: "wall" },
-        // Walls -- EWA = 100 sq ft (log-interp from 10 and 500)
-        { id: "wall_zone4_pos_100", label: "Wall Zone 4 (pos, A=100 sf) GCp = +0.82 [base]",                 gcp:  0.82, zoneType: "wall" },
-        { id: "wall_zone4_neg_100", label: "Wall Zone 4 (neg, A=100 sf) GCp = \u22120.92 [base]",            gcp: -0.92, zoneType: "wall" },
-        { id: "wall_zone5_pos_100", label: "Wall Zone 5 (pos, A=100 sf) GCp = +0.82 [base]",                 gcp:  0.82, zoneType: "wall" },
-        { id: "wall_zone5_neg_100", label: "Wall Zone 5 (neg, A=100 sf) GCp = \u22121.22 [base]",            gcp: -1.22, zoneType: "wall" },
-        // Flat / low-slope roof (Fig. 30.3-2A, theta <= 7 deg) -- EWA = 10 sq ft
-        { id: "roof_zone1_neg_10",  label: "Roof Zone 1 (neg, A\u226410 sf) GCp = \u22121.0",               gcp: -1.0, zoneType: "roof" },
-        { id: "roof_zone1_pos_10",  label: "Roof Zone 1 (pos, A\u226410 sf) GCp = +0.3",                    gcp:  0.3, zoneType: "roof" },
-        { id: "roof_zone2_neg_10",  label: "Roof Zone 2 (neg, A\u226410 sf) GCp = \u22121.8",               gcp: -1.8, zoneType: "roof" },
-        { id: "roof_zone2_pos_10",  label: "Roof Zone 2 (pos, A\u226410 sf) GCp = +0.3",                    gcp:  0.3, zoneType: "roof" },
-        { id: "roof_zone3_neg_10",  label: "Roof Zone 3 (neg, A\u226410 sf) GCp = \u22122.8",               gcp: -2.8, zoneType: "roof" },
-        { id: "roof_zone3_pos_10",  label: "Roof Zone 3 (pos, A\u226410 sf) GCp = +0.3",                    gcp:  0.3, zoneType: "roof" },
-        // Flat roof -- EWA = 100 sq ft
-        { id: "roof_zone1_neg_100", label: "Roof Zone 1 (neg, A=100 sf) GCp = \u22120.9",                   gcp: -0.9, zoneType: "roof" },
-        { id: "roof_zone1_pos_100", label: "Roof Zone 1 (pos, A=100 sf) GCp = +0.2",                        gcp:  0.2, zoneType: "roof" },
-        { id: "roof_zone2_neg_100", label: "Roof Zone 2 (neg, A=100 sf) GCp = \u22121.2",                   gcp: -1.2, zoneType: "roof" },
-        { id: "roof_zone3_neg_100", label: "Roof Zone 3 (neg, A=100 sf) GCp = \u22121.8",                   gcp: -1.8, zoneType: "roof" }
-      ];
+function secByName(n){return SECTIONS.find(s=>s.name===n)||SECTIONS[0];}
+function populateSectionSelect(id,def){const sel=document.getElementById(id);if(!sel)return;sel.innerHTML=SECTIONS.map(s=>`<option value="${s.name.replace(/"/g,'&quot;')}"${s.name===def?' selected':''}>${s.name}</option>`).join('');}
 
-      var GCPI_STANDARD_CASES = {
-        enclosed: [0.18, -0.18],
-        partially_enclosed: [0.55, -0.55],
-        open: [0.0]
-      };
+// WIND ENGINE
+const EXP={B:{coef:2.01,alpha:7.0,zg:1200},C:{coef:2.01,alpha:9.5,zg:900},D:{coef:2.01,alpha:11.5,zg:700}};
+function Kz(z,exp){const e=EXP[exp]||EXP.C;return e.coef*Math.pow(Math.max(z,15)/e.zg,2/e.alpha);}
 
-      var DEFAULTS = {
-        edition: "7-22",
-        risk: "II",
-        V: 140,
-        exposure: "C",
-        h: 30,
-        z: 30,
-        Kzt: 1.0,
-        Ke: 1.0,
-        kdMode: "auto",
-        kdManual: 0.85,
-        theta: 5,
-        applyThetaReduction: true,
-        gcpPreset: "roof_zone1_neg_100",
-        gcp: -0.9,
-        gcpiMode: "standard",
-        enclosure: "enclosed",
-        gcpiManual: 0.18
-      };
+function computeWind(d){
+  const hft=d.H/12;                                  
+  const kz=Kz(hft,d.exp);
+  const qh=0.00256*kz*d.Kzt*d.Kd*d.V*d.V;            
+  const PA=0.6*Math.max(16, qh*d.Gf*d.Cf);          
+  const qwind=d.eps*d.Iw*PA;                         
+  return {kz,qh,PA,qwind};
+}
 
-      var FIELD_TO_ERROR = {
-        edition: "err-edition",
-        risk: "err-risk-category",
-        V: "err-basic-speed",
-        exposure: "err-exposure",
-        h: "err-mean-roof-height",
-        z: "err-qz-height",
-        Kzt: "err-kzt",
-        Ke: "err-ke",
-        kdMode: "err-kd-mode",
-        kdManual: "err-kd-manual",
-        theta: "err-theta",
-        gcpPreset: "err-gcp-preset",
-        gcp: "err-gcp",
-        gcpiMode: "err-gcpi-mode",
-        enclosure: "err-enclosure-class",
-        gcpiManual: "err-gcpi-manual"
-      };
+function railCoef(spans){ return spans>=2 ? {cM:0.1012,cV:0.6} : {cM:0.125,cV:0.5}; }
 
-      var form = document.getElementById("wind-form");
-      var editionEl = document.getElementById("edition");
-      var riskEl = document.getElementById("risk-category");
-      var speedEl = document.getElementById("basic-speed");
-      var exposureEl = document.getElementById("exposure");
-      var meanRoofEl = document.getElementById("mean-roof-height");
-      var qzHeightEl = document.getElementById("qz-height");
-      var kztEl = document.getElementById("kzt");
-      var keEl = document.getElementById("ke");
-      var kdModeEl = document.getElementById("kd-mode");
-      var kdManualEl = document.getElementById("kd-manual");
-      var thetaEl = document.getElementById("theta");
-      var applyThetaReductionEl = document.getElementById("apply-theta-reduction");
-      var gcpPresetEl = document.getElementById("gcp-preset");
-      var gcpEl = document.getElementById("gcp");
-      var gcpiModeEl = document.getElementById("gcpi-mode");
-      var enclosureEl = document.getElementById("enclosure-class");
-      var gcpiManualEl = document.getElementById("gcpi-manual");
-      var errorSummaryEl = document.getElementById("error-summary");
-      var warningSummaryEl = document.getElementById("warning-summary");
-      var resultPlaceholderEl = document.getElementById("result-placeholder");
-      var resultContentEl = document.getElementById("result-content");
-      var resultAnnouncerEl = document.getElementById("result-announcer");
-      var resultWarningsEl = document.getElementById("result-warnings");
-      var factorTableBodyEl = document.getElementById("factor-table-body");
-      var caseTableBodyEl = document.getElementById("case-table-body");
-      var formulaBlockEl = document.getElementById("formula-block");
-      var qzValueEl = document.getElementById("qz-value");
-      var qhValueEl = document.getElementById("qh-value");
-      var pMinValueEl = document.getElementById("p-min-value");
-      var pMaxValueEl = document.getElementById("p-max-value");
-      var editionNoteEl = document.getElementById("edition-note");
-      var embedCodeEl = document.getElementById("embed-code");
-      var copyEmbedBtnEl = document.getElementById("copy-embed");
-      var copyStatusEl = document.getElementById("copy-status");
-      var resetBtnEl = document.getElementById("reset-btn");
+function computeAll(d){
+  const wind=computeWind(d);
+  const q=wind.qwind;                  
+  const Fty=d.fty, fbFac=(d.fbfac>0?d.fbfac:0.75), allowFb=fbFac*Fty, allowFv=0.6*d.fsy, Ey=10100;
+  const rc=railCoef(Math.max(1,Math.round(d.spans)));
 
-      init();
+  // ---- TOP RAIL (spans L horizontally) ----
+  const wRail=(q/144)*d.railTrib;                    
+  const rail={};
+  rail.M_wind=rc.cM*wRail*d.L*d.L;                   
+  rail.V_wind=rc.cV*wRail*d.L;
+  if(d.useGuard){
+    rail.M_50=rc.cM*(d.q50/12)*d.L*d.L;
+    rail.V_50=rc.cV*(d.q50/12)*d.L;
+    rail.M_200=d.P200*d.L/4;                         
+    rail.V_200=d.P200/2;
+  } else { rail.M_50=0; rail.V_50=0; rail.M_200=0; rail.V_200=0; }
+  rail.M=Math.max(rail.M_wind,rail.M_50,rail.M_200);
+  rail.V=Math.max(rail.V_wind,rail.V_50,rail.V_200);
+  rail.sec=d.rail_sec;
+  rail.eff=effSec(rail.sec, d.composite, d.rail_insI, d.rail_insA);
+  rail.Fb=rail.M/(rail.eff.Sb*1000);                 
+  rail.Fv=rail.V/(rail.eff.A*1000);
+  rail.gov = rail.M===rail.M_wind?'wind':(rail.M===rail.M_200?'200 lb conc.':'50 plf');
+  
+  const wDefl=Math.max(wRail, d.useGuard?(d.q50/12):0);
+  rail.defl=5*wDefl*Math.pow(d.L,4)/(384*Ey*1000*rail.eff.I);
+  rail.deflLimit=d.L/rail.defl;
 
-      function init() {
-        populatePresetOptions();
-        applyDefaults();
-        applyQueryParams();
-        updateKdState();
-        updateGcpiState();
-        updateEmbedSnippet();
-        attachEvents();
-        calculateAndRender();
-      }
+  // ---- POST (cantilever height H; tributary width L) ----
+  const post={};
+  const kdist=Math.max(2,Math.round(d.windk));
+  post.M_wind=(q/144)*d.L*d.H*d.H/kdist;             
+  post.V_wind=(q/144)*d.L*d.H;
+  if(d.useGuard){
+    const trib_ft=d.L/12;                            
+    post.M_200=d.P200*d.H;                           
+    post.V_200=d.P200;
+    post.F_50=d.q50*trib_ft;                         
+    post.M_50=post.F_50*d.H;
+    post.V_50=post.F_50;
+  } else { post.M_200=0;post.V_200=0;post.M_50=0;post.V_50=0;post.F_50=0; }
+  post.M=Math.max(post.M_wind,post.M_200,post.M_50);
+  post.V=Math.max(post.V_wind,post.V_200,post.V_50);
+  post.sec=d.post_sec;
+  post.eff=effSec(post.sec, d.composite, d.post_insI, d.post_insA);
+  post.Fb=post.M/(post.eff.Sb*1000);
+  post.Fv=post.V/(post.eff.A*1000);
+  post.gov=post.M===post.M_wind?'wind':(post.M===post.M_200?'200 lb conc.':'50 plf');
+  
+  const postI = post.eff.I;
+  post.I_used = postI;
+  post.defl=post.V_wind*Math.pow(d.H,3)/(8*Ey*1000*postI) + (d.useGuard?d.P200*Math.pow(d.H,3)/(3*Ey*1000*postI):0);
+  post.deflSpan = 2*d.H;
+  post.deflLimit=post.deflSpan/post.defl;
 
-      function attachEvents() {
-        form.addEventListener("submit", function (event) {
-          event.preventDefault();
-          calculateAndRender();
-        });
-        kdModeEl.addEventListener("change", updateKdState);
-        gcpiModeEl.addEventListener("change", updateGcpiState);
-        gcpPresetEl.addEventListener("change", function () {
-          var preset = findPreset(gcpPresetEl.value);
-          if (preset && typeof preset.gcp === "number") {
-            gcpEl.value = toFixedString(preset.gcp, 2);
+  // ---- BASE ANCHORAGE ----
+  const Mbase=post.M;                                 
+  const Pz=d.eps*d.dl*(d.L/12)*(d.H/12);                    
+  const nt=Math.max(1,Math.round(d.a_nt));
+  const T=Math.max(0, Mbase/(nt*d.a_sp) - Pz/Math.max(1,d.a_n));   
+  const Va=post.V/Math.max(1,d.a_n);                  
+  const inter=Math.pow(T/d.a_T,2)+Math.pow(Va/d.a_V,2);
+  
+  const armBP=Math.max(0.25, d.a_sp/2 - post.sec.H/2);   
+  const Bp=Math.max(1, d.bp_w||5);                        
+  const bp_treq=Math.sqrt(6*Math.abs(T)*armBP/(allowFb*1000*Bp))||0;
+  const anchor={Mbase,Pz,T,Va,inter,bp_treq};
+
+  // ---- OPTIONAL FASTENER ----
+  let fast=null;
+  if(d.useFast){
+    const Ab=Math.PI/4*d.f_d*d.f_d;
+    const Rn=0.45*d.f_fu*Ab;
+    const Vallow=Rn/d.f_omega;
+    const tw=Math.min(rail.sec.t||0.125, post.sec.t||0.125);
+    const Rbear=2.0*d.f_d*tw*(d.fu*1000)/d.f_omega;
+    const Vdem=post.V/Math.max(1,d.f_n);
+    fast={Ab,Rn,Vallow,tw,Rbear,Vdem};
+  }
+
+  // --- EPSILON AUTO CALC ---
+  const Agross = d.L * d.H;
+  const Apost = d.post_sec.H * d.H;
+  const Arails = Math.max(0, d.nrails) * d.rail_sec.H * d.L;
+  const nPickets = Math.max(0, Math.floor(d.L / (d.vert_sp || d.L)));
+  const Apickets = nPickets * d.vert_w * d.H; 
+  let eps_calc = (Apost + Arails + Apickets) / Agross;
+  if (eps_calc > 1.0) eps_calc = 1.0;
+  
+  const epsHint = document.getElementById('epsHint');
+  if(epsHint) epsHint.innerHTML = `(Calc: ${Math.round(eps_calc*100)}%)`;
+
+  return {wind,rail,post,anchor,fast,allowFb,allowFv};
+}
+
+// FORM I/O & CUSTOM SECTION LOGIC
+const NUM=['H','L','spans','nrails','vert_w','vert_sp','defl','P200','q50','P50','dl','V','Kd','Gf','Kzt','Iw','eps','Cf','windk',
+  'railTrib','a_n','a_d','a_sp','a_L','a_omega','a_nt','a_T','a_V','bp_t','bp_w','rail_insI','rail_insA','post_insI','post_insA',
+  'fbfac','f_n','f_d','f_omega','f_fu','fty','fsy','fu',
+  'rail_c_A','rail_c_I','rail_c_S','rail_c_H','rail_c_t','post_c_A','post_c_I','post_c_S','post_c_H','post_c_t'];
+const TXT=['project','risk','exp','type','substrate','alloy','rail_c_name','post_c_name'];
+const BOOL=['useGuard','useFast','composite'];
+const SECSEL=['rail_sec','post_sec'];
+
+function toggleCustom(prefix){
+  const sel = document.getElementById('f_'+prefix+'_sec').value;
+  document.getElementById('custom_'+prefix+'_block').style.display = (sel === 'Custom User Input...') ? 'block' : 'none';
+  render();
+}
+
+function getSection(prefix){
+  const name = document.getElementById('f_'+prefix+'_sec').value;
+  if(name === 'Custom User Input...'){
+    return {
+      name: document.getElementById('f_'+prefix+'_c_name').value || 'Custom Shape',
+      A: parseFloat(document.getElementById('f_'+prefix+'_c_A').value) || 0.01,
+      I: parseFloat(document.getElementById('f_'+prefix+'_c_I').value) || 0.01,
+      Sb: parseFloat(document.getElementById('f_'+prefix+'_c_S').value) || 0.01,
+      St: parseFloat(document.getElementById('f_'+prefix+'_c_S').value) || 0.01,
+      H: parseFloat(document.getElementById('f_'+prefix+'_c_H').value) || 1.0,
+      t: parseFloat(document.getElementById('f_'+prefix+'_c_t').value) || 0.125
+    };
+  }
+  return secByName(name);
+}
+
+function readForm(){
+  const d={};
+  NUM.forEach(k=>{d[k]=parseFloat(document.getElementById('f_'+k).value)||0;});
+  TXT.forEach(k=>{d[k]=document.getElementById('f_'+k).value;});
+  BOOL.forEach(k=>{d[k]=document.getElementById('f_'+k).checked;});
+  d.date=document.getElementById('f_date').value;
+  d.rail_sec=getSection('rail');
+  d.post_sec=getSection('post');
+  return d;
+}
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(x,dp){return (x).toFixed(dp==null?2:dp);}
+function fmtDateUpper(iso){const d=iso?(()=> {const[y,m,dd]=iso.split('-');return new Date(+y,+m-1,+dd);})():new Date();return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}).toUpperCase();}
+
+function applyTypePreset(){
+  const t=document.getElementById('f_type').value;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
+  const setChk=(id,v)=>{const e=document.getElementById(id);if(e)e.checked=v;};
+  
+  if(t==='ems_pool'){
+      set('f_H',53); set('f_L',50); set('f_nrails',3); 
+      set('f_vert_w',1.0); set('f_vert_sp',4.875);
+      set('f_defl',180); setChk('f_useGuard',false); 
+      set('f_eps', 0.30); set('f_a_d',0.25); set('f_a_L',2.75); set('f_a_T',1150); set('f_a_V',980);
+      document.getElementById('f_rail_sec').value = 'HR-14 + HR-2 Composite Rail (Iy=0.448)';
+      document.getElementById('f_post_sec').value = 'HR-4 + HR-2 Composite Post (Iy=0.578)';
+  }
+  else if(t==='fence'){set('f_H',72);set('f_defl',180);setChk('f_useGuard',false);}
+  else if(t==='guard'){set('f_H',42);set('f_defl',180);setChk('f_useGuard',true);}
+  else if(t==='handrail'){set('f_H',42);set('f_defl',180);setChk('f_useGuard',true);}
+  else if(t==='pool'){set('f_H',48);set('f_defl',180);setChk('f_useGuard',false);}
+  
+  toggleCustom('rail');
+  toggleCustom('post');
+  render();
+}
+function applyAlloy(){
+  const a=document.getElementById('f_alloy').value;
+  if(a==='6063'){document.getElementById('f_fty').value=25;document.getElementById('f_fu').value=30;}
+  else{document.getElementById('f_fty').value=35;document.getElementById('f_fu').value=42;}
+  render();
+}
+
+function saveState(){
+  const s={version:'FENCE-V1.6',timestamp:new Date().toISOString(),fields:{},bools:{},sections:{}};
+  NUM.concat(TXT).forEach(k=>{const e=document.getElementById('f_'+k);if(e)s.fields[k]=e.value;});
+  s.fields.date=document.getElementById('f_date').value;
+  BOOL.forEach(k=>{s.bools[k]=document.getElementById('f_'+k).checked;});
+  SECSEL.forEach(k=>{s.sections[k]=document.getElementById('f_'+k).value;});
+  const slug=(s.fields.project||'fence').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+  const b=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`fence_${slug}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function loadState(file){
+  const r=new FileReader();
+  r.onload=e=>{try{const s=JSON.parse(e.target.result);
+    if(s.fields)Object.entries(s.fields).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.value=v;});
+    if(s.bools)Object.entries(s.bools).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.checked=!!v;});
+    if(s.sections)Object.entries(s.sections).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.value=v;});
+    
+    toggleCustom('rail');
+    toggleCustom('post');
+    render();}catch(err){alert('Failed to load: '+err.message);}};
+  r.readAsText(file);
+}
+
+// DRAWINGS
+function dimV(x,y1,y2,label){
+  return `<line class="dl" x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+    <line class="dl" x1="${x-4}" y1="${y1}" x2="${x+4}" y2="${y1}"/>
+    <line class="dl" x1="${x-4}" y1="${y2}" x2="${x+4}" y2="${y2}"/>
+    <text class="dtxt sm" x="${x-6}" y="${(y1+y2)/2}" text-anchor="end" transform="rotate(-90 ${x-6} ${(y1+y2)/2})">${label}</text>`;
+}
+function dimH(x1,y,x2,label){
+  return `<line class="dl" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+    <line class="dl" x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+    <line class="dl" x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+    <text class="dtxt sm" x="${(x1+x2)/2}" y="${y-4}" text-anchor="middle">${label}</text>`;
+}
+function elevationSVG(d){
+  const W=440,Hsvg=270, gy=215, top=40;
+  const x0=70, x1=210, x2=350;            // two bays, three posts
+  const postW=8;
+  let s='';
+  
+  // ground
+  s+=`<line class="dl" x1="20" y1="${gy}" x2="${W-20}" y2="${gy}" stroke-width="1.4"/>`;
+  for(let i=20;i<W-20;i+=12){ s+=`<line class="dl" x1="${i}" y1="${gy}" x2="${i-6}" y2="${gy+7}"/>`; }
+  
+  // Draw Vertical Pickets Layer
+  if(d.vert_sp > 0 && d.vert_w > 0) {
+      const np = Math.floor(d.L / d.vert_sp);
+      [ [x0, x1], [x1, x2] ].forEach(bay => {
+          const bayW = bay[1] - bay[0];
+          const spacingPx = bayW / (np + 1);
+          for(let i=1; i<=np; i++){
+              const px = bay[0] + i*spacingPx;
+              s += `<line class="picket" x1="${px}" y1="${top+2}" x2="${px}" y2="${gy-8}" stroke-width="${Math.max(1, d.vert_w*1.5)}"/>`;
           }
-        });
-        resetBtnEl.addEventListener("click", function () {
-          applyDefaults();
-          updateKdState();
-          updateGcpiState();
-          clearErrors();
-          calculateAndRender();
-        });
-        copyEmbedBtnEl.addEventListener("click", copyEmbedCode);
-        form.addEventListener("input", function () {
-          if (!errorSummaryEl.classList.contains("hidden")) {
-            calculateAndRender();
-          }
-        });
-      }
+      });
+  }
 
-      function applyDefaults() {
-        editionEl.value = DEFAULTS.edition;
-        riskEl.value = DEFAULTS.risk;
-        speedEl.value = String(DEFAULTS.V);
-        exposureEl.value = DEFAULTS.exposure;
-        meanRoofEl.value = String(DEFAULTS.h);
-        qzHeightEl.value = String(DEFAULTS.z);
-        kztEl.value = toFixedString(DEFAULTS.Kzt, 2);
-        keEl.value = toFixedString(DEFAULTS.Ke, 2);
-        kdModeEl.value = DEFAULTS.kdMode;
-        kdManualEl.value = toFixedString(DEFAULTS.kdManual, 2);
-        thetaEl.value = String(DEFAULTS.theta);
-        applyThetaReductionEl.checked = DEFAULTS.applyThetaReduction;
-        gcpPresetEl.value = DEFAULTS.gcpPreset;
-        gcpEl.value = toFixedString(DEFAULTS.gcp, 2);
-        gcpiModeEl.value = DEFAULTS.gcpiMode;
-        enclosureEl.value = DEFAULTS.enclosure;
-        gcpiManualEl.value = toFixedString(DEFAULTS.gcpiManual, 2);
-      }
+  // Draw Horizontal Rails
+  const nr=Math.max(0,Math.round(d.nrails));
+  if(nr === 3) {
+      // Common Pool Configuration (Top, Mid near top, Bottom)
+      s+=`<line class="rail" x1="${x0+2}" y1="${top+14}" x2="${x2-2}" y2="${top+14}"/>`;
+      s+=`<line class="rail" x1="${x0+2}" y1="${gy-8}" x2="${x2-2}" y2="${gy-8}"/>`;
+  } else {
+      // Evenly spaced
+      for(let i=1;i<nr;i++){ const y=top+ (gy-top)*i/nr; s+=`<line class="rail" x1="${x0+2}" y1="${y}" x2="${x2-2}" y2="${y}"/>`; }
+  }
 
-      function applyQueryParams() {
-        var params = new URLSearchParams(window.location.search);
-        var embedMode = params.get("embed") === "1";
-        if (embedMode) {
-          document.body.classList.add("embed-mode");
-        }
-        var editionParam = params.get("edition");
-        if (editionParam === "7-16" || editionParam === "7-22") {
-          editionEl.value = editionParam;
-        }
-        var presetParam = params.get("preset");
-        if (presetParam && findPreset(presetParam)) {
-          gcpPresetEl.value = presetParam;
-          var preset = findPreset(presetParam);
-          if (preset && typeof preset.gcp === "number") {
-            gcpEl.value = toFixedString(preset.gcp, 2);
-          }
-        }
-      }
+  // Top rail (Alum)
+  s+=`<rect class="alum" x="${x0}" y="${top}" width="${x2-x0}" height="6"/>`;
+  
+  // Draw Posts Layer (overlays pickets & rails)
+  [x0,x1,x2].forEach(x=>{
+    s+=`<rect class="post" x="${x-postW/2}" y="${top}" width="${postW}" height="${gy-top}"/>`;
+    s+=`<rect class="plate" x="${x-9}" y="${gy-3}" width="18" height="5"/>`;   
+    s+=`<circle class="bolt" cx="${x-4}" cy="${gy-1}" r="1.5"/><circle class="bolt" cx="${x+4}" cy="${gy-1}" r="1.5"/>`;
+  });
 
-      function updateEmbedSnippet() {
-        var baseUrl = "https://windcalculations.com/asce-wind-pressure-calculator";
-        embedCodeEl.value =
-          '<iframe src="' + baseUrl + '?embed=1" width="100%" height="950" style="border:0;" loading="lazy"></iframe>';
-      }
+  // load arrows (guard)
+  if(d.useGuard){
+    s+=`<line class="loadarrow" x1="${x1}" y1="${top-22}" x2="${x1}" y2="${top-4}"/><path d="M${x1-3},${top-9} L${x1},${top-3} L${x1+3},${top-9}" class="loadarrow"/>`;
+    s+=`<text class="dtxt sm" x="${x1+5}" y="${top-12}" fill="#b1322a">${num(d.P200,0)} lb</text>`;
+    s+=`<text class="dtxt sm" x="${x0}" y="${top-24}" fill="#b1322a">${num(d.q50,0)} plf →</text>`;
+  }
+  // wind arrows
+  for(let i=0;i<3;i++){const y=top+30+i*45; s+=`<line class="loadarrow" x1="40" y1="${y}" x2="${x0-12}" y2="${y}" stroke-dasharray="3 2"/><path d="M${x0-16},${y-3} L${x0-10},${y} L${x0-16},${y+3}" class="loadarrow"/>`;}
+  s+=`<text class="dtxt sm" x="26" y="${top+22}" fill="#b1322a">wind</text>`;
+  // dims
+  s+=dimV(W-30, top, gy, `H = ${num(d.H,0)}"`);
+  s+=dimH(x0, gy+22, x1, `L = ${num(d.L,0)}"`);
+  return `<svg viewBox="0 0 ${W} ${Hsvg}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+function sideSVG(d){
+  const W=260,Hsvg=300, gy=150, top=20, cx=120;
+  let s='';
+  s+=`<rect class="conc" x="40" y="${gy}" width="${W-70}" height="${Hsvg-gy-20}"/>`;
+  for(let i=46;i<W-32;i+=14){for(let j=gy+8;j<Hsvg-22;j+=14){s+=`<line class="dl" x1="${i}" y1="${j}" x2="${i+6}" y2="${j+6}" stroke-width="0.5"/>`;}}
+  s+=`<line class="dl" x1="40" y1="${gy}" x2="${W-30}" y2="${gy}" stroke-width="1.4"/>`;
+  s+=`<text class="dtxt sm" x="${W-34}" y="${gy-4}" text-anchor="end" fill="#777">substrate</text>`;
+  s+=`<rect class="post" x="${cx-6}" y="${top}" width="12" height="${gy-top-2}"/>`;
+  s+=`<rect class="plate" x="${cx-26}" y="${gy-4}" width="52" height="5"/>`;
+  const embPx=Math.min(90, d.a_L*9);
+  [-16,16].forEach(dx=>{
+    s+=`<line class="bolt" x1="${cx+dx}" y1="${gy-2}" x2="${cx+dx}" y2="${gy+embPx}" stroke="#2b2b2b" stroke-width="2.4"/>`;
+    s+=`<circle class="bolt" cx="${cx+dx}" cy="${gy-2}" r="2"/>`;
+    s+=`<line class="dl" x1="${cx+dx-3}" y1="${gy+embPx}" x2="${cx+dx+3}" y2="${gy+embPx}" stroke-width="1.4"/>`;
+  });
+  s+=`<line class="dl" x1="${cx+34}" y1="${gy}" x2="${cx+34}" y2="${gy+embPx}"/>
+      <line class="dl" x1="${cx+30}" y1="${gy}" x2="${cx+38}" y2="${gy}"/>
+      <line class="dl" x1="${cx+30}" y1="${gy+embPx}" x2="${cx+38}" y2="${gy+embPx}"/>
+      <text class="dtxt sm" x="${cx+40}" y="${gy+embPx/2}" fill="#234">embed ${num(d.a_L,1)}"</text>`;
+  s+=dimH(cx-16, gy-10, cx+16, `a=${num(d.a_sp,1)}"`);
+  s+=dimV(cx-30, top, gy, `H = ${num(d.H,0)}"`);
+  s+=`<text class="dtxt sm" x="${cx+14}" y="${top+14}" fill="#1a5c4c">post</text>`;
+  s+=`<text class="dtxt sm" x="${cx-24}" y="${gy+13}" fill="#46524e">base plate ${num(d.bp_t,2)}"</text>`;
+  return `<svg viewBox="0 0 ${W} ${Hsvg}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
 
-      function populatePresetOptions() {
-        var optionsHtml = PRESETS.map(function (preset) {
-          return '<option value="' + escapeHtml(preset.id) + '">' + escapeHtml(preset.label) + "</option>";
-        }).join("");
-        gcpPresetEl.innerHTML = optionsHtml;
-      }
+// REPORT
+function footer(d,pg){
+  return `<div class="page-footer"><div class="footer-text">
+    <div class="left"><div><strong>PRELIMINARY — not for construction or permit</strong></div><div>${esc(d.project||'')}</div></div>
+    <div class="right"><div><strong>windcalculations.com</strong></div><div>Aluminum Fence &amp; Railing Wind Check</div></div>
+    </div><div class="swoosh"></div><div class="pageno">Page [${pg}]</div></div>`;
+}
+function checkLine(label,dem,allow,demDisp,allowDisp){
+  const ok=Math.abs(dem)<=Math.abs(allow)+1e-9;
+  return `<div class="check-line"><span class="formula">${label}: <strong>${demDisp}</strong> &lt; ${allowDisp}</span><span class="verdict ${ok?'pass':'fail'}">${ok?'[Satisfactory]':'[CHECK]'}</span></div>`;
+}
 
-      function updateKdState() {
-        var isManual = kdModeEl.value === "manual";
-        kdManualEl.disabled = !isManual;
-      }
+function render(){
+  const d=readForm();
+  if(!d.V||!d.H){document.getElementById('report').innerHTML='<div class="empty-state">Enter wind speed and member height to render.</div>';return;}
+  const R=computeAll(d);
+  const w=R.wind;
 
-      function updateGcpiState() {
-        var isManual = gcpiModeEl.value === "manual";
-        gcpiManualEl.disabled = !isManual;
-        enclosureEl.disabled = isManual;
-      }
+  document.getElementById('vizElev').innerHTML=elevationSVG(d);
+  document.getElementById('vizSide').innerHTML=sideSVG(d);
+  document.getElementById('vizReadout').innerHTML=
+    `<span>Type: <b>${esc(d.type)}</b></span><span>H: <b>${num(d.H,0)}"</b></span><span>Spacing L: <b>${num(d.L,0)}"</b></span>`+
+    `<span>qwind: <b>${num(w.qwind,1)} psf</b></span><span>Anchors: <b>${Math.round(d.a_n)}×${num(d.a_d,3)}"</b></span>`+
+    `<span>Embed: <b>${num(d.a_L,1)}"</b></span><span>Guard loads: <b>${d.useGuard?'on':'off'}</b></span>`;
 
-      function calculateAndRender() {
-        clearErrors();
-        var inputs = collectInputs();
-        var validation = validateInputs(inputs);
-        if (!validation.ok) {
-          renderErrors(validation.errors);
-          renderNoResult();
-          return;
-        }
-        var warnings = generateWarnings(inputs);
-        var results = computeResults(inputs);
-        renderResults(inputs, results, warnings);
-      }
+  document.getElementById('liveResult').innerHTML=
+    `<strong>qh</strong>=${num(w.qh,1)} · <strong>PA</strong>=${num(w.PA,1)} · <strong>qwind</strong>=${num(w.qwind,1)} psf<br>`+
+    `Rail M=${num(R.rail.M,0)} in-lb (gov ${R.rail.gov}) Fb=${num(R.rail.Fb,2)} ksi<br>`+
+    `Post M=${num(R.post.M,0)} in-lb (gov ${R.post.gov}) Fb=${num(R.post.Fb,2)} ksi<br>`+
+    `Anchor T=${num(R.anchor.T,0)} lb, interaction=${num(R.anchor.inter,2)}`;
 
-      function collectInputs() {
-        return {
-          edition: editionEl.value,
-          risk: riskEl.value,
-          V_mph: parseNumber(speedEl.value),
-          exposure: exposureEl.value,
-          h_ft: parseNumber(meanRoofEl.value),
-          z_ft: parseNumber(qzHeightEl.value),
-          Kzt: parseNumber(kztEl.value),
-          Ke: parseNumber(keEl.value),
-          kdMode: kdModeEl.value,
-          Kd_manual: parseNumber(kdManualEl.value),
-          theta_deg: parseNumber(thetaEl.value),
-          applyThetaReduction: applyThetaReductionEl.checked,
-          gcpPresetId: gcpPresetEl.value,
-          GCp: parseNumber(gcpEl.value),
-          GCpiMode: gcpiModeEl.value,
-          enclosureClass: enclosureEl.value,
-          GCpi_manual: parseNumber(gcpiManualEl.value)
-        };
-      }
+  const wb=document.getElementById('warnBanner');
+  if(d.type==='fence'&&d.H>72){wb.classList.add('active');wb.innerHTML='<strong>Note:</strong> FBC 1616.2.1 covers fences ≤6 ft. Taller fences need full wind design — confirm method.';}
+  else{wb.classList.remove('active');wb.innerHTML='';}
 
-      function validateInputs(inputs) {
-        var errors = [];
-        if (!(inputs.edition === "7-16" || inputs.edition === "7-22")) {
-          pushError(errors, "edition", "Choose either ASCE 7-16 or ASCE 7-22.");
-        }
-        if (RISK_CATEGORIES.indexOf(inputs.risk) === -1) {
-          pushError(errors, "risk", "Risk Category must be I, II, III, or IV.");
-        }
-        var exposureTable = EXPOSURE_CONSTANTS[inputs.edition];
-        if (!exposureTable || !Object.prototype.hasOwnProperty.call(exposureTable, inputs.exposure)) {
-          pushError(errors, "exposure", "Exposure Category must be B, C, or D.");
-        }
-        if (!isFinitePositive(inputs.V_mph)) {
-          pushError(errors, "V", "Basic wind speed V must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.z_ft)) {
-          pushError(errors, "z", "Exposure height z must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.h_ft)) {
-          pushError(errors, "h", "Mean roof height h must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.Kzt)) {
-          pushError(errors, "Kzt", "Topographic factor Kzt must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.Ke)) {
-          pushError(errors, "Ke", "Ground elevation factor Ke must be a positive number.");
-        }
-        if (!(inputs.kdMode === "auto" || inputs.kdMode === "manual")) {
-          pushError(errors, "kdMode", "Kd mode must be auto or manual.");
-        }
-        if (inputs.kdMode === "manual" && !isFinitePositive(inputs.Kd_manual)) {
-          pushError(errors, "kdManual", "Manual Kd must be a positive number.");
-        }
-        if (!isFiniteNumber(inputs.theta_deg) || inputs.theta_deg < 0 || inputs.theta_deg > 90) {
-          pushError(errors, "theta", "Roof slope must be between 0 and 90 degrees.");
-        }
-        if (!findPreset(inputs.gcpPresetId)) {
-          pushError(errors, "gcpPreset", "Select a valid GCp preset.");
-        }
-        if (!isFiniteNumber(inputs.GCp)) {
-          pushError(errors, "gcp", "GCp must be a valid number.");
-        }
-        if (!(inputs.GCpiMode === "standard" || inputs.GCpiMode === "manual")) {
-          pushError(errors, "gcpiMode", "GCpi mode must be standard or manual.");
-        }
-        if (inputs.GCpiMode === "standard" && !Object.prototype.hasOwnProperty.call(GCPI_STANDARD_CASES, inputs.enclosureClass)) {
-          pushError(errors, "enclosure", "Select a valid enclosure class.");
-        }
-        if (inputs.GCpiMode === "manual" && !isFiniteNumber(inputs.GCpi_manual)) {
-          pushError(errors, "gcpiManual", "Manual GCpi must be a valid number.");
-        }
-        return { ok: errors.length === 0, errors: errors };
-      }
+  const date=fmtDateUpper(d.date);
+  const allowFb=R.allowFb, allowFv=R.allowFv;
 
-      function generateWarnings(inputs) {
-        var warnings = [];
-        if (inputs.h_ft > 60) {
-          warnings.push(
-            "Mean roof height h = " + formatNumber(inputs.h_ft) + " ft exceeds 60 ft. " +
-            "Chapter 30 low-rise C&C provisions (Figures 30.3-x) apply only when h \u2264 60 ft. " +
-            "For h > 60 ft, verify GCp from Figures 30.5-1 / 30.6-1."
-          );
-        }
-        if (inputs.V_mph > 200) {
-          warnings.push("Basic wind speed V = " + formatNumber(inputs.V_mph, 0) + " mph exceeds 200 mph. Verify mapped value.");
-        }
-        if (inputs.V_mph < 85) {
-          warnings.push("Basic wind speed V = " + formatNumber(inputs.V_mph, 0) + " mph is below typical mapped values (\u2265 95 mph Risk Cat II). Verify the map used.");
-        }
-        if (inputs.h_ft > 200) {
-          warnings.push("Mean roof height h = " + formatNumber(inputs.h_ft) + " ft is unusually large. Verify this input.");
-        }
-        return warnings;
-      }
+  // P1 TITLE + DISCLAIMER
+  const p1=`<div class="report-page">
+    <div class="cover-band"><div class="title">FENCE / RAILING</div><div class="sub">WIND &amp; GUARD CHECK</div></div>
+    <div class="cover-meta"><strong>${date}</strong>${d.project?'<br>'+esc(d.project):''}</div>
+    <div style="margin-top:1.5in;border:2px solid #b85c00;border-radius:8px;padding:0.7rem 0.9rem;background:#fff7ee;">
+      <p style="font-weight:700;color:#b85c00;margin:0 0 0.4rem;font-size:12pt;">PRELIMINARY SCREENING — NOT FOR CONSTRUCTION OR PERMIT</p>
+      <p style="margin:0 0 0.5rem;font-size:10pt;">This document is an automated, preliminary screening check of an aluminum fence/railing under wind and guard loads per the cited codes. It is <strong>not</strong> a sealed engineering calculation, is not signed by a licensed Professional Engineer, and must not be relied upon for permitting, fabrication, or construction. All inputs, section properties, anchor allowables, and code interpretations must be independently verified by a qualified engineer.</p>
+      <p style="margin:0;font-size:10pt;"><strong>No warranty is made and no liability is assumed</strong> for any use of this output. For a project-specific, sealed calculation, contact <strong>windcalculations.com</strong>.</p>
+    </div>
+    <div class="cover-code" style="margin-top:1rem;">Code basis: FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19</div>
+    ${footer(d,'')}
+  </div>`;
 
-      // ====================================================================
-      // CORE COMPUTATION -- edition-aware
-      // ====================================================================
-      function computeResults(inputs) {
-        var editionTable = EXPOSURE_CONSTANTS[inputs.edition];
-        var kzInfo = calculateKz(inputs.z_ft, inputs.exposure, inputs.edition);
-        var khInfo = calculateKz(inputs.h_ft, inputs.exposure, inputs.edition);
-        var Kd = resolveKd(inputs);
+  // P2 OVERVIEW + DIAGRAMS
+  const p2=`<div class="report-page">
+    <h3 style="margin-top:0;">DESIGN CRITERIA:</h3><p>FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19</p>
+    <h3>OVERVIEW &amp; CONFIGURATION:</h3>
+    <div class="fig-row">
+      <div class="fig">${elevationSVG(d)}<div class="cap">Elevation — ${esc(d.type)} system</div></div>
+      <div class="fig">${sideSVG(d)}<div class="cap">Base section — anchor embedment</div></div>
+    </div>
+    <table class="data-grid">
+      <tr><td class="lbl">Member type</td><td class="eq">=</td><td class="val">${esc(d.type)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Height</td><td class="sym">H</td><td class="eq">=</td><td class="val">${num(d.H,0)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Post spacing</td><td class="sym">L</td><td class="eq">=</td><td class="val">${num(d.L,0)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Picket spacing (c.c.)</td><td class="eq">=</td><td class="val">${num(d.vert_sp,3)}"</td><td class="unit">width ${num(d.vert_w,2)}"</td></tr>
+      <tr><td class="lbl">Anchors / post</td><td class="eq">=</td><td class="val">${Math.round(d.a_n)} × ${num(d.a_d,3)}"</td><td class="unit">embed ${num(d.a_L,1)}"</td></tr>
+    </table>
+    <h3>MATERIAL DATA:</h3>
+    <table class="data-grid">
+      <tr><td class="group">Aluminium:</td><td colspan="4" class="grade">${d.alloy}-T6</td></tr>
+      <tr><td class="lbl">Yield strength</td><td class="sym">f<sub>ty</sub>=f<sub>cy</sub></td><td class="eq">=</td><td class="val">${num(d.fty,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Shear yield</td><td class="sym">f<sub>sy</sub></td><td class="eq">=</td><td class="val">${num(d.fsy,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Tensile</td><td class="sym">f<sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.fu,0)}</td><td class="unit">ksi</td></tr>
+      <tr><td class="lbl">Modulus</td><td class="sym">E<sub>y</sub></td><td class="eq">=</td><td class="val">10100</td><td class="unit">ksi</td></tr>
+    </table>
+    <h3>DESIGN LOADS:</h3>
+    <table class="data-grid">
+      <tr><td class="lbl">Dead (self wt)</td><td class="eq">=</td><td class="val">${num(d.dl,1)}</td><td class="unit">psf</td></tr>
+      ${d.useGuard?`<tr><td class="lbl">Concentrated</td><td class="sym">P</td><td class="eq">=</td><td class="val">${num(d.P200,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Uniform</td><td class="sym">w</td><td class="eq">=</td><td class="val">${num(d.q50,0)}</td><td class="unit">plf</td></tr>
+      <tr><td class="lbl">Intermediate</td><td class="eq">=</td><td class="val">${num(d.P50,0)}</td><td class="unit">lb</td></tr>`:`<tr><td class="lbl" colspan="5"><em>Guard live loads not applied (wind only).</em></td></tr>`}
+    </table>
+    ${footer(d,'1')}
+  </div>`;
 
-        // Velocity pressure -- edition-dependent Kd placement
-        //   ASCE 7-16: qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2   (Eq. 26.10-1, Kd IN qz)
-        //   ASCE 7-22: qz = 0.00256 * Kz * Kzt *      Ke * V^2   (Eq. 26.10-1, Kd OUT of qz)
-        var qzKdFactor = (inputs.edition === "7-16") ? Kd : 1.0;
-        var qz = 0.00256 * kzInfo.coefficient * inputs.Kzt * qzKdFactor * inputs.Ke * Math.pow(inputs.V_mph, 2);
-        var qh = 0.00256 * khInfo.coefficient * inputs.Kzt * qzKdFactor * inputs.Ke * Math.pow(inputs.V_mph, 2);
+  // P3 CODE BASIS
+  const guardNoteText = d.useGuard 
+        ? 'Guard live loads (200 lb &amp; 50 plf) are applied to this design per FBC 1607.8.1.'
+        : 'Guard live loads waived — this member is checked for wind only. <br><br><strong style="color:#b1322a;">ENGINEERING CAVEAT:</strong> If any portion of this fence is mounted on a retaining wall or elevated deck where the drop-off on the other side exceeds 30 inches, that specific section legally becomes a "Guard" (FBC 1015.2) and the 200 lb impact load requirement immediately applies.';
+        
+  const p3=`<div class="report-page">
+    <h3 style="margin-top:0;">Code Basis (FBC 2023)</h3>
+    <div class="code-snip"><span class="ref">1607.8.1 Handrails and guards.</span> Designed to resist a linear load of <strong>50 plf</strong> per ASCE 7 §4.5.1. Exceptions: one/two-family dwellings — single concentrated load only; certain I-3/F/H/S areas (occupant load &lt;50) — 20 plf.</div>
+    <div class="code-snip"><span class="ref">1607.8.1.1 Concentrated load.</span> Designed to resist a concentrated load of <strong>200 lb</strong> per ASCE 7 §4.5.1.</div>
+    <div class="code-snip"><span class="ref">1607.8.1.2 Intermediate rails.</span> Intermediate rails, balusters and panel fillers shall resist a concentrated load of <strong>50 lb</strong>.</div>
+    <div class="code-snip"><span class="ref">1616.2.1 Fences.</span> Fences not exceeding 6 ft in height from grade may be designed for allowable wind speeds of 115 mph 3-second gust.</div>
+    <div class="code-snip"><span class="ref">1616.3 Deflection (allowable).</span> Item 5 (brittle/hardening): L/360. Item 6 (other vertical/wall members): L/180. Item 9 (members supporting screens only): L/80. This calc uses <strong>L/${num(d.defl,0)}</strong>.</div>
+    <p class="note">${guardNoteText}</p>
+    ${footer(d,'2')}
+  </div>`;
 
-        // 10% wall reduction for theta <= 10 deg
-        var preset = findPreset(inputs.gcpPresetId);
-        var isWall = preset && preset.zoneType === "wall";
-        var applyReduction = isWall && inputs.applyThetaReduction && (inputs.theta_deg <= 10);
-        var GCp_effective = applyReduction ? inputs.GCp * 0.90 : inputs.GCp;
+  // P4 WIND
+  const hft=d.H/12, EC=EXP[d.exp]||EXP.C;
+  const p4=`<div class="report-page">
+    <h3 style="margin-top:0;">1. Wind Load (FBC 2023 &amp; ASCE 7-22)</h3>
+    <table class="data-grid">
+      <tr><td class="lbl">Basic wind speed</td><td class="sym">V</td><td class="eq">=</td><td class="val">${num(d.V,0)}</td><td class="unit">mph</td></tr>
+      <tr><td class="lbl">Risk category</td><td class="eq"></td><td class="val">${esc(d.risk)}</td><td></td></tr>
+      <tr><td class="lbl">Exposure</td><td class="eq"></td><td class="val">${esc(d.exp)}</td><td></td></tr>
+      <tr><td class="lbl">Height of railing</td><td class="sym">h</td><td class="eq">=</td><td class="val">${num(hft,1)}</td><td class="unit">ft</td></tr>
+      <tr><td class="lbl">Directionality</td><td class="sym">K<sub>d</sub></td><td class="eq">=</td><td class="val">${num(d.Kd,2)}</td><td></td></tr>
+      <tr><td class="lbl">Gust effect factor</td><td class="sym">G=G<sub>f</sub></td><td class="eq">=</td><td class="val">${num(d.Gf,2)}</td><td></td></tr>
+      <tr><td class="lbl">Topography</td><td class="sym">K<sub>zt</sub></td><td class="eq">=</td><td class="val">${num(d.Kzt,2)}</td><td></td></tr>
+      <tr><td class="lbl">Importance</td><td class="sym">I<sub>w</sub></td><td class="eq">=</td><td class="val">${num(d.Iw,2)}</td><td></td></tr>
+      <tr><td class="lbl">Vel. press. coeff (Table 26.10-1)</td><td class="sym">K<sub>z</sub></td><td class="eq">=</td><td class="val">${num(w.kz,2)}</td><td class="unit">@ z=${num(hft,1)} ft</td></tr>
+      <tr><td class="lbl">Solid/gross ratio</td><td class="sym">ε</td><td class="eq">=</td><td class="val">${num(d.eps*100,0)}</td><td class="unit">%</td></tr>
+      <tr><td class="lbl">Force coeff (Fig 29.3-1)</td><td class="sym">C<sub>f</sub></td><td class="eq">=</td><td class="val">${num(d.Cf,2)}</td><td></td></tr>
+    </table>
+    <p style="font-family:var(--font-mono);font-size:9.5pt;">q<sub>h</sub> = 0.00256·K<sub>z</sub>·K<sub>zt</sub>·K<sub>d</sub>·V² = <strong>${num(w.qh,1)} psf</strong><br>
+    P<sub>A</sub> = 0.6·max(16 psf, q<sub>h</sub>·G<sub>f</sub>·C<sub>f</sub>) = <strong>${num(w.PA,1)} psf</strong><br>
+    P<sub>A.EQ</sub> = ε·I<sub>w</sub>·P<sub>A</sub> = <strong>${num(w.qwind,1)} psf</strong> &nbsp;(design wind pressure)</p>
+    ${footer(d,'3')}
+  </div>`;
 
-        var gcpiCases = resolveGcpiCases(inputs);
+  // member block helper
+  function railRows(){
+    let r=`<tr><td class="l">Span L</td><td class="v">${num(d.L,0)}</td><td class="u">in</td></tr>
+      <tr><td class="l">Wind trib. height</td><td class="v">${num(d.railTrib,0)}</td><td class="u">in</td></tr>
+      <tr><td class="l">q<sub>wind</sub></td><td class="v">${num(w.qwind,1)}</td><td class="u">psf</td></tr>
+      <tr class="hl"><td class="l">M wind</td><td class="v">${num(R.rail.M_wind,0)}</td><td class="u">in-lb</td></tr>`;
+    if(d.useGuard) r+=`<tr class="hl"><td class="l">M 200 lb (PL/4)</td><td class="v">${num(R.rail.M_200,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">M 50 plf</td><td class="v">${num(R.rail.M_50,0)}</td><td class="u">in-lb</td></tr>`;
+    r+=`<tr class="hl"><td class="l">M governing (${R.rail.gov})</td><td class="v">${num(R.rail.M,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">V governing</td><td class="v">${num(R.rail.V,0)}</td><td class="u">lb</td></tr>`;
+    return r;
+  }
+  function postRows(){
+    let r=`<tr><td class="l">Height H</td><td class="v">${num(d.H,0)}</td><td class="u">in</td></tr>
+      <tr><td class="l">Tributary width L</td><td class="v">${num(d.L,0)}</td><td class="u">in</td></tr>
+      <tr class="hl"><td class="l">M wind (H²/${Math.max(2,Math.round(d.windk))})</td><td class="v">${num(R.post.M_wind,0)}</td><td class="u">in-lb</td></tr>`;
+    if(d.useGuard) r+=`<tr class="hl"><td class="l">M 200 lb (P·H)</td><td class="v">${num(R.post.M_200,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">M 50 plf</td><td class="v">${num(R.post.M_50,0)}</td><td class="u">in-lb</td></tr>`;
+    r+=`<tr class="hl"><td class="l">M governing (${R.post.gov})</td><td class="v">${num(R.post.M,0)}</td><td class="u">in-lb</td></tr>
+      <tr class="hl"><td class="l">V governing</td><td class="v">${num(R.post.V,0)}</td><td class="u">lb</td></tr>`;
+    return r;
+  }
+  const railSec=R.rail.sec, postSec=R.post.sec;
+  const p5=`<div class="report-page">
+    <h3 style="margin-top:0;">2. Result of Analysis</h3>
+    <div class="member-block">
+      <h4>2.1 — Top Rail / Handrail</h4>
+      <table class="ld-table" style="width:100%;font-family:var(--font-mono);font-size:9pt;">${railRows()}</table>
+      <div class="section-props">${esc(railSec.name)} → A=${num(R.rail.eff.A,2)} in², I=${num(R.rail.eff.I,2)} in⁴${R.rail.eff.comp?' (composite ΣI)':''}, S=${num(R.rail.eff.Sb,2)} in³ · F<sub>ty</sub>=${num(d.fty,0)} ksi</div>
+      ${checkLine('F<sub>b</sub> = M/S = '+num(R.rail.Fb,2)+' ksi', R.rail.Fb, allowFb, num(R.rail.Fb,2)+' ksi', num(allowFb/Math.max(d.fty,1),2)+' F<sub>cy</sub> = '+num(allowFb,1)+' ksi')}
+      ${checkLine('F<sub>v</sub> = V/A = '+num(R.rail.Fv,2)+' ksi', R.rail.Fv, allowFv, num(R.rail.Fv,2)+' ksi', '0.6 F<sub>sy</sub> = '+num(allowFv,1)+' ksi')}
+      ${checkLine('Deflection δ', R.rail.defl, d.L/d.defl, num(R.rail.defl,3)+' in', 'L/'+num(d.defl,0)+' = '+num(d.L/d.defl,3)+' in')}
+    </div>
+    <div class="member-block">
+      <h4>2.2 — Post (cantilever, H = ${num(d.H,0)}")</h4>
+      <table class="ld-table" style="width:100%;font-family:var(--font-mono);font-size:9pt;">${postRows()}</table>
+      <div class="section-props">${esc(postSec.name)} → A=${num(R.post.eff.A,2)} in², I=${num(R.post.eff.I,2)} in⁴${R.post.eff.comp?' (composite ΣI)':''}, S=${num(R.post.eff.Sb,2)} in³ · F<sub>ty</sub>=${num(d.fty,0)} ksi</div>${R.rail.sec.name===R.post.sec.name?'<div class="note" style="color:#b85c00;">⚠ Post and top-rail are the same section — confirm the post dropdown is the snap post, not the top cap.</div>':''}
+      ${checkLine('F<sub>b</sub> = M/S = '+num(R.post.Fb,2)+' ksi', R.post.Fb, allowFb, num(R.post.Fb,2)+' ksi', num(allowFb/Math.max(d.fty,1),2)+' F<sub>cy</sub> = '+num(allowFb,1)+' ksi')}
+      ${checkLine('F<sub>v</sub> = V/A = '+num(R.post.Fv,2)+' ksi', R.post.Fv, allowFv, num(R.post.Fv,2)+' ksi', '0.6 F<sub>sy</sub> = '+num(allowFv,1)+' ksi')}
+      ${checkLine('Deflection δ', R.post.defl, (2*d.H)/d.defl, num(R.post.defl,3)+' in', '2H/'+num(d.defl,0)+' = '+num((2*d.H)/d.defl,3)+' in (cantilever, FBC Table 1604.3)')}
+      <div class="note">Bending allowable = ${num(allowFb/Math.max(d.fty,1),2)}·F<sub>cy</sub>; section assumed compact — ADM Ch. F local buckling (b/t) not explicitly checked. ${R.post.eff.comp?'Composite uses ΣI (Path A, two-beam, S=ΣI/c) — valid only if the snap legs develop the longitudinal shear flow q=VQ/I; otherwise turn composite OFF.':''}</div>
+    </div>
+    <p class="note">Post wind moment uses ${Math.round(d.windk)===2?'a uniform pressure distribution (M = q·L·H²/2, conservative)':'a triangular pressure resultant at H/3 (M = q·L·H²/3, per safety boundary layer profile).'}</p>
+    ${footer(d,'4')}
+  </div>`;
 
-        // Net pressure -- edition-dependent Kd placement
-        //   ASCE 7-16: p = qh * (GCp - GCpi)       (Kd already in qh)
-        //   ASCE 7-22: p = qh * Kd * (GCp - GCpi)  (Kd applied here, Eq. 30.3-1)
-        var pressureKdFactor = (inputs.edition === "7-22") ? Kd : 1.0;
-        var pCases = gcpiCases.map(function (gcpi) {
-          return { gcpi: gcpi, pressure: qh * pressureKdFactor * (GCp_effective - gcpi) };
-        });
-        var pValues = pCases.map(function (e) { return e.pressure; });
+  // P6 CONNECTIONS
+  const a=R.anchor;
+  let fastBlock='';
+  if(R.fast){const f=R.fast;
+    fastBlock=`<h4>3.2 — Fastener (rail-to-post / cane bracket)</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Number of bolts</td><td class="sym">n</td><td class="eq">=</td><td class="val">${Math.round(d.f_n)}</td><td class="unit">pc</td></tr>
+      <tr><td class="lbl">Diameter</td><td class="sym">d</td><td class="eq">=</td><td class="val">${num(d.f_d,3)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Tensile strength</td><td class="sym">F<sub>u</sub></td><td class="eq">=</td><td class="val">${num(d.f_fu,0)}</td><td class="unit">psi</td></tr>
+      <tr><td class="lbl">R<sub>n</sub>=0.45 F<sub>u</sub> A<sub>b</sub></td><td class="eq">=</td><td class="val">${num(f.Rn,0)}</td><td class="unit">lb</td></tr>
+    </table>
+    ${checkLine('Bolt shear / 1 bolt', f.Vdem, f.Vallow, num(f.Vdem,1)+' lb', num(f.Vallow,0)+' lb (R<sub>n</sub>/Ω)')}
+    ${checkLine('Aluminum bearing / bolt (ADM J.5)', f.Vdem, f.Rbear, num(f.Vdem,1)+' lb', num(f.Rbear,0)+' lb (2·d·t·F<sub>u</sub>/Ω, t='+num(f.tw,3)+'")')}`;
+  }
+  const p6=`<div class="report-page">
+    <h3 style="margin-top:0;">3. Connection Design</h3>
+    <h4>3.1 — Base Anchorage (${Math.round(d.a_n)} × ${num(d.a_d,3)}" embed ${num(d.a_L,1)}")</h4>
+    <table class="data-grid">
+      <tr><td class="lbl">Base moment</td><td class="sym">M</td><td class="eq">=</td><td class="val">${num(a.Mbase,0)}</td><td class="unit">in-lb</td></tr>
+      <tr><td class="lbl">Anchors in tension</td><td class="sym">n<sub>t</sub></td><td class="eq">=</td><td class="val">${Math.round(d.a_nt)}</td><td class="unit"></td></tr>
+      <tr><td class="lbl">Anchor spacing</td><td class="sym">a</td><td class="eq">=</td><td class="val">${num(d.a_sp,2)}</td><td class="unit">in</td></tr>
+      <tr><td class="lbl">Axial dead (relief)</td><td class="sym">P<sub>z</sub></td><td class="eq">=</td><td class="val">${num(a.Pz,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Tension / anchor</td><td class="sym">T=M/(n<sub>t</sub>·a)−P<sub>z</sub>/n</td><td class="eq">=</td><td class="val">${num(a.T,0)}</td><td class="unit">lb</td></tr>
+      <tr><td class="lbl">Shear / anchor</td><td class="sym">V/n</td><td class="eq">=</td><td class="val">${num(a.Va,0)}</td><td class="unit">lb</td></tr>
+    </table>
+    ${checkLine('Tension / anchor', a.T, d.a_T, num(a.T,0)+' lb', '[T] = '+num(d.a_T,0)+' lb')}
+    ${checkLine('Shear / anchor', a.Va, d.a_V, num(a.Va,0)+' lb', '[V] = '+num(d.a_V,0)+' lb')}
+    ${checkLine('Interaction (T/[T])²+(V/[V])²', a.inter, 1.0, num(a.inter,2), '1.0')}
+    <h4>Base Plate</h4>
+    ${checkLine('Required thickness t<sub>p</sub>', a.bp_treq, d.bp_t, num(a.bp_treq,3)+' in', 'design '+num(d.bp_t,2)+' in')}
+    <p class="note">Anchor allowables [T], [V] are per the manufacturer ESR for the substrate &amp; embedment selected — editable in the form. Embedment shown: ${num(d.a_L,1)} in into ${esc(d.substrate)}.</p>
+    ${fastBlock}
+    ${footer(d,'5')}
+  </div>`;
 
-        return {
-          Kz: kzInfo.coefficient,
-          KzEffHeight: kzInfo.effectiveHeight,
-          Kh: khInfo.coefficient,
-          KhEffHeight: khInfo.effectiveHeight,
-          alpha: kzInfo.alpha,
-          zg: kzInfo.zg,
-          zmin: kzInfo.zmin,
-          mult: kzInfo.mult,
-          Kd: Kd,
-          qz: qz,
-          qh: qh,
-          qzKdFactor: qzKdFactor,
-          pressureKdFactor: pressureKdFactor,
-          GCp_base: inputs.GCp,
-          GCp_effective: GCp_effective,
-          thetaReductionApplied: applyReduction,
-          pCases: pCases,
-          pMin: Math.min.apply(null, pValues),
-          pMax: Math.max.apply(null, pValues)
-        };
-      }
+  document.getElementById('report').innerHTML=p1+p2+p3+p4+p5+p6;
+}
 
-      function calculateKz(heightFt, exposure, edition) {
-        var T = EXPOSURE_CONSTANTS[edition];
-        var c = T[exposure];
-        // Effective height: at or above zmin for the exposure, capped at zg
-        var effectiveHeight = clamp(heightFt, c.zmin, c.zg);
-        var coefficient = T.mult * Math.pow(effectiveHeight / c.zg, 2 / c.alpha);
-        return {
-          coefficient: coefficient,
-          effectiveHeight: effectiveHeight,
-          alpha: c.alpha,
-          zg: c.zg,
-          zmin: c.zmin,
-          mult: T.mult
-        };
-      }
-
-      function resolveKd(inputs) {
-        if (inputs.kdMode === "manual" && isFinitePositive(inputs.Kd_manual)) {
-          return inputs.Kd_manual;
-        }
-        return 0.85;
-      }
-
-      function resolveGcpiCases(inputs) {
-        if (inputs.GCpiMode === "manual") {
-          return [inputs.GCpi_manual];
-        }
-        return GCPI_STANDARD_CASES[inputs.enclosureClass] || [0.18, -0.18];
-      }
-
-      // ====================================================================
-      // RENDERING
-      // ====================================================================
-      function renderResults(inputs, results, warnings) {
-        errorSummaryEl.classList.add("hidden");
-        resultPlaceholderEl.classList.add("hidden");
-        resultContentEl.classList.remove("hidden");
-
-        if (warnings && warnings.length > 0) {
-          resultWarningsEl.innerHTML = warnings.map(function (w) {
-            return '<div class="warning-box"><strong>\u26a0 Warning:</strong> ' + escapeHtml(w) + '</div>';
-          }).join("");
-          resultWarningsEl.classList.remove("hidden");
-        } else {
-          resultWarningsEl.innerHTML = "";
-          resultWarningsEl.classList.add("hidden");
-        }
-
-        qzValueEl.textContent = formatPsf(results.qz);
-        qhValueEl.textContent = formatPsf(results.qh);
-        pMinValueEl.textContent = formatPsf(results.pMin);
-        pMaxValueEl.textContent = formatPsf(results.pMax);
-
-        var gcpDisplay = formatSigned(results.GCp_effective);
-        if (results.thetaReductionApplied) {
-          gcpDisplay += " (base " + formatSigned(results.GCp_base) + " &times; 0.90 for &theta;\u226410\u00b0)";
-        }
-
-        factorTableBodyEl.innerHTML = [
-          tableRow("ASCE Edition", escapeHtml(inputs.edition)),
-          tableRow("Exposure", escapeHtml(inputs.exposure)),
-          tableRow("Risk Category", escapeHtml(inputs.risk)),
-          tableRow("K<sub>z</sub> formula multiplier", formatNumber(results.mult, 2)),
-          tableRow("K<sub>z</sub> at z", formatNumber(results.Kz)),
-          tableRow("z<sub>eff</sub> for K<sub>z</sub> (ft)", formatNumber(results.KzEffHeight)),
-          tableRow("K<sub>h</sub> at h", formatNumber(results.Kh)),
-          tableRow("h<sub>eff</sub> for K<sub>h</sub> (ft)", formatNumber(results.KhEffHeight)),
-          tableRow("&alpha;", formatNumber(results.alpha)),
-          tableRow("z<sub>g</sub> (ft)", formatNumber(results.zg, 0)),
-          tableRow("z<sub>min</sub> (ft)", formatNumber(results.zmin, 0)),
-          tableRow("K<sub>d</sub>", formatNumber(results.Kd)),
-          tableRow("K<sub>zt</sub>", formatNumber(inputs.Kzt)),
-          tableRow("K<sub>e</sub>", formatNumber(inputs.Ke)),
-          tableRow("&theta; (deg)", formatNumber(inputs.theta_deg)),
-          tableRow("GC<sub>p</sub> (effective)", gcpDisplay)
-        ].join("");
-
-        caseTableBodyEl.innerHTML = results.pCases.map(function (entry) {
-          return "<tr><td>" + formatSigned(entry.gcpi) + "</td><td>" + formatPsf(entry.pressure) + "</td></tr>";
-        }).join("");
-
-        formulaBlockEl.innerHTML = renderFormulaBlocks(inputs, results);
-
-        editionNoteEl.innerHTML =
-          "<strong>ASCE " + inputs.edition + " referenced.</strong> " +
-          (inputs.edition === "7-22"
-            ? "Per ASCE 7-22 Eq. 26.10-1, K<sub>d</sub> is excluded from q<sub>z</sub> and applied in the pressure equation (Eq. 30.3-1: p = q<sub>h</sub> &times; K<sub>d</sub> &times; (GC<sub>p</sub> &minus; GC<sub>pi</sub>))."
-            : "Per ASCE 7-16 Eq. 26.10-1, K<sub>d</sub> is included in q<sub>z</sub>. Net C&amp;C pressure: p = q<sub>h</sub> &times; (GC<sub>p</sub> &minus; GC<sub>pi</sub>).") +
-          " Risk Category " + inputs.risk + " selects V from the adopted wind speed map. No separate importance factor.";
-
-        resultAnnouncerEl.textContent =
-          "Calculation complete. qz is " + formatPsf(results.qz) +
-          ", qh is " + formatPsf(results.qh) +
-          ", envelope ranges from " + formatPsf(results.pMin) +
-          " to " + formatPsf(results.pMax) + ".";
-      }
-
-      function renderFormulaBlocks(inputs, results) {
-        var rows = [];
-        var multStr = formatNumber(results.mult, 2);
-
-        rows.push(formulaHtml(
-          "Kz at z (MWFRS reference)",
-          "Kz = " + multStr + " * (z_eff / zg)^(2 / alpha)",
-          "Kz = " + multStr + " * (" + formatNumber(results.KzEffHeight) + " / " + formatNumber(results.zg, 0) +
-            ")^(2 / " + formatNumber(results.alpha) + ") = " + formatNumber(results.Kz)
-        ));
-        rows.push(formulaHtml(
-          "Kh at h (used for qh and C&C net pressure)",
-          "Kh = " + multStr + " * (h_eff / zg)^(2 / alpha)",
-          "Kh = " + multStr + " * (" + formatNumber(results.KhEffHeight) + " / " + formatNumber(results.zg, 0) +
-            ")^(2 / " + formatNumber(results.alpha) + ") = " + formatNumber(results.Kh)
-        ));
-
-        if (inputs.edition === "7-22") {
-          rows.push(formulaHtml(
-            "Velocity pressure qz (ASCE 7-22 Eq. 26.10-1, Kd NOT included)",
-            "qz = 0.00256 * Kz * Kzt * Ke * V^2",
-            "qz = 0.00256 * " + formatNumber(results.Kz) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(inputs.Ke) + " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qz)
-          ));
-          rows.push(formulaHtml(
-            "Velocity pressure qh at mean roof height",
-            "qh = 0.00256 * Kh * Kzt * Ke * V^2",
-            "qh = 0.00256 * " + formatNumber(results.Kh) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(inputs.Ke) + " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qh)
-          ));
-        } else {
-          rows.push(formulaHtml(
-            "Velocity pressure qz (ASCE 7-16 Eq. 26.10-1, Kd IN qz)",
-            "qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2",
-            "qz = 0.00256 * " + formatNumber(results.Kz) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(results.Kd) + " * " + formatNumber(inputs.Ke) +
-              " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qz)
-          ));
-          rows.push(formulaHtml(
-            "Velocity pressure qh at mean roof height",
-            "qh = 0.00256 * Kh * Kzt * Kd * Ke * V^2",
-            "qh = 0.00256 * " + formatNumber(results.Kh) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(results.Kd) + " * " + formatNumber(inputs.Ke) +
-              " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qh)
-          ));
-        }
-
-        if (results.thetaReductionApplied) {
-          rows.push(formulaHtml(
-            "Wall GCp reduction for theta <= 10 deg (Fig. 30.3-1 footnote)",
-            "GCp_eff = GCp_base * 0.90",
-            "GCp_eff = " + formatSigned(results.GCp_base) + " * 0.90 = " + formatSigned(results.GCp_effective)
-          ));
-        }
-
-        results.pCases.forEach(function (entry, index) {
-          if (inputs.edition === "7-22") {
-            rows.push(formulaHtml(
-              "Net C&C design pressure case " + (index + 1) + " (ASCE 7-22 Eq. 30.3-1)",
-              "p = qh * Kd * (GCp - GCpi)",
-              "p = " + formatPsf(results.qh) + " * " + formatNumber(results.Kd) +
-                " * (" + formatSigned(results.GCp_effective) + " - " + formatSigned(entry.gcpi) +
-                ") = " + formatPsf(entry.pressure)
-            ));
-          } else {
-            rows.push(formulaHtml(
-              "Net C&C design pressure case " + (index + 1) + " (ASCE 7-16 Eq. 30.3-1)",
-              "p = qh * (GCp - GCpi)",
-              "p = " + formatPsf(results.qh) +
-                " * (" + formatSigned(results.GCp_effective) + " - " + formatSigned(entry.gcpi) +
-                ") = " + formatPsf(entry.pressure)
-            ));
-          }
-        });
-
-        rows.push(formulaHtml(
-          "Controlling envelope",
-          "p_min = min(all cases), p_max = max(all cases)",
-          "p_min = " + formatPsf(results.pMin) + ", p_max = " + formatPsf(results.pMax)
-        ));
-
-        return rows.join("");
-      }
-
-      function renderNoResult() {
-        resultPlaceholderEl.classList.remove("hidden");
-        resultContentEl.classList.add("hidden");
-      }
-
-      function renderErrors(errors) {
-        if (!errors.length) {
-          errorSummaryEl.classList.add("hidden");
-          return;
-        }
-        var messageList = errors.map(function (entry) {
-          return "<li>" + escapeHtml(entry.message) + "</li>";
-        }).join("");
-        errorSummaryEl.innerHTML = "<h3>Please fix the following inputs:</h3><ul>" + messageList + "</ul>";
-        errorSummaryEl.classList.remove("hidden");
-        errors.forEach(function (entry) {
-          var id = FIELD_TO_ERROR[entry.field];
-          if (!id) return;
-          var errorEl = document.getElementById(id);
-          if (errorEl) {
-            errorEl.textContent = entry.message;
-            var fieldInput = findFieldInput(entry.field);
-            if (fieldInput) fieldInput.setAttribute("aria-invalid", "true");
-          }
-        });
-      }
-
-      function clearErrors() {
-        Object.keys(FIELD_TO_ERROR).forEach(function (field) {
-          var id = FIELD_TO_ERROR[field];
-          var errorEl = document.getElementById(id);
-          if (errorEl) errorEl.textContent = "";
-          var inputEl = findFieldInput(field);
-          if (inputEl) inputEl.removeAttribute("aria-invalid");
-        });
-        errorSummaryEl.innerHTML = "";
-        errorSummaryEl.classList.add("hidden");
-        warningSummaryEl.innerHTML = "";
-        warningSummaryEl.classList.add("hidden");
-      }
-
-      function findFieldInput(field) {
-        switch (field) {
-          case "edition":    return editionEl;
-          case "risk":       return riskEl;
-          case "V":          return speedEl;
-          case "exposure":   return exposureEl;
-          case "h":          return meanRoofEl;
-          case "z":          return qzHeightEl;
-          case "Kzt":        return kztEl;
-          case "Ke":         return keEl;
-          case "kdMode":     return kdModeEl;
-          case "kdManual":   return kdManualEl;
-          case "theta":      return thetaEl;
-          case "gcpPreset":  return gcpPresetEl;
-          case "gcp":        return gcpEl;
-          case "gcpiMode":   return gcpiModeEl;
-          case "enclosure":  return enclosureEl;
-          case "gcpiManual": return gcpiManualEl;
-          default:           return null;
-        }
-      }
-
-      function pushError(errors, field, message) { errors.push({ field: field, message: message }); }
-      function findPreset(id) { return PRESETS.find(function (p) { return p.id === id; }); }
-      function parseNumber(value) { return Number(value); }
-      function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
-      function formatPsf(value) { return Number(value).toFixed(2) + " psf"; }
-      function formatSigned(value) {
-        var normalized = Math.abs(value) < 0.0000001 ? 0 : value;
-        var num = Number(normalized).toFixed(2);
-        return value > 0 ? "+" + num : num;
-      }
-      function formatNumber(value, decimals) {
-        var places = typeof decimals === "number" ? decimals : 4;
-        var fixed = Number(value).toFixed(places);
-        if (fixed.indexOf(".") === -1) return fixed;
-        return fixed.replace(/0+$/, "").replace(/\.$/, "");
-      }
-      function toFixedString(value, decimals) { return Number(value).toFixed(decimals); }
-      function tableRow(name, value) { return '<tr><th scope="row">' + name + "</th><td>" + value + "</td></tr>"; }
-      function formulaHtml(title, general, substituted) {
-        return '<div class="formula"><strong>' + escapeHtml(title) + "</strong><br>" +
-          "<code>" + escapeHtml(general) + "</code><br>" +
-          "<code>" + escapeHtml(substituted) + "</code></div>";
-      }
-      function escapeHtml(text) {
-        return String(text)
-          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
-      }
-      function isFinitePositive(value) { return Number.isFinite(value) && value > 0; }
-      function isFiniteNumber(value) { return Number.isFinite(value); }
-
-      function copyEmbedCode() {
-        var text = embedCodeEl.value;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(
-            function () { copyStatusEl.textContent = "Embed code copied."; },
-            function () { fallbackCopy(); }
-          );
-        } else {
-          fallbackCopy();
-        }
-        function fallbackCopy() {
-          embedCodeEl.focus();
-          embedCodeEl.select();
-          try {
-            document.execCommand("copy");
-            copyStatusEl.textContent = "Embed code copied.";
-          } catch (err) {
-            copyStatusEl.textContent = "Copy failed. Select and copy manually.";
-          }
-        }
-      }
-    })();
-  </script>
+// INIT
+function resetForm(){if(!confirm('Reset to defaults?'))return;location.reload();}
+populateSectionSelect('f_rail_sec','HR-14 + HR-2 Composite Rail (Iy=0.448)');
+populateSectionSelect('f_post_sec','HR-4 + HR-2 Composite Post (Iy=0.578)');
+const _d=document.getElementById('f_date'); if(_d&&!_d.value){_d.value=new Date().toISOString().slice(0,10);}
+const _p=document.querySelector('.form-panel');
+if(_p){_p.addEventListener('input',render);_p.addEventListener('change',render);}
+applyTypePreset();
+</script>
 </body>
 </html>
