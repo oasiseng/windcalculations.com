@@ -154,6 +154,22 @@
   .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;border-radius:50%;background:var(--green);color:#fff;font-size:9.5px;font-weight:700;cursor:pointer;vertical-align:middle;user-select:none;font-family:var(--font-body);text-transform:none;letter-spacing:0;}
   .help:hover{background:var(--green-dark);}
   #tipBubble{display:none;position:fixed;max-width:240px;background:#1a1714;color:#fff;font-family:var(--font-body);font-weight:400;font-size:0.74rem;line-height:1.45;padding:0.5rem 0.62rem;border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,0.32);z-index:9999;pointer-events:none;}
+  /* --- RESPONSIVE LAYOUT OVERRIDES --- */
+@media screen and (max-width: 1000px) {
+  .app {
+    display: flex;
+    flex-direction: column;
+  }
+  .form-panel {
+    max-height: 55vh; /* Keeps the form from taking over the whole screen */
+    border-right: none;
+    border-bottom: 2px solid var(--green);
+    position: relative;
+  }
+  .viz-grid {
+    grid-template-columns: 1fr; /* Stacks the live SVGs */
+  }
+}
   @media print{ .help,#tipBubble{display:none !important;} }
   .disclaimer-banner{background:rgba(217,48,37,0.08);border:1px solid rgba(217,48,37,0.35);border-left:3px solid var(--error);border-radius:6px;padding:0.5rem 0.65rem;margin:0.2rem 0 1rem;font-size:0.72rem;color:#9a2018;line-height:1.45;}
   .cover-disclaimer{border:1.5px solid #c0392b;background:#fbeeec;border-radius:6px;padding:0.55rem 0.7rem;margin:1rem 0 0;font-size:8.5pt;color:#7a1d15;line-height:1.42;}
@@ -1275,7 +1291,35 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initial programmatic render cycle
   render();
   attachHelp();
+// --- PDF "ZOOM TO FIT" AUTO-SCALER ---
+  const previewPanel = document.querySelector('.preview-panel');
+  const reportContainer = document.getElementById('report');
 
+  if (previewPanel && reportContainer) {
+    new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const availableWidth = entry.contentRect.width;
+        const reportWidth = 816; // 8.5 inches in pixels
+        const padding = 40; // Safety buffer for visual breathing room
+
+        if (availableWidth < (reportWidth + padding)) {
+          const scale = availableWidth / (reportWidth + padding);
+          
+          // Scale the report down
+          reportContainer.style.transform = `scale(${scale})`;
+          reportContainer.style.transformOrigin = 'top center';
+          
+          // Reclaim the empty whitespace left at the bottom by the scaled element
+          const scaledHeightDiff = reportContainer.scrollHeight * (1 - scale);
+          reportContainer.style.marginBottom = `-${scaledHeightDiff}px`;
+        } else {
+          // Reset when there is enough room
+          reportContainer.style.transform = 'none';
+          reportContainer.style.marginBottom = '0';
+        }
+      }
+    }).observe(previewPanel);
+  }
   // Attach event loop triggers to the input fields panel
   const _panel = document.querySelector('.form-panel');
   if(_panel){
