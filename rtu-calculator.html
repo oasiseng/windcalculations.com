@@ -417,6 +417,8 @@
           <div class="actions">
             <button class="btn btn-secondary" type="button" id="copy-record">Copy Calculation Record</button>
             <span id="copy-status" class="meta" aria-live="polite"></span>
+            <button class="btn btn-secondary" type="button" id="export-record">Export Calculation Record</button>
+            <span id="export-status" class="meta" aria-live="polite"></span>
           </div>
         </div>
         <h3>Methodology and References</h3>
@@ -601,6 +603,10 @@
     var recordTextEl = document.getElementById("record-text");
     var copyRecordEl = document.getElementById("copy-record");
     var copyStatusEl = document.getElementById("copy-status");
+    var exportRecordEl = document.getElementById("export-record");
+    var exportStatusEl = document.getElementById("export-status");
+
+    var lastCalculation = null;
 
     function init() {
       applyDefaults();
@@ -614,6 +620,7 @@
         renderNoResult();
       });
       copyRecordEl.addEventListener("click", copyRecord);
+      exportRecordEl.addEventListener("click", exportRecord);
     }
 
     function applyDefaults() {
@@ -640,9 +647,12 @@
 
     function calculateAndRender() {
       clearErrors();
+      copyStatusEl.textContent = "";
+      exportStatusEl.textContent = "";
       var inputs = collectInputs();
       var errors = validateInputs(inputs);
       if (errors.length > 0) {
+        lastCalculation = null;
         renderErrors(errors);
         renderNoResult();
         return;
@@ -650,6 +660,7 @@
       var warnings = generateWarnings(inputs);
       var results = computeResults(inputs);
       renderResults(inputs, results, warnings);
+      lastCalculation = { inputs: inputs, results: results, warnings: warnings, timestamp: new Date() };
     }
 
     function collectInputs() {
@@ -1058,6 +1069,54 @@
         return;
       }
       copyStatusEl.textContent = copied ? "Copied." : "Copy failed. Select and copy manually.";
+    }
+
+    function exportRecord() {
+      if (!lastCalculation) {
+        exportStatusEl.textContent = "Run a valid calculation first.";
+        return;
+      }
+      var stamp = lastCalculation.timestamp.toISOString();
+      var doc =
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>RTU Wind Calculation Record</title>" +
+        "<style>" +
+        "body{font-family:Arial,sans-serif;color:#102535;margin:24px;line-height:1.4;}" +
+        "table{width:100%;border-collapse:collapse;margin:8px 0 14px;}" +
+        "th,td{border:1px solid #c9d8df;padding:8px;text-align:left;vertical-align:top;}" +
+        "th{background:#eef6f8;} .formula{border:1px solid #d3e4ea;background:#f7fbfc;border-radius:8px;padding:8px;margin:0 0 8px;}" +
+        ".formula-title{font-weight:bold;} .warning-box{border:1px solid #e0b252;background:#fdf6e3;border-radius:8px;padding:8px;margin:0 0 8px;}" +
+        "code{font-family:Courier New,monospace;}" +
+        "pre{border:1px solid #d3e4ea;background:#f7fbfc;border-radius:8px;padding:10px;white-space:pre-wrap;font-family:Courier New,monospace;font-size:0.85em;}" +
+        "</style></head><body>" +
+        "<h1>RTU Wind Calculation Record</h1>" +
+        "<p>Generated: " + escapeHtml(stamp) + "</p>" +
+        "<h2>Summary</h2>" +
+        "<table><tbody>" +
+        "<tr><th>Velocity pressure qh</th><td>" + escapeHtml(qhValueEl.textContent) + "</td></tr>" +
+        "<tr><th>Nominal lateral force Fh</th><td>" + escapeHtml(fhValueEl.textContent) + "</td></tr>" +
+        "<tr><th>Design lateral force</th><td>" + escapeHtml(designLateralValueEl.textContent) + "</td></tr>" +
+        "<tr><th>Design uplift force</th><td>" + escapeHtml(designUpliftValueEl.textContent) + "</td></tr>" +
+        "<tr><th>Net uplift</th><td>" + escapeHtml(netUpliftValueEl.textContent) + "</td></tr>" +
+        "<tr><th>Tension per anchor (overturning screening)</th><td>" + escapeHtml(perAnchorValueEl.textContent) + "</td></tr>" +
+        "</tbody></table>" +
+        "<h2>Factors and Forces</h2><table><tbody>" + factorTableBodyEl.innerHTML + "</tbody></table>" +
+        "<h2>Stability Screening (rigid body)</h2><table><tbody>" + stabilityTableBodyEl.innerHTML + "</tbody></table>" +
+        "<h2>Decision Log</h2><div>" + decisionLogEl.innerHTML + "</div>" +
+        "<h2>Formulas With Substituted Values</h2>" + formulaBlockEl.innerHTML +
+        "<p>" + escapeHtml(editionNoteEl.textContent) + "</p>" +
+        "<h2>Plain-Text Record</h2><pre>" + escapeHtml(recordTextEl.value) + "</pre>" +
+        "<p><strong>Disclaimer:</strong> Informational and preliminary screening use only. Final design requires review, verification, and sealing by the licensed engineer of record.</p>" +
+        "</body></html>";
+      var blob = new Blob([doc], { type: "text/html" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "rtu-wind-calculation-record-" + stamp.replace(/[:]/g, "-") + ".html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      exportStatusEl.textContent = "Calculation record exported.";
     }
 
     function renderErrors(errors) {
