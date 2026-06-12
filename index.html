@@ -304,13 +304,23 @@
               <div class="field">
                 <label for="gcp-preset">GC<sub>p</sub> Preset</label>
                 <select id="gcp-preset" name="gcp-preset" aria-describedby="err-gcp-preset"></select>
-                <p class="hint">Preset values are base values from ASCE Figs. 30.3-1 / 30.3-2A at the effective wind area noted. Verify against the applicable figure for your zone and area.</p>
+                <p class="hint">Wall presets are figure base values at the noted effective wind area. Roof presets are the conservative A &le; 10 sf anchors per ASCE 7-16/7-22 Fig. 30.3-2A (Zones 1&#39;, 1, 2, 3); reduced values for larger effective wind areas must be read from the figure and entered manually.</p>
                 <p class="field-error" id="err-gcp-preset"></p>
               </div>
               <div class="field">
+                <label for="surface-type">Surface for GC<sub>p</sub></label>
+                <select id="surface-type" name="surface-type" aria-describedby="err-surface-type">
+                  <option value="wall">Wall (Zones 4 / 5)</option>
+                  <option value="roof" selected>Roof (Zones 1&#39; / 1 / 2 / 3)</option>
+                  <option value="other">Other</option>
+                </select>
+                <p class="hint">Auto-set by the preset; set manually when entering a custom GC<sub>p</sub>. The 10% &theta; &le; 10&deg; reduction applies to wall zones only (Fig. 30.3-1 footnote).</p>
+                <p class="field-error" id="err-surface-type"></p>
+              </div>
+              <div class="field">
                 <label for="gcp">External Pressure Coefficient GC<sub>p</sub></label>
-                <input id="gcp" name="gcp" type="number" inputmode="decimal" step="0.01" value="-0.90" aria-describedby="err-gcp">
-                <p class="hint">Base value. 10% wall reduction applied separately if checkbox above is on and &theta; &le; 10&deg;.</p>
+                <input id="gcp" name="gcp" type="number" inputmode="decimal" step="0.01" value="-1.70" aria-describedby="err-gcp">
+                <p class="hint">Base value. 10% wall reduction applied separately if the checkbox above is on, surface is a wall, and &theta; &le; 10&deg;.</p>
                 <p class="field-error" id="err-gcp"></p>
               </div>
               <div class="field">
@@ -341,7 +351,8 @@
           <div class="status-box" id="method-note">
             <strong>Method:</strong> Edition-aware low-rise C&amp;C calculation. The gust effect is already
             combined into GC<sub>p</sub> and GC<sub>pi</sub>&mdash;no separate G factor is applied. q<sub>z</sub>
-            is shown for MWFRS reference and is not used in the net C&amp;C pressure. Rooftop equipment force
+            is shown for MWFRS reference and is not used in the net C&amp;C pressure. Net design pressures are
+            checked against the 16 psf minimum of Section 30.2.2. Rooftop equipment force
             design (Ch. 29) is not included.
           </div>
           <div class="actions">
@@ -388,6 +399,14 @@
               <div class="label">Net Pressure Envelope (max)</div>
               <div class="value" id="p-max-value">-</div>
             </div>
+            <div class="item">
+              <div class="label">Design Envelope min (&sect;30.2.2 16 psf floor)</div>
+              <div class="value" id="p-min-design-value">-</div>
+            </div>
+            <div class="item">
+              <div class="label">Design Envelope max (&sect;30.2.2 16 psf floor)</div>
+              <div class="value" id="p-max-design-value">-</div>
+            </div>
           </div>
           <div class="subgrid">
             <div>
@@ -419,6 +438,7 @@
           ASCE 7-22 Eq. 26.10-1 for velocity pressure (K<sub>d</sub> excluded from q<sub>z</sub>);
           Ch. 30 Eq. 30.3-1 for low-rise C&amp;C net pressure (K<sub>d</sub> applied in pressure equation).
           ASCE 7-16 follows the prior form with K<sub>d</sub> inside q<sub>z</sub>.
+          Net design pressures are subject to the 16 psf minimum of Section 30.2.2.
         </p>
         <ul class="method-links">
           <li><a href="https://windcalculations.com/wind-pressure-calculator-methodology/" target="_blank" rel="noopener noreferrer">Methodology page</a></li>
@@ -426,9 +446,11 @@
         </ul>
         <div class="citation">
           <strong>Applicable scope:</strong> Low-rise enclosed / partially enclosed / partially open / open
-          buildings with h &le; 60 ft. GC<sub>p</sub> values from Ch. 30 Figures 30.3-1 (walls) and 30.3-2A&ndash;D
-          (roofs) depend on effective wind area and zone. Users must verify the applicable figure, zone,
-          and effective wind area for their project.
+          buildings with h &le; 60 ft. Wall GC<sub>p</sub> values from Fig. 30.3-1 (Zones 4 &amp; 5). Roof
+          GC<sub>p</sub> values from Fig. 30.3-2A&ndash;D per ASCE 7-16/7-22 (Zones 1&#39;, 1, 2, 3 &mdash;
+          substantially higher than ASCE 7-10, with zone geometry now based on building-height offsets
+          (0.6h) and L-shaped Zone 3 corners). GC<sub>p</sub> depends on effective wind area and zone;
+          users must verify the applicable figure, zone layout, and effective wind area for their project.
         </div>
         <div class="disclaimer">
           <strong>Important Disclaimer</strong>
@@ -449,727 +471,825 @@
     </div>
   </div>
   <script>
-    (function () {
-      "use strict";
+  (function () {
+    "use strict";
 
-      // ====================================================================
-      // EDITION-AWARE EXPOSURE CONSTANTS
-      //
-      // ASCE 7-16 Table 26.11-1 (Kz formula uses 2.01 multiplier; Kd in qz):
-      //   B: alpha=7.0,  zg=1200 ft, zmin=30 ft (Kz floor at z=30 for Exp B)
-      //   C: alpha=9.5,  zg= 900 ft, zmin=15 ft
-      //   D: alpha=11.5, zg= 700 ft, zmin=15 ft
-      //
-      // ASCE 7-22 Table 26.11-1 (Kz formula uses 2.41 multiplier; Kd in p-eq):
-      //   B: alpha=7.5,  zg=3280 ft, zmin=30 ft
-      //   C: alpha=9.8,  zg=2460 ft, zmin=15 ft
-      //   D: alpha=11.5, zg=1935 ft, zmin=15 ft
-      //
-      // VERIFICATION vs third party software (V=160, Exp C, h=30, ASCE 7-22):
-      //   Kh = 0.9805 (ref table: 0.980)        OK
-      //   qh = 64.26 psf (no Kd, per Eq 26.10-1)     OK
-      //   Wall Z4 pos at A=1 (theta<=10 reduction):  58.99 psf  OK
-      //   Wall Z5 neg at A=1 (theta<=10 reduction): -78.65 psf  OK
-      // ====================================================================
-      var EXPOSURE_CONSTANTS = {
-        "7-16": {
-          mult: 2.01,
-          B: { alpha: 7.0,  zg: 1200, zmin: 30 },
-          C: { alpha: 9.5,  zg:  900, zmin: 15 },
-          D: { alpha: 11.5, zg:  700, zmin: 15 }
-        },
-        "7-22": {
-          mult: 2.41,
-          B: { alpha: 7.5,  zg: 3280, zmin: 30 },
-          C: { alpha: 9.8,  zg: 2460, zmin: 15 },
-          D: { alpha: 11.5, zg: 1935, zmin: 15 }
-        }
-      };
+    // =====================================================================
+    // VERIFICATION NOTES (rev 2026-06-12)
+    //   Kz/Kh constants per ASCE 7-16 Table 26.10-1 and ASCE 7-22 Table 26.10-1.
+    //   Validation case (ASCE 7-22, V = 160 mph, Exposure C, h = z = 30 ft,
+    //   Kzt = Ke = 1.0, Kd = 0.85, enclosed +/-0.18, theta <= 10 deg with 10%
+    //   wall reduction): qh = 64.26 psf, Zone 4 pos = +58.99 psf,
+    //   Zone 5 neg = -78.65 psf. Verified against third-party software.
+    //   Changes in this revision:
+    //     - Roof GCp presets updated to ASCE 7-16/7-22 Fig. 30.3-2A small-area
+    //       values (Zone 1' -0.9 / Z1 -1.7 / Z2 -2.3 / Z3 -3.2 at A <= 10 sf).
+    //       The previous presets were ASCE 7-10 Fig. 30.4-2A values.
+    //     - Wall Zone 5 (neg, A = 100 sf) corrected to -1.05 (was -1.22; the
+    //       old value used the Zone 4 endpoint delta by mistake).
+    //     - Sec. 30.2.2 minimum design pressure (16 psf each direction)
+    //       enforced as a reported design envelope.
+    //     - Exposure B Kz floor of 0.70 (Table 26.10-1, C&C of buildings with
+    //       h <= 60 ft) applied in both editions.
+    //     - theta <= 10 deg wall reduction now keyed to an explicit
+    //       surface-type selection instead of being inferred from the preset.
+    // =====================================================================
 
-      var RISK_CATEGORIES = ["I", "II", "III", "IV"];
+    var EXPOSURE_CONSTANTS = {
+      "7-16": {
+        mult: 2.01,
+        B: { alpha: 7.0,  zg: 1200, zmin: 30 },
+        C: { alpha: 9.5,  zg: 900,  zmin: 15 },
+        D: { alpha: 11.5, zg: 700,  zmin: 15 }
+      },
+      "7-22": {
+        mult: 2.41,
+        B: { alpha: 7.5,  zg: 3280, zmin: 30 },
+        C: { alpha: 9.8,  zg: 2460, zmin: 15 },
+        D: { alpha: 11.5, zg: 1935, zmin: 15 }
+      }
+    };
 
-      // ====================================================================
-      // GCp PRESETS (base values from ASCE 7-16/7-22 Figs. 30.3-1, 30.3-2A)
-      // 10% reduction for walls when theta <= 10 is applied separately
-      // via the apply-theta-reduction checkbox.
-      // ====================================================================
-      var PRESETS = [
-        { id: "custom",             label: "Custom manual GCp",                                             gcp: null, zoneType: "custom" },
-        // Walls (Fig. 30.3-1) base values -- EWA = 10 sq ft
-        { id: "wall_zone4_pos_10",  label: "Wall Zone 4 (pos, A\u226410 sf) GCp = +1.0 [base]",             gcp:  1.0, zoneType: "wall" },
-        { id: "wall_zone4_neg_10",  label: "Wall Zone 4 (neg, A\u226410 sf) GCp = \u22121.1 [base]",        gcp: -1.1, zoneType: "wall" },
-        { id: "wall_zone5_pos_10",  label: "Wall Zone 5 (pos, A\u226410 sf) GCp = +1.0 [base]",             gcp:  1.0, zoneType: "wall" },
-        { id: "wall_zone5_neg_10",  label: "Wall Zone 5 (neg, A\u226410 sf) GCp = \u22121.4 [base]",        gcp: -1.4, zoneType: "wall" },
-        // Walls -- EWA = 100 sq ft (log-interp from 10 and 500)
-        { id: "wall_zone4_pos_100", label: "Wall Zone 4 (pos, A=100 sf) GCp = +0.82 [base]",                 gcp:  0.82, zoneType: "wall" },
-        { id: "wall_zone4_neg_100", label: "Wall Zone 4 (neg, A=100 sf) GCp = \u22120.92 [base]",            gcp: -0.92, zoneType: "wall" },
-        { id: "wall_zone5_pos_100", label: "Wall Zone 5 (pos, A=100 sf) GCp = +0.82 [base]",                 gcp:  0.82, zoneType: "wall" },
-        { id: "wall_zone5_neg_100", label: "Wall Zone 5 (neg, A=100 sf) GCp = \u22121.22 [base]",            gcp: -1.22, zoneType: "wall" },
-        // Flat / low-slope roof (Fig. 30.3-2A, theta <= 7 deg) -- EWA = 10 sq ft
-        { id: "roof_zone1_neg_10",  label: "Roof Zone 1 (neg, A\u226410 sf) GCp = \u22121.0",               gcp: -1.0, zoneType: "roof" },
-        { id: "roof_zone1_pos_10",  label: "Roof Zone 1 (pos, A\u226410 sf) GCp = +0.3",                    gcp:  0.3, zoneType: "roof" },
-        { id: "roof_zone2_neg_10",  label: "Roof Zone 2 (neg, A\u226410 sf) GCp = \u22121.8",               gcp: -1.8, zoneType: "roof" },
-        { id: "roof_zone2_pos_10",  label: "Roof Zone 2 (pos, A\u226410 sf) GCp = +0.3",                    gcp:  0.3, zoneType: "roof" },
-        { id: "roof_zone3_neg_10",  label: "Roof Zone 3 (neg, A\u226410 sf) GCp = \u22122.8",               gcp: -2.8, zoneType: "roof" },
-        { id: "roof_zone3_pos_10",  label: "Roof Zone 3 (pos, A\u226410 sf) GCp = +0.3",                    gcp:  0.3, zoneType: "roof" },
-        // Flat roof -- EWA = 100 sq ft
-        { id: "roof_zone1_neg_100", label: "Roof Zone 1 (neg, A=100 sf) GCp = \u22120.9",                   gcp: -0.9, zoneType: "roof" },
-        { id: "roof_zone1_pos_100", label: "Roof Zone 1 (pos, A=100 sf) GCp = +0.2",                        gcp:  0.2, zoneType: "roof" },
-        { id: "roof_zone2_neg_100", label: "Roof Zone 2 (neg, A=100 sf) GCp = \u22121.2",                   gcp: -1.2, zoneType: "roof" },
-        { id: "roof_zone3_neg_100", label: "Roof Zone 3 (neg, A=100 sf) GCp = \u22121.8",                   gcp: -1.8, zoneType: "roof" }
-      ];
+    // Tabulated minimum for Exposure B, Case 1 (C&C of buildings with
+    // h <= 60 ft), per Table 26.10-1. The 7-22 power-law value at the 30 ft
+    // clamp computes to 0.689; the published tabulated 0.70 governs.
+    var KZ_FLOOR_EXPOSURE_B = 0.70;
 
-      var GCPI_STANDARD_CASES = {
-        enclosed: [0.18, -0.18],
-        partially_enclosed: [0.55, -0.55],
-        open: [0.0]
-      };
+    var GCPI_STANDARD = {
+      enclosed: 0.18,
+      partially_enclosed: 0.55,
+      open: 0.0
+    };
 
-      var DEFAULTS = {
-        edition: "7-22",
-        risk: "II",
-        V: 140,
-        exposure: "C",
-        h: 30,
-        z: 30,
-        Kzt: 1.0,
-        Ke: 1.0,
-        kdMode: "auto",
-        kdManual: 0.85,
-        theta: 5,
-        applyThetaReduction: true,
-        gcpPreset: "roof_zone1_neg_100",
-        gcp: -0.9,
-        gcpiMode: "standard",
-        enclosure: "enclosed",
-        gcpiManual: 0.18
-      };
+    // ---------------------------------------------------------------------
+    // GCp presets.
+    // Walls: ASCE Fig. 30.3-1 (unchanged 7-16 -> 7-22). 100 sf values are
+    // log-linear interpolations between the 10 sf and 500 sf figure
+    // endpoints (pos +1.0 -> +0.7; Zone 4 neg -1.1 -> -0.8;
+    // Zone 5 neg -1.4 -> -0.8).
+    // Roofs: ASCE 7-16 / 7-22 Fig. 30.3-2A (theta <= 7 deg). These editions
+    // substantially increased low-slope roof coefficients vs ASCE 7-10 and
+    // added interior Zone 1'. The presets below are the conservative
+    // small-effective-area (A <= 10 sf) anchors, valid (and conservative)
+    // for any effective wind area. Reduced values for larger effective wind
+    // areas must be read directly from Fig. 30.3-2A and entered manually.
+    // Zone geometry is now based on building height (0.6h offsets, L-shaped
+    // Zone 3 corners) -- verify zone assignment per the figure.
+    // ---------------------------------------------------------------------
+    var PRESETS = [
+      { id: "custom", label: "Custom manual GCp", gcp: null, zoneType: "custom" },
 
-      var FIELD_TO_ERROR = {
-        edition: "err-edition",
-        risk: "err-risk-category",
-        V: "err-basic-speed",
-        exposure: "err-exposure",
-        h: "err-mean-roof-height",
-        z: "err-qz-height",
-        Kzt: "err-kzt",
-        Ke: "err-ke",
-        kdMode: "err-kd-mode",
-        kdManual: "err-kd-manual",
-        theta: "err-theta",
-        gcpPreset: "err-gcp-preset",
-        gcp: "err-gcp",
-        gcpiMode: "err-gcpi-mode",
-        enclosure: "err-enclosure-class",
-        gcpiManual: "err-gcpi-manual"
-      };
+      { id: "wall_zone4_pos_10",  label: "Wall Zone 4 (pos, A\u226410 sf) GCp = +1.0 [base]",      gcp:  1.0,  zoneType: "wall" },
+      { id: "wall_zone4_neg_10",  label: "Wall Zone 4 (neg, A\u226410 sf) GCp = \u22121.1 [base]", gcp: -1.1,  zoneType: "wall" },
+      { id: "wall_zone5_pos_10",  label: "Wall Zone 5 (pos, A\u226410 sf) GCp = +1.0 [base]",      gcp:  1.0,  zoneType: "wall" },
+      { id: "wall_zone5_neg_10",  label: "Wall Zone 5 (neg, A\u226410 sf) GCp = \u22121.4 [base]", gcp: -1.4,  zoneType: "wall" },
 
-      var form = document.getElementById("wind-form");
-      var editionEl = document.getElementById("edition");
-      var riskEl = document.getElementById("risk-category");
-      var speedEl = document.getElementById("basic-speed");
-      var exposureEl = document.getElementById("exposure");
-      var meanRoofEl = document.getElementById("mean-roof-height");
-      var qzHeightEl = document.getElementById("qz-height");
-      var kztEl = document.getElementById("kzt");
-      var keEl = document.getElementById("ke");
-      var kdModeEl = document.getElementById("kd-mode");
-      var kdManualEl = document.getElementById("kd-manual");
-      var thetaEl = document.getElementById("theta");
-      var applyThetaReductionEl = document.getElementById("apply-theta-reduction");
-      var gcpPresetEl = document.getElementById("gcp-preset");
-      var gcpEl = document.getElementById("gcp");
-      var gcpiModeEl = document.getElementById("gcpi-mode");
-      var enclosureEl = document.getElementById("enclosure-class");
-      var gcpiManualEl = document.getElementById("gcpi-manual");
-      var errorSummaryEl = document.getElementById("error-summary");
-      var warningSummaryEl = document.getElementById("warning-summary");
-      var resultPlaceholderEl = document.getElementById("result-placeholder");
-      var resultContentEl = document.getElementById("result-content");
-      var resultAnnouncerEl = document.getElementById("result-announcer");
-      var resultWarningsEl = document.getElementById("result-warnings");
-      var factorTableBodyEl = document.getElementById("factor-table-body");
-      var caseTableBodyEl = document.getElementById("case-table-body");
-      var formulaBlockEl = document.getElementById("formula-block");
-      var qzValueEl = document.getElementById("qz-value");
-      var qhValueEl = document.getElementById("qh-value");
-      var pMinValueEl = document.getElementById("p-min-value");
-      var pMaxValueEl = document.getElementById("p-max-value");
-      var editionNoteEl = document.getElementById("edition-note");
-      var embedCodeEl = document.getElementById("embed-code");
-      var copyEmbedBtnEl = document.getElementById("copy-embed");
-      var copyStatusEl = document.getElementById("copy-status");
-      var resetBtnEl = document.getElementById("reset-btn");
+      { id: "wall_zone4_pos_100", label: "Wall Zone 4 (pos, A=100 sf) GCp = +0.82 [base]",          gcp:  0.82, zoneType: "wall" },
+      { id: "wall_zone4_neg_100", label: "Wall Zone 4 (neg, A=100 sf) GCp = \u22120.92 [base]",     gcp: -0.92, zoneType: "wall" },
+      { id: "wall_zone5_pos_100", label: "Wall Zone 5 (pos, A=100 sf) GCp = +0.82 [base]",          gcp:  0.82, zoneType: "wall" },
+      // CORRECTED 2026-06: was -1.22, which used the Zone 4 endpoint delta.
+      // Log interpolation -1.4 (<=10 sf) -> -0.8 (>=500 sf) at 100 sf = -1.05.
+      { id: "wall_zone5_neg_100", label: "Wall Zone 5 (neg, A=100 sf) GCp = \u22121.05 [base]",     gcp: -1.05, zoneType: "wall" },
 
-      init();
+      { id: "roof_zone1p_neg_10", label: "Roof Zone 1\u2032 interior (neg, A\u226410 sf) GCp = \u22120.9", gcp: -0.9, zoneType: "roof" },
+      { id: "roof_zone1_neg_10",  label: "Roof Zone 1 (neg, A\u226410 sf) GCp = \u22121.7",                gcp: -1.7, zoneType: "roof" },
+      { id: "roof_zone2_neg_10",  label: "Roof Zone 2 (neg, A\u226410 sf) GCp = \u22122.3",                gcp: -2.3, zoneType: "roof" },
+      { id: "roof_zone3_neg_10",  label: "Roof Zone 3 (neg, A\u226410 sf) GCp = \u22123.2",                gcp: -3.2, zoneType: "roof" },
+      { id: "roof_pos_10",        label: "Roof all zones (pos, A\u226410 sf) GCp = +0.3",                  gcp:  0.3, zoneType: "roof" },
+      { id: "roof_pos_500",       label: "Roof all zones (pos, A\u2265500 sf) GCp = +0.2",                 gcp:  0.2, zoneType: "roof" }
+    ];
 
-      function init() {
-        populatePresetOptions();
+    var DEFAULTS = {
+      edition: "7-22",
+      riskCategory: "II",
+      V: 140,
+      exposure: "C",
+      h: 30,
+      z: 30,
+      kzt: 1.0,
+      ke: 1.0,
+      kdMode: "auto",
+      kdManual: 0.85,
+      theta: 5,
+      applyThetaReduction: true,
+      gcpPreset: "roof_zone1_neg_10",
+      gcp: -1.7,
+      surfaceType: "roof",
+      gcpiMode: "standard",
+      enclosureClass: "enclosed",
+      gcpiManual: 0.18
+    };
+
+    var FIELD_TO_ERROR = {
+      edition: "err-edition",
+      riskCategory: "err-risk-category",
+      V: "err-basic-speed",
+      exposure: "err-exposure",
+      h: "err-mean-roof-height",
+      z: "err-qz-height",
+      kzt: "err-kzt",
+      ke: "err-ke",
+      kdMode: "err-kd-mode",
+      kdManual: "err-kd-manual",
+      theta: "err-theta",
+      gcpPreset: "err-gcp-preset",
+      surfaceType: "err-surface-type",
+      gcp: "err-gcp",
+      gcpiMode: "err-gcpi-mode",
+      enclosureClass: "err-enclosure-class",
+      gcpiManual: "err-gcpi-manual"
+    };
+
+    var FIELD_TO_INPUT = {
+      edition: "edition",
+      riskCategory: "risk-category",
+      V: "basic-speed",
+      exposure: "exposure",
+      h: "mean-roof-height",
+      z: "qz-height",
+      kzt: "kzt",
+      ke: "ke",
+      kdMode: "kd-mode",
+      kdManual: "kd-manual",
+      theta: "theta",
+      gcpPreset: "gcp-preset",
+      surfaceType: "surface-type",
+      gcp: "gcp",
+      gcpiMode: "gcpi-mode",
+      enclosureClass: "enclosure-class",
+      gcpiManual: "gcpi-manual"
+    };
+
+    var formEl = document.getElementById("wind-form");
+    var editionEl = document.getElementById("edition");
+    var riskCategoryEl = document.getElementById("risk-category");
+    var basicSpeedEl = document.getElementById("basic-speed");
+    var exposureEl = document.getElementById("exposure");
+    var meanRoofHeightEl = document.getElementById("mean-roof-height");
+    var qzHeightEl = document.getElementById("qz-height");
+    var kztEl = document.getElementById("kzt");
+    var keEl = document.getElementById("ke");
+    var kdModeEl = document.getElementById("kd-mode");
+    var kdManualEl = document.getElementById("kd-manual");
+    var thetaEl = document.getElementById("theta");
+    var applyThetaReductionEl = document.getElementById("apply-theta-reduction");
+    var gcpPresetEl = document.getElementById("gcp-preset");
+    var surfaceTypeEl = document.getElementById("surface-type");
+    var gcpEl = document.getElementById("gcp");
+    var gcpiModeEl = document.getElementById("gcpi-mode");
+    var enclosureClassEl = document.getElementById("enclosure-class");
+    var gcpiManualEl = document.getElementById("gcpi-manual");
+    var resetBtnEl = document.getElementById("reset-btn");
+    var errorSummaryEl = document.getElementById("error-summary");
+    var warningSummaryEl = document.getElementById("warning-summary");
+    var resultAnnouncerEl = document.getElementById("result-announcer");
+    var resultPlaceholderEl = document.getElementById("result-placeholder");
+    var resultContentEl = document.getElementById("result-content");
+    var resultWarningsEl = document.getElementById("result-warnings");
+    var qzValueEl = document.getElementById("qz-value");
+    var qhValueEl = document.getElementById("qh-value");
+    var pMinValueEl = document.getElementById("p-min-value");
+    var pMaxValueEl = document.getElementById("p-max-value");
+    var pMinDesignValueEl = document.getElementById("p-min-design-value");
+    var pMaxDesignValueEl = document.getElementById("p-max-design-value");
+    var factorTableBodyEl = document.getElementById("factor-table-body");
+    var caseTableBodyEl = document.getElementById("case-table-body");
+    var formulaBlockEl = document.getElementById("formula-block");
+    var editionNoteEl = document.getElementById("edition-note");
+    var embedCodeEl = document.getElementById("embed-code");
+    var copyEmbedEl = document.getElementById("copy-embed");
+    var copyStatusEl = document.getElementById("copy-status");
+
+    function init() {
+      populatePresetOptions();
+      applyDefaults();
+      applyQueryParams();
+      updateKdState();
+      updateGcpiState();
+      updateEmbedSnippet();
+      attachEvents();
+    }
+
+    function attachEvents() {
+      formEl.addEventListener("submit", function (event) {
+        event.preventDefault();
+        calculateAndRender();
+      });
+      resetBtnEl.addEventListener("click", function () {
         applyDefaults();
-        applyQueryParams();
+        clearErrors();
+        hideWarnings();
         updateKdState();
         updateGcpiState();
-        updateEmbedSnippet();
-        attachEvents();
+        renderNoResult();
+      });
+      kdModeEl.addEventListener("change", updateKdState);
+      gcpiModeEl.addEventListener("change", updateGcpiState);
+      gcpPresetEl.addEventListener("change", function () {
+        var preset = findPreset(gcpPresetEl.value);
+        if (preset && typeof preset.gcp === "number") {
+          gcpEl.value = toFixedString(preset.gcp, 2);
+        }
+        if (preset && (preset.zoneType === "wall" || preset.zoneType === "roof")) {
+          surfaceTypeEl.value = preset.zoneType;
+        }
+      });
+      copyEmbedEl.addEventListener("click", copyEmbedCode);
+    }
+
+    function populatePresetOptions() {
+      var html = "";
+      for (var i = 0; i < PRESETS.length; i++) {
+        html += '<option value="' + PRESETS[i].id + '">' + escapeHtml(PRESETS[i].label) + "</option>";
+      }
+      gcpPresetEl.innerHTML = html;
+    }
+
+    function findPreset(id) {
+      for (var i = 0; i < PRESETS.length; i++) {
+        if (PRESETS[i].id === id) { return PRESETS[i]; }
+      }
+      return null;
+    }
+
+    function applyDefaults() {
+      editionEl.value = DEFAULTS.edition;
+      riskCategoryEl.value = DEFAULTS.riskCategory;
+      basicSpeedEl.value = String(DEFAULTS.V);
+      exposureEl.value = DEFAULTS.exposure;
+      meanRoofHeightEl.value = String(DEFAULTS.h);
+      qzHeightEl.value = String(DEFAULTS.z);
+      kztEl.value = toFixedString(DEFAULTS.kzt, 2);
+      keEl.value = toFixedString(DEFAULTS.ke, 2);
+      kdModeEl.value = DEFAULTS.kdMode;
+      kdManualEl.value = toFixedString(DEFAULTS.kdManual, 2);
+      thetaEl.value = String(DEFAULTS.theta);
+      applyThetaReductionEl.checked = DEFAULTS.applyThetaReduction;
+      gcpPresetEl.value = DEFAULTS.gcpPreset;
+      surfaceTypeEl.value = DEFAULTS.surfaceType;
+      gcpEl.value = toFixedString(DEFAULTS.gcp, 2);
+      gcpiModeEl.value = DEFAULTS.gcpiMode;
+      enclosureClassEl.value = DEFAULTS.enclosureClass;
+      gcpiManualEl.value = toFixedString(DEFAULTS.gcpiManual, 2);
+    }
+
+    function applyQueryParams() {
+      var params;
+      try {
+        params = new URLSearchParams(window.location.search);
+      } catch (err) {
+        return;
+      }
+      if (params.get("embed") === "1") {
+        document.body.classList.add("embed-mode");
+      }
+      var v = parseFloat(params.get("v"));
+      if (isFinite(v) && v > 0) { basicSpeedEl.value = String(v); }
+      var h = parseFloat(params.get("h"));
+      if (isFinite(h) && h > 0) {
+        meanRoofHeightEl.value = String(h);
+        qzHeightEl.value = String(h);
+      }
+      var exposure = params.get("exposure");
+      if (exposure && EXPOSURE_CONSTANTS["7-22"][exposure]) { exposureEl.value = exposure; }
+      var edition = params.get("edition");
+      if (edition && EXPOSURE_CONSTANTS[edition]) { editionEl.value = edition; }
+      var presetParam = params.get("preset");
+      if (presetParam) {
+        var preset = findPreset(presetParam);
+        if (preset) {
+          gcpPresetEl.value = presetParam;
+          if (typeof preset.gcp === "number") {
+            gcpEl.value = toFixedString(preset.gcp, 2);
+          }
+          if (preset.zoneType === "wall" || preset.zoneType === "roof") {
+            surfaceTypeEl.value = preset.zoneType;
+          }
+        }
+      }
+      if (params.get("autocalc") === "1") {
         calculateAndRender();
       }
+    }
 
-      function attachEvents() {
-        form.addEventListener("submit", function (event) {
-          event.preventDefault();
-          calculateAndRender();
+    function updateKdState() {
+      var manual = kdModeEl.value === "manual";
+      kdManualEl.disabled = !manual;
+    }
+
+    function updateGcpiState() {
+      var manual = gcpiModeEl.value === "manual";
+      gcpiManualEl.disabled = !manual;
+      enclosureClassEl.disabled = manual;
+    }
+
+    function updateEmbedSnippet() {
+      var pageUrl = window.location.origin + window.location.pathname;
+      embedCodeEl.value =
+        '<iframe src="' + pageUrl + '?embed=1" width="100%" height="950" ' +
+        'style="border:1px solid #c8d8df;border-radius:12px;" ' +
+        'title="WindCalculations ASCE Wind Pressure Calculator" loading="lazy"></iframe>';
+    }
+
+    function copyEmbedCode() {
+      embedCodeEl.focus();
+      embedCodeEl.select();
+      var copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch (err) {
+        copied = false;
+      }
+      if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(embedCodeEl.value).then(function () {
+          copyStatusEl.textContent = "Copied.";
+        }, function () {
+          copyStatusEl.textContent = "Copy failed. Select and copy manually.";
         });
-        kdModeEl.addEventListener("change", updateKdState);
-        gcpiModeEl.addEventListener("change", updateGcpiState);
-        gcpPresetEl.addEventListener("change", function () {
-          var preset = findPreset(gcpPresetEl.value);
-          if (preset && typeof preset.gcp === "number") {
-            gcpEl.value = toFixedString(preset.gcp, 2);
-          }
-        });
-        resetBtnEl.addEventListener("click", function () {
-          applyDefaults();
-          updateKdState();
-          updateGcpiState();
-          clearErrors();
-          calculateAndRender();
-        });
-        copyEmbedBtnEl.addEventListener("click", copyEmbedCode);
-        form.addEventListener("input", function () {
-          if (!errorSummaryEl.classList.contains("hidden")) {
-            calculateAndRender();
-          }
-        });
+        return;
       }
+      copyStatusEl.textContent = copied ? "Copied." : "Copy failed. Select and copy manually.";
+    }
 
-      function applyDefaults() {
-        editionEl.value = DEFAULTS.edition;
-        riskEl.value = DEFAULTS.risk;
-        speedEl.value = String(DEFAULTS.V);
-        exposureEl.value = DEFAULTS.exposure;
-        meanRoofEl.value = String(DEFAULTS.h);
-        qzHeightEl.value = String(DEFAULTS.z);
-        kztEl.value = toFixedString(DEFAULTS.Kzt, 2);
-        keEl.value = toFixedString(DEFAULTS.Ke, 2);
-        kdModeEl.value = DEFAULTS.kdMode;
-        kdManualEl.value = toFixedString(DEFAULTS.kdManual, 2);
-        thetaEl.value = String(DEFAULTS.theta);
-        applyThetaReductionEl.checked = DEFAULTS.applyThetaReduction;
-        gcpPresetEl.value = DEFAULTS.gcpPreset;
-        gcpEl.value = toFixedString(DEFAULTS.gcp, 2);
-        gcpiModeEl.value = DEFAULTS.gcpiMode;
-        enclosureEl.value = DEFAULTS.enclosure;
-        gcpiManualEl.value = toFixedString(DEFAULTS.gcpiManual, 2);
+    function calculateAndRender() {
+      clearErrors();
+      var inputs = collectInputs();
+      var errors = validateInputs(inputs);
+      if (errors.length > 0) {
+        renderErrors(errors);
+        renderNoResult();
+        return;
       }
+      var warnings = generateWarnings(inputs);
+      var results = computeResults(inputs);
+      renderResults(inputs, results, warnings);
+    }
 
-      function applyQueryParams() {
-        var params = new URLSearchParams(window.location.search);
-        var embedMode = params.get("embed") === "1";
-        if (embedMode) {
-          document.body.classList.add("embed-mode");
-        }
-        var editionParam = params.get("edition");
-        if (editionParam === "7-16" || editionParam === "7-22") {
-          editionEl.value = editionParam;
-        }
-        var presetParam = params.get("preset");
-        if (presetParam && findPreset(presetParam)) {
-          gcpPresetEl.value = presetParam;
-          var preset = findPreset(presetParam);
-          if (preset && typeof preset.gcp === "number") {
-            gcpEl.value = toFixedString(preset.gcp, 2);
-          }
-        }
+    function collectInputs() {
+      return {
+        edition: editionEl.value,
+        riskCategory: riskCategoryEl.value,
+        V: parseFloat(basicSpeedEl.value),
+        exposure: exposureEl.value,
+        h: parseFloat(meanRoofHeightEl.value),
+        z: parseFloat(qzHeightEl.value),
+        kzt: parseFloat(kztEl.value),
+        ke: parseFloat(keEl.value),
+        kdMode: kdModeEl.value,
+        kdManual: parseFloat(kdManualEl.value),
+        theta: parseFloat(thetaEl.value),
+        applyThetaReduction: applyThetaReductionEl.checked,
+        gcpPreset: gcpPresetEl.value,
+        surfaceType: surfaceTypeEl.value,
+        gcp: parseFloat(gcpEl.value),
+        gcpiMode: gcpiModeEl.value,
+        enclosureClass: enclosureClassEl.value,
+        gcpiManual: parseFloat(gcpiManualEl.value)
+      };
+    }
+
+    function validateInputs(inputs) {
+      var errors = [];
+      if (!EXPOSURE_CONSTANTS[inputs.edition]) {
+        pushError(errors, "edition", "Select a supported ASCE edition.");
       }
-
-      function updateEmbedSnippet() {
-        var baseUrl = "https://windcalculations.com/asce-wind-pressure-calculator";
-        embedCodeEl.value =
-          '<iframe src="' + baseUrl + '?embed=1" width="100%" height="950" style="border:0;" loading="lazy"></iframe>';
+      if (["I", "II", "III", "IV"].indexOf(inputs.riskCategory) === -1) {
+        pushError(errors, "riskCategory", "Select a risk category.");
       }
-
-      function populatePresetOptions() {
-        var optionsHtml = PRESETS.map(function (preset) {
-          return '<option value="' + escapeHtml(preset.id) + '">' + escapeHtml(preset.label) + "</option>";
-        }).join("");
-        gcpPresetEl.innerHTML = optionsHtml;
+      if (!isFinite(inputs.V) || inputs.V <= 0 || inputs.V > 400) {
+        pushError(errors, "V", "Enter a basic wind speed between 1 and 400 mph.");
       }
-
-      function updateKdState() {
-        var isManual = kdModeEl.value === "manual";
-        kdManualEl.disabled = !isManual;
+      if (!EXPOSURE_CONSTANTS["7-22"][inputs.exposure]) {
+        pushError(errors, "exposure", "Select exposure B, C, or D.");
       }
-
-      function updateGcpiState() {
-        var isManual = gcpiModeEl.value === "manual";
-        gcpiManualEl.disabled = !isManual;
-        enclosureEl.disabled = isManual;
+      if (!isFinite(inputs.h) || inputs.h <= 0 || inputs.h > 2000) {
+        pushError(errors, "h", "Enter a mean roof height between 1 and 2000 ft.");
       }
-
-      function calculateAndRender() {
-        clearErrors();
-        var inputs = collectInputs();
-        var validation = validateInputs(inputs);
-        if (!validation.ok) {
-          renderErrors(validation.errors);
-          renderNoResult();
-          return;
-        }
-        var warnings = generateWarnings(inputs);
-        var results = computeResults(inputs);
-        renderResults(inputs, results, warnings);
+      if (!isFinite(inputs.z) || inputs.z <= 0 || inputs.z > 2000) {
+        pushError(errors, "z", "Enter an exposure height between 1 and 2000 ft.");
       }
-
-      function collectInputs() {
-        return {
-          edition: editionEl.value,
-          risk: riskEl.value,
-          V_mph: parseNumber(speedEl.value),
-          exposure: exposureEl.value,
-          h_ft: parseNumber(meanRoofEl.value),
-          z_ft: parseNumber(qzHeightEl.value),
-          Kzt: parseNumber(kztEl.value),
-          Ke: parseNumber(keEl.value),
-          kdMode: kdModeEl.value,
-          Kd_manual: parseNumber(kdManualEl.value),
-          theta_deg: parseNumber(thetaEl.value),
-          applyThetaReduction: applyThetaReductionEl.checked,
-          gcpPresetId: gcpPresetEl.value,
-          GCp: parseNumber(gcpEl.value),
-          GCpiMode: gcpiModeEl.value,
-          enclosureClass: enclosureEl.value,
-          GCpi_manual: parseNumber(gcpiManualEl.value)
-        };
+      if (!isFinite(inputs.kzt) || inputs.kzt < 1.0 || inputs.kzt > 3.0) {
+        pushError(errors, "kzt", "Kzt must be between 1.00 and 3.00.");
       }
-
-      function validateInputs(inputs) {
-        var errors = [];
-        if (!(inputs.edition === "7-16" || inputs.edition === "7-22")) {
-          pushError(errors, "edition", "Choose either ASCE 7-16 or ASCE 7-22.");
-        }
-        if (RISK_CATEGORIES.indexOf(inputs.risk) === -1) {
-          pushError(errors, "risk", "Risk Category must be I, II, III, or IV.");
-        }
-        var exposureTable = EXPOSURE_CONSTANTS[inputs.edition];
-        if (!exposureTable || !Object.prototype.hasOwnProperty.call(exposureTable, inputs.exposure)) {
-          pushError(errors, "exposure", "Exposure Category must be B, C, or D.");
-        }
-        if (!isFinitePositive(inputs.V_mph)) {
-          pushError(errors, "V", "Basic wind speed V must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.z_ft)) {
-          pushError(errors, "z", "Exposure height z must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.h_ft)) {
-          pushError(errors, "h", "Mean roof height h must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.Kzt)) {
-          pushError(errors, "Kzt", "Topographic factor Kzt must be a positive number.");
-        }
-        if (!isFinitePositive(inputs.Ke)) {
-          pushError(errors, "Ke", "Ground elevation factor Ke must be a positive number.");
-        }
-        if (!(inputs.kdMode === "auto" || inputs.kdMode === "manual")) {
-          pushError(errors, "kdMode", "Kd mode must be auto or manual.");
-        }
-        if (inputs.kdMode === "manual" && !isFinitePositive(inputs.Kd_manual)) {
-          pushError(errors, "kdManual", "Manual Kd must be a positive number.");
-        }
-        if (!isFiniteNumber(inputs.theta_deg) || inputs.theta_deg < 0 || inputs.theta_deg > 90) {
-          pushError(errors, "theta", "Roof slope must be between 0 and 90 degrees.");
-        }
-        if (!findPreset(inputs.gcpPresetId)) {
-          pushError(errors, "gcpPreset", "Select a valid GCp preset.");
-        }
-        if (!isFiniteNumber(inputs.GCp)) {
-          pushError(errors, "gcp", "GCp must be a valid number.");
-        }
-        if (!(inputs.GCpiMode === "standard" || inputs.GCpiMode === "manual")) {
-          pushError(errors, "gcpiMode", "GCpi mode must be standard or manual.");
-        }
-        if (inputs.GCpiMode === "standard" && !Object.prototype.hasOwnProperty.call(GCPI_STANDARD_CASES, inputs.enclosureClass)) {
-          pushError(errors, "enclosure", "Select a valid enclosure class.");
-        }
-        if (inputs.GCpiMode === "manual" && !isFiniteNumber(inputs.GCpi_manual)) {
-          pushError(errors, "gcpiManual", "Manual GCpi must be a valid number.");
-        }
-        return { ok: errors.length === 0, errors: errors };
+      if (!isFinite(inputs.ke) || inputs.ke <= 0 || inputs.ke > 1.0) {
+        pushError(errors, "ke", "Ke must be between 0 and 1.00.");
       }
-
-      function generateWarnings(inputs) {
-        var warnings = [];
-        if (inputs.h_ft > 60) {
-          warnings.push(
-            "Mean roof height h = " + formatNumber(inputs.h_ft) + " ft exceeds 60 ft. " +
-            "Chapter 30 low-rise C&C provisions (Figures 30.3-x) apply only when h \u2264 60 ft. " +
-            "For h > 60 ft, verify GCp from Figures 30.5-1 / 30.6-1."
-          );
-        }
-        if (inputs.V_mph > 200) {
-          warnings.push("Basic wind speed V = " + formatNumber(inputs.V_mph, 0) + " mph exceeds 200 mph. Verify mapped value.");
-        }
-        if (inputs.V_mph < 85) {
-          warnings.push("Basic wind speed V = " + formatNumber(inputs.V_mph, 0) + " mph is below typical mapped values (\u2265 95 mph Risk Cat II). Verify the map used.");
-        }
-        if (inputs.h_ft > 200) {
-          warnings.push("Mean roof height h = " + formatNumber(inputs.h_ft) + " ft is unusually large. Verify this input.");
-        }
-        return warnings;
+      if (inputs.kdMode === "manual" && (!isFinite(inputs.kdManual) || inputs.kdManual <= 0 || inputs.kdManual > 1.0)) {
+        pushError(errors, "kdManual", "Manual Kd must be between 0 and 1.00.");
       }
-
-      // ====================================================================
-      // CORE COMPUTATION -- edition-aware
-      // ====================================================================
-      function computeResults(inputs) {
-        var editionTable = EXPOSURE_CONSTANTS[inputs.edition];
-        var kzInfo = calculateKz(inputs.z_ft, inputs.exposure, inputs.edition);
-        var khInfo = calculateKz(inputs.h_ft, inputs.exposure, inputs.edition);
-        var Kd = resolveKd(inputs);
-
-        // Velocity pressure -- edition-dependent Kd placement
-        //   ASCE 7-16: qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2   (Eq. 26.10-1, Kd IN qz)
-        //   ASCE 7-22: qz = 0.00256 * Kz * Kzt *      Ke * V^2   (Eq. 26.10-1, Kd OUT of qz)
-        var qzKdFactor = (inputs.edition === "7-16") ? Kd : 1.0;
-        var qz = 0.00256 * kzInfo.coefficient * inputs.Kzt * qzKdFactor * inputs.Ke * Math.pow(inputs.V_mph, 2);
-        var qh = 0.00256 * khInfo.coefficient * inputs.Kzt * qzKdFactor * inputs.Ke * Math.pow(inputs.V_mph, 2);
-
-        // 10% wall reduction for theta <= 10 deg
-        var preset = findPreset(inputs.gcpPresetId);
-        var isWall = preset && preset.zoneType === "wall";
-        var applyReduction = isWall && inputs.applyThetaReduction && (inputs.theta_deg <= 10);
-        var GCp_effective = applyReduction ? inputs.GCp * 0.90 : inputs.GCp;
-
-        var gcpiCases = resolveGcpiCases(inputs);
-
-        // Net pressure -- edition-dependent Kd placement
-        //   ASCE 7-16: p = qh * (GCp - GCpi)       (Kd already in qh)
-        //   ASCE 7-22: p = qh * Kd * (GCp - GCpi)  (Kd applied here, Eq. 30.3-1)
-        var pressureKdFactor = (inputs.edition === "7-22") ? Kd : 1.0;
-        var pCases = gcpiCases.map(function (gcpi) {
-          return { gcpi: gcpi, pressure: qh * pressureKdFactor * (GCp_effective - gcpi) };
-        });
-        var pValues = pCases.map(function (e) { return e.pressure; });
-
-        return {
-          Kz: kzInfo.coefficient,
-          KzEffHeight: kzInfo.effectiveHeight,
-          Kh: khInfo.coefficient,
-          KhEffHeight: khInfo.effectiveHeight,
-          alpha: kzInfo.alpha,
-          zg: kzInfo.zg,
-          zmin: kzInfo.zmin,
-          mult: kzInfo.mult,
-          Kd: Kd,
-          qz: qz,
-          qh: qh,
-          qzKdFactor: qzKdFactor,
-          pressureKdFactor: pressureKdFactor,
-          GCp_base: inputs.GCp,
-          GCp_effective: GCp_effective,
-          thetaReductionApplied: applyReduction,
-          pCases: pCases,
-          pMin: Math.min.apply(null, pValues),
-          pMax: Math.max.apply(null, pValues)
-        };
+      if (!isFinite(inputs.theta) || inputs.theta < 0 || inputs.theta > 90) {
+        pushError(errors, "theta", "Roof slope must be between 0 and 90 degrees.");
       }
-
-      function calculateKz(heightFt, exposure, edition) {
-        var T = EXPOSURE_CONSTANTS[edition];
-        var c = T[exposure];
-        // Effective height: at or above zmin for the exposure, capped at zg
-        var effectiveHeight = clamp(heightFt, c.zmin, c.zg);
-        var coefficient = T.mult * Math.pow(effectiveHeight / c.zg, 2 / c.alpha);
-        return {
-          coefficient: coefficient,
-          effectiveHeight: effectiveHeight,
-          alpha: c.alpha,
-          zg: c.zg,
-          zmin: c.zmin,
-          mult: T.mult
-        };
+      if (["wall", "roof", "other"].indexOf(inputs.surfaceType) === -1) {
+        pushError(errors, "surfaceType", "Select wall, roof, or other.");
       }
-
-      function resolveKd(inputs) {
-        if (inputs.kdMode === "manual" && isFinitePositive(inputs.Kd_manual)) {
-          return inputs.Kd_manual;
-        }
-        return 0.85;
+      if (!isFinite(inputs.gcp) || inputs.gcp < -10 || inputs.gcp > 10) {
+        pushError(errors, "gcp", "GCp must be a number between -10 and +10.");
       }
-
-      function resolveGcpiCases(inputs) {
-        if (inputs.GCpiMode === "manual") {
-          return [inputs.GCpi_manual];
-        }
-        return GCPI_STANDARD_CASES[inputs.enclosureClass] || [0.18, -0.18];
+      if (inputs.gcpiMode === "manual" && (!isFinite(inputs.gcpiManual) || inputs.gcpiManual < -2 || inputs.gcpiManual > 2)) {
+        pushError(errors, "gcpiManual", "Manual GCpi must be between -2.00 and +2.00.");
+      } else if (inputs.gcpiMode === "standard" && !(inputs.enclosureClass in GCPI_STANDARD)) {
+        pushError(errors, "enclosureClass", "Select an enclosure class.");
       }
+      return errors;
+    }
 
-      // ====================================================================
-      // RENDERING
-      // ====================================================================
-      function renderResults(inputs, results, warnings) {
-        errorSummaryEl.classList.add("hidden");
-        resultPlaceholderEl.classList.add("hidden");
-        resultContentEl.classList.remove("hidden");
-
-        if (warnings && warnings.length > 0) {
-          resultWarningsEl.innerHTML = warnings.map(function (w) {
-            return '<div class="warning-box"><strong>\u26a0 Warning:</strong> ' + escapeHtml(w) + '</div>';
-          }).join("");
-          resultWarningsEl.classList.remove("hidden");
-        } else {
-          resultWarningsEl.innerHTML = "";
-          resultWarningsEl.classList.add("hidden");
-        }
-
-        qzValueEl.textContent = formatPsf(results.qz);
-        qhValueEl.textContent = formatPsf(results.qh);
-        pMinValueEl.textContent = formatPsf(results.pMin);
-        pMaxValueEl.textContent = formatPsf(results.pMax);
-
-        var gcpDisplay = formatSigned(results.GCp_effective);
-        if (results.thetaReductionApplied) {
-          gcpDisplay += " (base " + formatSigned(results.GCp_base) + " &times; 0.90 for &theta;\u226410\u00b0)";
-        }
-
-        factorTableBodyEl.innerHTML = [
-          tableRow("ASCE Edition", escapeHtml(inputs.edition)),
-          tableRow("Exposure", escapeHtml(inputs.exposure)),
-          tableRow("Risk Category", escapeHtml(inputs.risk)),
-          tableRow("K<sub>z</sub> formula multiplier", formatNumber(results.mult, 2)),
-          tableRow("K<sub>z</sub> at z", formatNumber(results.Kz)),
-          tableRow("z<sub>eff</sub> for K<sub>z</sub> (ft)", formatNumber(results.KzEffHeight)),
-          tableRow("K<sub>h</sub> at h", formatNumber(results.Kh)),
-          tableRow("h<sub>eff</sub> for K<sub>h</sub> (ft)", formatNumber(results.KhEffHeight)),
-          tableRow("&alpha;", formatNumber(results.alpha)),
-          tableRow("z<sub>g</sub> (ft)", formatNumber(results.zg, 0)),
-          tableRow("z<sub>min</sub> (ft)", formatNumber(results.zmin, 0)),
-          tableRow("K<sub>d</sub>", formatNumber(results.Kd)),
-          tableRow("K<sub>zt</sub>", formatNumber(inputs.Kzt)),
-          tableRow("K<sub>e</sub>", formatNumber(inputs.Ke)),
-          tableRow("&theta; (deg)", formatNumber(inputs.theta_deg)),
-          tableRow("GC<sub>p</sub> (effective)", gcpDisplay)
-        ].join("");
-
-        caseTableBodyEl.innerHTML = results.pCases.map(function (entry) {
-          return "<tr><td>" + formatSigned(entry.gcpi) + "</td><td>" + formatPsf(entry.pressure) + "</td></tr>";
-        }).join("");
-
-        formulaBlockEl.innerHTML = renderFormulaBlocks(inputs, results);
-
-        editionNoteEl.innerHTML =
-          "<strong>ASCE " + inputs.edition + " referenced.</strong> " +
-          (inputs.edition === "7-22"
-            ? "Per ASCE 7-22 Eq. 26.10-1, K<sub>d</sub> is excluded from q<sub>z</sub> and applied in the pressure equation (Eq. 30.3-1: p = q<sub>h</sub> &times; K<sub>d</sub> &times; (GC<sub>p</sub> &minus; GC<sub>pi</sub>))."
-            : "Per ASCE 7-16 Eq. 26.10-1, K<sub>d</sub> is included in q<sub>z</sub>. Net C&amp;C pressure: p = q<sub>h</sub> &times; (GC<sub>p</sub> &minus; GC<sub>pi</sub>).") +
-          " Risk Category " + inputs.risk + " selects V from the adopted wind speed map. No separate importance factor.";
-
-        resultAnnouncerEl.textContent =
-          "Calculation complete. qz is " + formatPsf(results.qz) +
-          ", qh is " + formatPsf(results.qh) +
-          ", envelope ranges from " + formatPsf(results.pMin) +
-          " to " + formatPsf(results.pMax) + ".";
+    function generateWarnings(inputs) {
+      var warnings = [];
+      if (inputs.h > 60) {
+        warnings.push(
+          "Mean roof height h = " + formatNumber(inputs.h, 1) + " ft exceeds 60 ft. The low-rise C&C " +
+          "figures used by this tool (ASCE 7 Figs. 30.3-1 and 30.3-2A) apply to buildings with " +
+          "h \u2264 60 ft. Use the applicable Ch. 30 provisions for taller buildings; treat these " +
+          "results as reference screening only."
+        );
       }
-
-      function renderFormulaBlocks(inputs, results) {
-        var rows = [];
-        var multStr = formatNumber(results.mult, 2);
-
-        rows.push(formulaHtml(
-          "Kz at z (MWFRS reference)",
-          "Kz = " + multStr + " * (z_eff / zg)^(2 / alpha)",
-          "Kz = " + multStr + " * (" + formatNumber(results.KzEffHeight) + " / " + formatNumber(results.zg, 0) +
-            ")^(2 / " + formatNumber(results.alpha) + ") = " + formatNumber(results.Kz)
-        ));
-        rows.push(formulaHtml(
-          "Kh at h (used for qh and C&C net pressure)",
-          "Kh = " + multStr + " * (h_eff / zg)^(2 / alpha)",
-          "Kh = " + multStr + " * (" + formatNumber(results.KhEffHeight) + " / " + formatNumber(results.zg, 0) +
-            ")^(2 / " + formatNumber(results.alpha) + ") = " + formatNumber(results.Kh)
-        ));
-
-        if (inputs.edition === "7-22") {
-          rows.push(formulaHtml(
-            "Velocity pressure qz (ASCE 7-22 Eq. 26.10-1, Kd NOT included)",
-            "qz = 0.00256 * Kz * Kzt * Ke * V^2",
-            "qz = 0.00256 * " + formatNumber(results.Kz) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(inputs.Ke) + " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qz)
-          ));
-          rows.push(formulaHtml(
-            "Velocity pressure qh at mean roof height",
-            "qh = 0.00256 * Kh * Kzt * Ke * V^2",
-            "qh = 0.00256 * " + formatNumber(results.Kh) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(inputs.Ke) + " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qh)
-          ));
-        } else {
-          rows.push(formulaHtml(
-            "Velocity pressure qz (ASCE 7-16 Eq. 26.10-1, Kd IN qz)",
-            "qz = 0.00256 * Kz * Kzt * Kd * Ke * V^2",
-            "qz = 0.00256 * " + formatNumber(results.Kz) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(results.Kd) + " * " + formatNumber(inputs.Ke) +
-              " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qz)
-          ));
-          rows.push(formulaHtml(
-            "Velocity pressure qh at mean roof height",
-            "qh = 0.00256 * Kh * Kzt * Kd * Ke * V^2",
-            "qh = 0.00256 * " + formatNumber(results.Kh) + " * " + formatNumber(inputs.Kzt) +
-              " * " + formatNumber(results.Kd) + " * " + formatNumber(inputs.Ke) +
-              " * " + formatNumber(inputs.V_mph) + "^2 = " + formatPsf(results.qh)
-          ));
-        }
-
-        if (results.thetaReductionApplied) {
-          rows.push(formulaHtml(
-            "Wall GCp reduction for theta <= 10 deg (Fig. 30.3-1 footnote)",
-            "GCp_eff = GCp_base * 0.90",
-            "GCp_eff = " + formatSigned(results.GCp_base) + " * 0.90 = " + formatSigned(results.GCp_effective)
-          ));
-        }
-
-        results.pCases.forEach(function (entry, index) {
-          if (inputs.edition === "7-22") {
-            rows.push(formulaHtml(
-              "Net C&C design pressure case " + (index + 1) + " (ASCE 7-22 Eq. 30.3-1)",
-              "p = qh * Kd * (GCp - GCpi)",
-              "p = " + formatPsf(results.qh) + " * " + formatNumber(results.Kd) +
-                " * (" + formatSigned(results.GCp_effective) + " - " + formatSigned(entry.gcpi) +
-                ") = " + formatPsf(entry.pressure)
-            ));
-          } else {
-            rows.push(formulaHtml(
-              "Net C&C design pressure case " + (index + 1) + " (ASCE 7-16 Eq. 30.3-1)",
-              "p = qh * (GCp - GCpi)",
-              "p = " + formatPsf(results.qh) +
-                " * (" + formatSigned(results.GCp_effective) + " - " + formatSigned(entry.gcpi) +
-                ") = " + formatPsf(entry.pressure)
-            ));
-          }
-        });
-
-        rows.push(formulaHtml(
-          "Controlling envelope",
-          "p_min = min(all cases), p_max = max(all cases)",
-          "p_min = " + formatPsf(results.pMin) + ", p_max = " + formatPsf(results.pMax)
-        ));
-
-        return rows.join("");
+      if (inputs.surfaceType === "roof" && inputs.theta > 7) {
+        warnings.push(
+          "Roof slope \u03b8 = " + formatNumber(inputs.theta, 1) + "\u00b0 exceeds 7\u00b0. The roof presets in " +
+          "this tool are Fig. 30.3-2A values (\u03b8 \u2264 7\u00b0). Steeper roofs use Figs. 30.3-2B/2C/2D " +
+          "(gable) or the applicable hip-roof figure \u2014 read GCp from the correct figure and enter it manually."
+        );
       }
-
-      function renderNoResult() {
-        resultPlaceholderEl.classList.remove("hidden");
-        resultContentEl.classList.add("hidden");
+      if (inputs.V > 200) {
+        warnings.push(
+          "Basic wind speed V = " + formatNumber(inputs.V, 0) + " mph exceeds 200 mph. Verify the mapped " +
+          "value for the selected risk category."
+        );
       }
+      if (inputs.z !== inputs.h) {
+        warnings.push(
+          "Exposure height z differs from mean roof height h. The C&C net pressure uses q\u2095 at h; " +
+          "q\u2093 at z is shown for MWFRS reference only."
+        );
+      }
+      return warnings;
+    }
 
-      function renderErrors(errors) {
-        if (!errors.length) {
-          errorSummaryEl.classList.add("hidden");
-          return;
-        }
-        var messageList = errors.map(function (entry) {
-          return "<li>" + escapeHtml(entry.message) + "</li>";
-        }).join("");
-        errorSummaryEl.innerHTML = "<h3>Please fix the following inputs:</h3><ul>" + messageList + "</ul>";
-        errorSummaryEl.classList.remove("hidden");
-        errors.forEach(function (entry) {
-          var id = FIELD_TO_ERROR[entry.field];
-          if (!id) return;
-          var errorEl = document.getElementById(id);
-          if (errorEl) {
-            errorEl.textContent = entry.message;
-            var fieldInput = findFieldInput(entry.field);
-            if (fieldInput) fieldInput.setAttribute("aria-invalid", "true");
-          }
+    function calculateKz(heightFt, exposure, edition) {
+      var T = EXPOSURE_CONSTANTS[edition];
+      var c = T[exposure];
+      var effectiveHeight = clamp(heightFt, c.zmin, c.zg);
+      var raw = T.mult * Math.pow(effectiveHeight / c.zg, 2 / c.alpha);
+      // Case 1 (C&C of buildings with h <= 60 ft): Kz shall not be taken
+      // less than 0.70 in Exposure B per Table 26.10-1.
+      var minimum = (exposure === "B") ? KZ_FLOOR_EXPOSURE_B : 0;
+      var coefficient = Math.max(raw, minimum);
+      return {
+        coefficient: coefficient,
+        effectiveHeight: effectiveHeight,
+        alpha: c.alpha,
+        zg: c.zg,
+        zmin: c.zmin,
+        mult: T.mult,
+        floorApplied: raw < minimum
+      };
+    }
+
+    function resolveKd(inputs) {
+      if (inputs.kdMode === "manual") {
+        return { value: inputs.kdManual, label: "manual override" };
+      }
+      return { value: 0.85, label: "auto (buildings, Table 26.6-1)" };
+    }
+
+    function resolveGcpiCases(inputs) {
+      if (inputs.gcpiMode === "manual") {
+        var magnitude = Math.abs(inputs.gcpiManual);
+        if (magnitude === 0) { return [0]; }
+        return [magnitude, -magnitude];
+      }
+      var standard = GCPI_STANDARD[inputs.enclosureClass];
+      if (standard === 0) { return [0]; }
+      return [standard, -standard];
+    }
+
+    function computeResults(inputs) {
+      var kzInfo = calculateKz(inputs.z, inputs.exposure, inputs.edition);
+      var khInfo = calculateKz(inputs.h, inputs.exposure, inputs.edition);
+      var kd = resolveKd(inputs);
+
+      // ASCE 7-16 Eq. 26.10-1 includes Kd in qz; ASCE 7-22 Eq. 26.10-1
+      // excludes Kd from qz and applies it in the pressure equation
+      // (Eq. 30.3-1). Net pressures are equivalent between editions for the
+      // same coefficient inputs.
+      var qzKdFactor = (inputs.edition === "7-16") ? kd.value : 1.0;
+      var pressureKdFactor = (inputs.edition === "7-22") ? kd.value : 1.0;
+
+      var qz = 0.00256 * kzInfo.coefficient * inputs.kzt * qzKdFactor * inputs.ke * Math.pow(inputs.V, 2);
+      var qh = 0.00256 * khInfo.coefficient * inputs.kzt * qzKdFactor * inputs.ke * Math.pow(inputs.V, 2);
+
+      // 10% wall reduction for theta <= 10 deg (Fig. 30.3-1 footnote).
+      // Keyed to the explicit surface-type selection (NOT the preset), so
+      // custom wall coefficients are treated correctly and roof/other
+      // surfaces never receive the reduction.
+      var isWall = inputs.surfaceType === "wall";
+      var thetaReductionApplied = isWall && inputs.applyThetaReduction && (inputs.theta <= 10);
+      var gcpEffective = thetaReductionApplied ? inputs.gcp * 0.9 : inputs.gcp;
+
+      var gcpiCases = resolveGcpiCases(inputs);
+      var cases = [];
+      for (var i = 0; i < gcpiCases.length; i++) {
+        cases.push({
+          gcpi: gcpiCases[i],
+          p: qh * pressureKdFactor * (gcpEffective - gcpiCases[i])
         });
       }
 
-      function clearErrors() {
-        Object.keys(FIELD_TO_ERROR).forEach(function (field) {
-          var id = FIELD_TO_ERROR[field];
-          var errorEl = document.getElementById(id);
-          if (errorEl) errorEl.textContent = "";
-          var inputEl = findFieldInput(field);
-          if (inputEl) inputEl.removeAttribute("aria-invalid");
-        });
-        errorSummaryEl.innerHTML = "";
-        errorSummaryEl.classList.add("hidden");
-        warningSummaryEl.innerHTML = "";
+      var pValues = [];
+      for (var j = 0; j < cases.length; j++) { pValues.push(cases[j].p); }
+      var pMin = Math.min.apply(null, pValues);
+      var pMax = Math.max.apply(null, pValues);
+
+      // ASCE 7-16/7-22 Section 30.2.2: the design wind pressure for C&C
+      // shall be not less than a net pressure of 16 psf acting in either
+      // direction normal to the surface.
+      var MIN_CC_PRESSURE = 16.0;
+      var pMinDesign = Math.min(pMin, -MIN_CC_PRESSURE);
+      var pMaxDesign = Math.max(pMax, MIN_CC_PRESSURE);
+      var minPressureGoverns = (pMinDesign !== pMin) || (pMaxDesign !== pMax);
+
+      return {
+        kzInfo: kzInfo,
+        khInfo: khInfo,
+        Kz: kzInfo.coefficient,
+        Kh: khInfo.coefficient,
+        kd: kd,
+        qzKdFactor: qzKdFactor,
+        pressureKdFactor: pressureKdFactor,
+        qz: qz,
+        qh: qh,
+        thetaReductionApplied: thetaReductionApplied,
+        gcpEffective: gcpEffective,
+        cases: cases,
+        pMin: pMin,
+        pMax: pMax,
+        pMinDesign: pMinDesign,
+        pMaxDesign: pMaxDesign,
+        minPressureGoverns: minPressureGoverns
+      };
+    }
+
+    function renderResults(inputs, results, warnings) {
+      resultPlaceholderEl.classList.add("hidden");
+      resultContentEl.classList.remove("hidden");
+
+      // Input-side warnings (scope / sanity).
+      if (warnings.length > 0) {
+        var wHtml = "<strong>Review notes:</strong><ul>";
+        for (var w = 0; w < warnings.length; w++) {
+          wHtml += "<li>" + escapeHtml(warnings[w]) + "</li>";
+        }
+        wHtml += "</ul>";
+        warningSummaryEl.innerHTML = wHtml;
+        warningSummaryEl.classList.remove("hidden");
+      } else {
         warningSummaryEl.classList.add("hidden");
+        warningSummaryEl.innerHTML = "";
       }
 
-      function findFieldInput(field) {
-        switch (field) {
-          case "edition":    return editionEl;
-          case "risk":       return riskEl;
-          case "V":          return speedEl;
-          case "exposure":   return exposureEl;
-          case "h":          return meanRoofEl;
-          case "z":          return qzHeightEl;
-          case "Kzt":        return kztEl;
-          case "Ke":         return keEl;
-          case "kdMode":     return kdModeEl;
-          case "kdManual":   return kdManualEl;
-          case "theta":      return thetaEl;
-          case "gcpPreset":  return gcpPresetEl;
-          case "gcp":        return gcpEl;
-          case "gcpiMode":   return gcpiModeEl;
-          case "enclosure":  return enclosureEl;
-          case "gcpiManual": return gcpiManualEl;
-          default:           return null;
+      // Result-side warnings.
+      var resultWarnings = [];
+      if (results.minPressureGoverns) {
+        resultWarnings.push(
+          "The computed net pressure envelope is below the ASCE 7 Section 30.2.2 minimum design " +
+          "pressure of 16 psf in at least one direction. The 16 psf minimum governs there \u2014 use the " +
+          "design envelope values."
+        );
+      }
+      if (results.kzInfo.floorApplied || results.khInfo.floorApplied) {
+        resultWarnings.push(
+          "Exposure B tabulated minimum K\u2093 = 0.70 (Table 26.10-1, C&C of buildings with h \u2264 60 ft) " +
+          "applied in place of the lower power-law value."
+        );
+      }
+      if (resultWarnings.length > 0) {
+        var rwHtml = "";
+        for (var rw = 0; rw < resultWarnings.length; rw++) {
+          rwHtml += '<div class="warning-box"><strong>Note:</strong> ' + escapeHtml(resultWarnings[rw]) + "</div>";
         }
+        resultWarningsEl.innerHTML = rwHtml;
+        resultWarningsEl.classList.remove("hidden");
+      } else {
+        resultWarningsEl.innerHTML = "";
+        resultWarningsEl.classList.add("hidden");
       }
 
-      function pushError(errors, field, message) { errors.push({ field: field, message: message }); }
-      function findPreset(id) { return PRESETS.find(function (p) { return p.id === id; }); }
-      function parseNumber(value) { return Number(value); }
-      function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
-      function formatPsf(value) { return Number(value).toFixed(2) + " psf"; }
-      function formatSigned(value) {
-        var normalized = Math.abs(value) < 0.0000001 ? 0 : value;
-        var num = Number(normalized).toFixed(2);
-        return value > 0 ? "+" + num : num;
-      }
-      function formatNumber(value, decimals) {
-        var places = typeof decimals === "number" ? decimals : 4;
-        var fixed = Number(value).toFixed(places);
-        if (fixed.indexOf(".") === -1) return fixed;
-        return fixed.replace(/0+$/, "").replace(/\.$/, "");
-      }
-      function toFixedString(value, decimals) { return Number(value).toFixed(decimals); }
-      function tableRow(name, value) { return '<tr><th scope="row">' + name + "</th><td>" + value + "</td></tr>"; }
-      function formulaHtml(title, general, substituted) {
-        return '<div class="formula"><strong>' + escapeHtml(title) + "</strong><br>" +
-          "<code>" + escapeHtml(general) + "</code><br>" +
-          "<code>" + escapeHtml(substituted) + "</code></div>";
-      }
-      function escapeHtml(text) {
-        return String(text)
-          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
-      }
-      function isFinitePositive(value) { return Number.isFinite(value) && value > 0; }
-      function isFiniteNumber(value) { return Number.isFinite(value); }
+      qzValueEl.textContent = formatPsf(results.qz);
+      qhValueEl.textContent = formatPsf(results.qh);
+      pMinValueEl.textContent = formatPsf(results.pMin);
+      pMaxValueEl.textContent = formatPsf(results.pMax);
+      pMinDesignValueEl.textContent = formatPsf(results.pMinDesign);
+      pMaxDesignValueEl.textContent = formatPsf(results.pMaxDesign);
 
-      function copyEmbedCode() {
-        var text = embedCodeEl.value;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(
-            function () { copyStatusEl.textContent = "Embed code copied."; },
-            function () { fallbackCopy(); }
-          );
-        } else {
-          fallbackCopy();
-        }
-        function fallbackCopy() {
-          embedCodeEl.focus();
-          embedCodeEl.select();
-          try {
-            document.execCommand("copy");
-            copyStatusEl.textContent = "Embed code copied.";
-          } catch (err) {
-            copyStatusEl.textContent = "Copy failed. Select and copy manually.";
-          }
-        }
+      var surfaceLabel = inputs.surfaceType === "wall" ? "Wall (Zones 4/5)" :
+        inputs.surfaceType === "roof" ? "Roof (Zones 1\u2032/1/2/3)" : "Other";
+
+      var factorRows = [
+        tableRow("ASCE edition", escapeHtml("ASCE " + inputs.edition)),
+        tableRow("Risk category", escapeHtml(inputs.riskCategory) + " (V from mapped value)"),
+        tableRow("Basic wind speed V", formatNumber(inputs.V, 0) + " mph"),
+        tableRow("Exposure", escapeHtml(inputs.exposure)),
+        tableRow("K<sub>z</sub> at z = " + formatNumber(results.kzInfo.effectiveHeight, 1) + " ft",
+          formatNumber(results.Kz, 4) + (results.kzInfo.floorApplied ? " (Exp B 0.70 floor)" : "")),
+        tableRow("K<sub>h</sub> at h = " + formatNumber(results.khInfo.effectiveHeight, 1) + " ft",
+          formatNumber(results.Kh, 4) + (results.khInfo.floorApplied ? " (Exp B 0.70 floor)" : "")),
+        tableRow("K<sub>zt</sub>", formatNumber(inputs.kzt, 2)),
+        tableRow("K<sub>e</sub>", formatNumber(inputs.ke, 2)),
+        tableRow("K<sub>d</sub>", formatNumber(results.kd.value, 2) + " (" + escapeHtml(results.kd.label) + ")"),
+        tableRow("K<sub>d</sub> placement",
+          inputs.edition === "7-22" ? "Pressure equation (7-22 Eq. 30.3-1)" : "Inside q<sub>z</sub> (7-16 Eq. 26.10-1)"),
+        tableRow("Surface type", escapeHtml(surfaceLabel)),
+        tableRow("GC<sub>p</sub> base", formatNumber(inputs.gcp, 2)),
+        tableRow("GC<sub>p</sub> effective",
+          formatNumber(results.gcpEffective, 3) +
+          (results.thetaReductionApplied ? " (10% wall reduction, \u03b8 \u2264 10\u00b0)" : " (no reduction)")),
+        tableRow("Roof slope \u03b8", formatNumber(inputs.theta, 1) + "\u00b0")
+      ];
+      factorTableBodyEl.innerHTML = factorRows.join("");
+
+      var caseRows = "";
+      for (var i = 0; i < results.cases.length; i++) {
+        var c = results.cases[i];
+        caseRows += "<tr><td>GC<sub>pi</sub> = " + formatSigned(c.gcpi, 2) + "</td><td>" + formatPsf(c.p) + "</td></tr>";
       }
-    })();
+      caseTableBodyEl.innerHTML = caseRows;
+
+      renderFormulaBlocks(inputs, results);
+
+      editionNoteEl.textContent =
+        "ASCE " + inputs.edition + " referenced. " +
+        (inputs.edition === "7-22"
+          ? "Kd is excluded from qz/qh per Eq. 26.10-1 and applied once in the net pressure equation (Eq. 30.3-1)."
+          : "Kd is included in qz/qh per Eq. 26.10-1; the net pressure equation applies qh directly.") +
+        " Net design pressures are subject to the 16 psf minimum of Section 30.2.2. Verify coefficients, " +
+        "zones, and effective wind area against the governing figures for final design.";
+
+      resultAnnouncerEl.textContent =
+        "Calculation complete. Velocity pressure at mean roof height " + formatPsf(results.qh) +
+        ". Net pressure envelope from " + formatPsf(results.pMin) + " to " + formatPsf(results.pMax) +
+        ". Design envelope with Section 30.2.2 minimum from " + formatPsf(results.pMinDesign) +
+        " to " + formatPsf(results.pMaxDesign) + ".";
+    }
+
+    function renderFormulaBlocks(inputs, results) {
+      var blocks = [];
+
+      blocks.push(formulaHtml(
+        "Velocity pressure exposure coefficient (Table 26.10-1)",
+        "Kz = " + formatNumber(results.khInfo.mult, 2) + " \u00d7 (z / zg)^(2/\u03b1)",
+        "Kh = " + formatNumber(results.khInfo.mult, 2) + " \u00d7 (" + formatNumber(results.khInfo.effectiveHeight, 1) +
+          " / " + formatNumber(results.khInfo.zg, 0) + ")^(2/" + formatNumber(results.khInfo.alpha, 1) + ") = " +
+          formatNumber(results.Kh, 4) + (results.khInfo.floorApplied ? " (0.70 Exposure B floor applied)" : "")
+      ));
+
+      if (inputs.edition === "7-22") {
+        blocks.push(formulaHtml(
+          "Velocity pressure (ASCE 7-22 Eq. 26.10-1, Kd excluded)",
+          "qh = 0.00256 \u00d7 Kh \u00d7 Kzt \u00d7 Ke \u00d7 V\u00b2",
+          "qh = 0.00256 \u00d7 " + formatNumber(results.Kh, 4) + " \u00d7 " + formatNumber(inputs.kzt, 2) +
+            " \u00d7 " + formatNumber(inputs.ke, 2) + " \u00d7 " + formatNumber(inputs.V, 0) + "\u00b2 = " +
+            formatPsf(results.qh)
+        ));
+      } else {
+        blocks.push(formulaHtml(
+          "Velocity pressure (ASCE 7-16 Eq. 26.10-1, Kd included)",
+          "qh = 0.00256 \u00d7 Kh \u00d7 Kzt \u00d7 Kd \u00d7 Ke \u00d7 V\u00b2",
+          "qh = 0.00256 \u00d7 " + formatNumber(results.Kh, 4) + " \u00d7 " + formatNumber(inputs.kzt, 2) +
+            " \u00d7 " + formatNumber(results.kd.value, 2) + " \u00d7 " + formatNumber(inputs.ke, 2) +
+            " \u00d7 " + formatNumber(inputs.V, 0) + "\u00b2 = " + formatPsf(results.qh)
+        ));
+      }
+
+      if (results.thetaReductionApplied) {
+        blocks.push(formulaHtml(
+          "Wall GCp reduction (Fig. 30.3-1 footnote, \u03b8 \u2264 10\u00b0)",
+          "GCp,eff = 0.90 \u00d7 GCp",
+          "GCp,eff = 0.90 \u00d7 " + formatNumber(inputs.gcp, 2) + " = " + formatNumber(results.gcpEffective, 3)
+        ));
+      }
+
+      var pFormula = inputs.edition === "7-22"
+        ? "p = qh \u00d7 Kd \u00d7 [GCp \u2212 GCpi]  (Eq. 30.3-1)"
+        : "p = qh \u00d7 [GCp \u2212 GCpi]  (Eq. 30.4-1; Kd already inside qh)";
+      var caseLines = [];
+      for (var i = 0; i < results.cases.length; i++) {
+        var c = results.cases[i];
+        caseLines.push(
+          "p = " + formatNumber(results.qh, 2) +
+          (inputs.edition === "7-22" ? " \u00d7 " + formatNumber(results.kd.value, 2) : "") +
+          " \u00d7 [" + formatNumber(results.gcpEffective, 3) + " \u2212 (" + formatSigned(c.gcpi, 2) + ")] = " +
+          formatPsf(c.p)
+        );
+      }
+      blocks.push(formulaHtml("Net C&C design pressure", pFormula, caseLines.join("<br>")));
+
+      blocks.push(formulaHtml(
+        "Minimum design pressure check (Sec. 30.2.2)",
+        "p_design \u2265 16 psf acting in either direction",
+        "p_design,min = min(p_min, \u221216.00) = " + formatPsf(results.pMinDesign) +
+          "<br>p_design,max = max(p_max, +16.00) = " + formatPsf(results.pMaxDesign) +
+          (results.minPressureGoverns ? "<br><strong>16 psf minimum governs in at least one direction.</strong>" : "")
+      ));
+
+      formulaBlockEl.innerHTML = blocks.join("");
+    }
+
+    function formulaHtml(title, generic, substituted) {
+      return '<div class="formula"><strong>' + escapeHtml(title) + "</strong><br>" +
+        "<code>" + generic + "</code><br>" + substituted + "</div>";
+    }
+
+    function tableRow(label, valueHtml) {
+      return "<tr><th>" + label + "</th><td>" + valueHtml + "</td></tr>";
+    }
+
+    function renderNoResult() {
+      resultContentEl.classList.add("hidden");
+      resultPlaceholderEl.classList.remove("hidden");
+      resultAnnouncerEl.textContent = "";
+    }
+
+    function hideWarnings() {
+      warningSummaryEl.classList.add("hidden");
+      warningSummaryEl.innerHTML = "";
+      resultWarningsEl.classList.add("hidden");
+      resultWarningsEl.innerHTML = "";
+    }
+
+    function renderErrors(errors) {
+      var html = "<strong>Fix the following inputs:</strong><ul>";
+      for (var i = 0; i < errors.length; i++) {
+        html += "<li>" + escapeHtml(errors[i].message) + "</li>";
+        var errEl = document.getElementById(FIELD_TO_ERROR[errors[i].field]);
+        if (errEl) { errEl.textContent = errors[i].message; }
+        var inputEl = findFieldInput(errors[i].field);
+        if (inputEl) { inputEl.setAttribute("aria-invalid", "true"); }
+      }
+      html += "</ul>";
+      errorSummaryEl.innerHTML = html;
+      errorSummaryEl.classList.remove("hidden");
+    }
+
+    function clearErrors() {
+      errorSummaryEl.classList.add("hidden");
+      errorSummaryEl.innerHTML = "";
+      for (var field in FIELD_TO_ERROR) {
+        if (!Object.prototype.hasOwnProperty.call(FIELD_TO_ERROR, field)) { continue; }
+        var errEl = document.getElementById(FIELD_TO_ERROR[field]);
+        if (errEl) { errEl.textContent = ""; }
+        var inputEl = findFieldInput(field);
+        if (inputEl) { inputEl.removeAttribute("aria-invalid"); }
+      }
+    }
+
+    function findFieldInput(field) {
+      var id = FIELD_TO_INPUT[field];
+      return id ? document.getElementById(id) : null;
+    }
+
+    function pushError(errors, field, message) {
+      errors.push({ field: field, message: message });
+    }
+
+    function clamp(value, low, high) {
+      return Math.min(Math.max(value, low), high);
+    }
+
+    function formatNumber(value, decimals) {
+      var dp = typeof decimals === "number" ? decimals : 2;
+      return Number(value).toFixed(dp);
+    }
+
+    function formatSigned(value, decimals) {
+      var text = formatNumber(Math.abs(value), decimals);
+      if (value > 0) { return "+" + text; }
+      if (value < 0) { return "\u2212" + text; }
+      return text;
+    }
+
+    function formatPsf(value) {
+      var text = formatNumber(Math.abs(value), 2) + " psf";
+      if (value < 0) { return "\u2212" + text; }
+      if (value > 0) { return "+" + text; }
+      return text;
+    }
+
+    function toFixedString(value, decimals) {
+      return Number(value).toFixed(decimals);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    init();
+  })();
   </script>
 </body>
 </html>

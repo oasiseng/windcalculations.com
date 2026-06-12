@@ -556,15 +556,9 @@ function isHurricaneProne(lat,lng){
 }
 
 function isWindBorneDebris(vult,isHurricane,lat,lng){
-  // ASCE 7 Sec. 26.12.3.1: wind-borne debris regions exist only WITHIN
-  // hurricane-prone regions (isHurricaneProne already includes Hawaii and
-  // the Caribbean territories). High inland speeds (e.g. Colorado Front
-  // Range chinook zones) do NOT trigger WBD glazing protection.
-  if(!isHurricane){return false;}
-  // Within hurricane-prone regions, 140 mph triggers WBD anywhere; the
-  // 130 mph branch is a conservative screen for the within-1-mile-of-
-  // coastal-mean-high-water condition, which cannot be computed client-side.
-  return vult>=130;
+  if(vult>=140){return true;}
+  if((isHawaii(lat,lng)||isCaribbean(lat,lng))&&vult>=130){return true;}
+  return isHurricane&&vult>=130;
 }
 
 function interpolateRiskTable(table,vult,basis){
@@ -683,12 +677,10 @@ async function resolveLocation(lat,lng){
   let displaySpeed=mapped;
   let displaySource=sourceDetail;
   if(colorado){
-    if(colorado.design>displaySpeed){
-      displaySpeed=colorado.design;
-      displaySource='Colorado Front Range overlay and local note';
+    displaySpeed=Math.max(displaySpeed,colorado.design);
+    displaySource='Colorado Front Range overlay and local note';
+    if(displaySpeed===colorado.design){
       riskTable=coloradoRiskTable(colorado.design);
-    }else{
-      displaySource=sourceDetail+' (Colorado overlay cross-checked; mapped value governs)';
     }
   }
 
@@ -696,15 +688,6 @@ async function resolveLocation(lat,lng){
   const wbd=isWindBorneDebris(displaySpeed,hurricane,lat,lng);
   const threshold=hurricane?130:140;
   return {lat:lat,lng:lng,mapped:mapped,displaySpeed:displaySpeed,riskTable:riskTable,sourceKind:sourceKind,sourceDetail:displaySource,lookupNote:lookupNote,inSWR:inSWR,hurricane:hurricane,wbd:wbd,colorado:colorado,threshold:threshold};
-}
-
-function escapeHtml(value){
-  return String(value)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
 }
 
 function setFlag(id,value,truthyColor){
@@ -742,14 +725,11 @@ function updateComparison(result){
   document.getElementById('bSite').textContent=formatMph(result.displaySpeed);
   document.getElementById('bThreshold').style.width=((result.threshold/max)*100)+'%';
   document.getElementById('bThreshold').textContent=formatMph(result.threshold);
-  document.getElementById('thresholdLabel').textContent=result.hurricane?(result.threshold===130?'Hurricane/WBD Trigger':'WBD Trigger'):'WBD Trigger (hurricane-prone regions only)';
+  document.getElementById('thresholdLabel').textContent=result.threshold===130?'Hurricane/WBD Trigger':'WBD Trigger';
   const note=document.getElementById('rCompNote');
-  if(result.hurricane&&result.displaySpeed>=result.threshold){
-    note.textContent='This site meets or exceeds the wind-borne debris screening threshold for this hurricane-prone region.';
+  if(result.displaySpeed>=result.threshold){
+    note.textContent='This site meets or exceeds the wind-borne debris threshold.';
     note.style.color='#dc2626';
-  }else if(!result.hurricane&&result.displaySpeed>=140){
-    note.textContent='High wind speed, but wind-borne debris provisions apply only within hurricane-prone regions (ASCE 7 Sec. 26.12.3.1).';
-    note.style.color='#c2410c';
   }else if(result.displaySpeed>=140){
     note.textContent='This site is above the common inland baseline and near debris-region thresholds.';
     note.style.color='#c2410c';
@@ -798,7 +778,7 @@ function showResult(result,address){
   document.getElementById('resultPanel').style.display='block';
   document.getElementById('ctaSection').style.display='block';
   const coord=result.lat.toFixed(4)+'°N, '+Math.abs(result.lng).toFixed(4)+'°W';
-  document.getElementById('rLoc').innerHTML=address?'<span>'+escapeHtml(address)+'</span><br>'+coord:'<span>'+coord+'</span>';
+  document.getElementById('rLoc').innerHTML=address?'<span>'+address+'</span><br>'+coord:'<span>'+coord+'</span>';
   document.getElementById('rMapped').textContent=formatMph(result.mapped)+' mph';
   document.getElementById('rMappedNote').textContent=result.lookupNote+'. Displayed to the nearest 1 mph.';
   document.getElementById('rSpeed').textContent=formatMph(result.displaySpeed);

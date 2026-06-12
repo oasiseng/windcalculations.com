@@ -343,34 +343,28 @@ L.marker([40.078, -105.253], {
 }).addTo(map);
 
 // ---- WIND SPEED INTERPOLATION ----
-// For a given lat, find EVERY longitude where a contour crosses that
-// latitude. The 165 and especially 225 mph contours wiggle enough to cross
-// a single latitude several times, so returning only the first crossing
-// (the previous behavior) could place foothills points in the wrong band.
-function getContourLngsAtLat(contourPts, lat) {
-  const crossings = [];
+// For a given lat, find where each contour line crosses that latitude
+function getContourLngAtLat(contourPts, lat) {
   for (let i = 0; i < contourPts.length - 1; i++) {
     const [lat1, lng1] = contourPts[i];
     const [lat2, lng2] = contourPts[i + 1];
+    // Check if lat is between these two points
     if ((lat1 >= lat && lat2 <= lat) || (lat1 <= lat && lat2 >= lat)) {
-      if (Math.abs(lat2 - lat1) < 0.0001) {
-        crossings.push((lng1 + lng2) / 2);
-      } else {
-        const t = (lat - lat1) / (lat2 - lat1);
-        crossings.push(lng1 + t * (lng2 - lng1));
-      }
+      if (Math.abs(lat2 - lat1) < 0.0001) return (lng1 + lng2) / 2;
+      const t = (lat - lat1) / (lat2 - lat1);
+      return lng1 + t * (lng2 - lng1);
     }
   }
-  return crossings;
+  return null;
 }
 
 function getSeacSpeed(lat, lng) {
-  // Collect EVERY crossing of every contour at this latitude
+  // For each contour, find its longitude at this latitude
   const crossings = [];
   for (const s of SPEEDS) {
     if (!C[s]) continue;
-    const lngs = getContourLngsAtLat(C[s], lat);
-    for (const cLng of lngs) {
+    const cLng = getContourLngAtLat(C[s], lat);
+    if (cLng !== null) {
       crossings.push({ speed: s, lng: cLng });
     }
   }
@@ -380,52 +374,47 @@ function getSeacSpeed(lat, lng) {
     return { speed: 115, interpolated: false, note: 'Outside SEAC map coverage — using ASCE 7-22 baseline' };
   }
 
-  // Sort crossings east to west (descending longitude; west = more negative)
-  crossings.sort((a, b) => b.lng - a.lng);
+  // Sort crossings by longitude (east to west = more negative)
+  crossings.sort((a, b) => b.lng - a.lng); // east first
 
-  // East of all contour crossings — ASCE 7-22 mapped values govern
+  // Find which zone the point is in
+  // If east of all contours → below minimum (use 115)
   if (lng > crossings[0].lng) {
     return { speed: 110, interpolated: false, note: 'East of SEAC map — ASCE 7-22 mapped values govern' };
   }
 
-  // West of all contour crossings — maximum zone
+  // If west of all contours → above maximum
   if (lng < crossings[crossings.length - 1].lng) {
     return { speed: 225, interpolated: false, note: 'West of all contours — maximum zone' };
   }
 
-  // Find the bracketing pair of crossings
+  // Find which two contour lines the point is between
   for (let i = 0; i < crossings.length - 1; i++) {
     if (lng <= crossings[i].lng && lng >= crossings[i + 1].lng) {
-      const east = crossings[i];
-      const west = crossings[i + 1];
+      // Between crossing[i] and crossing[i+1]
+      // Interpolate
+      const eastSpeed = crossings[i].speed;
+      const westSpeed = crossings[i + 1].speed;
+      const eastLng = crossings[i].lng;
+      const westLng = crossings[i + 1].lng;
 
-      // Same contour on both sides (a contour loops back across this
-      // latitude): the point sits inside that contour's band.
-      if (east.speed === west.speed) {
-        return {
-          speed: east.speed,
-          interpolated: false,
-          note: `Within the ${east.speed} mph contour band`
-        };
-      }
-
-      // Linear interpolation between the two bracketing contours
-      const t = (lng - east.lng) / (west.lng - east.lng);
-      const rawSpeed = east.speed + t * (west.speed - east.speed);
+      // Linear interpolation
+      const t = (lng - eastLng) / (westLng - eastLng);
+      const rawSpeed = eastSpeed + t * (westSpeed - eastSpeed);
       // Round to nearest 5
       const rounded = Math.round(rawSpeed / 5) * 5;
 
       return {
         speed: rounded,
         interpolated: true,
-        eastContour: east.speed,
-        westContour: west.speed,
-        note: `Interpolated between ${east.speed} and ${west.speed} mph contours`
+        eastContour: eastSpeed,
+        westContour: westSpeed,
+        note: `Interpolated between ${eastSpeed} and ${westSpeed} mph contours`
       };
     }
   }
 
-  // Fallback: use nearest contour crossing
+  // Fallback: use nearest contour
   let nearest = crossings[0];
   let minDist = Math.abs(lng - nearest.lng);
   for (const c of crossings) {
@@ -480,15 +469,6 @@ function getResult(lat, lng) {
 // ---- UI ----
 let marker = null;
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 function showResult(r, address) {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('loading').classList.remove('on');
@@ -496,7 +476,7 @@ function showResult(r, address) {
   document.getElementById('ctaSection').style.display = 'block';
 
   const coord = `${r.lat.toFixed(4)}°N, ${Math.abs(r.lng).toFixed(4)}°W`;
-  document.getElementById('rLoc').innerHTML = address ? `<span>${escapeHtml(address)}</span><br>${coord}` : `<span>${coord}</span>`;
+  document.getElementById('rLoc').innerHTML = address ? `<span>${address}</span><br>${coord}` : `<span>${coord}</span>`;
 
   // SEAC value
   document.getElementById('rSeac').textContent = `${r.seac.speed} mph`;
