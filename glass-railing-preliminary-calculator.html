@@ -1,0 +1,1090 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glass Railing Preliminary Calculator | Public Screening Tool</title>
+<meta name="description" content="Free preliminary glass railing calculator for educational screening of stand-offs, anchors, posts, grab rails, and grouted post sockets. Not a sealed engineering design.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1a5c4c;
+    --green-dark:#13463a;
+    --green-soft:rgba(26,92,76,0.08);
+    --bg:#f5f3ef;
+    --surface:#fff;
+    --text:#1a1714;
+    --muted:#5c5955;
+    --border:#e2dfd8;
+    --warn:#b85c00;
+    --pass:#1e7a3b;
+    --fail:#c0392b;
+    --blue:#2c5f87;
+    --font-body:'Plus Jakarta Sans',Arial,sans-serif;
+    --font-mono:'JetBrains Mono',Consolas,monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.5;}
+  .app{display:grid;grid-template-columns:minmax(440px,500px) 1fr;min-height:100vh;}
+  .form-panel{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;max-height:100vh;position:sticky;top:0;}
+  .preview-panel{padding:2rem 1rem;background:linear-gradient(180deg,#e8e6df 0%,#f5f3ef 100%);overflow-x:auto;}
+  .form-panel h1{color:var(--green);font-size:1.15rem;margin:0 0 0.25rem;}
+  .subtitle{font-size:0.76rem;color:var(--muted);margin:0 0 1.2rem;font-family:var(--font-mono);}
+  .public-disclaimer{font-size:0.76rem;line-height:1.45;background:#fff7ea;border:1px solid rgba(184,92,0,0.28);border-left:4px solid var(--warn);border-radius:6px;padding:0.55rem 0.65rem;margin:0 0 1rem;color:#4b3822;}
+  .public-disclaimer a{color:var(--green-dark);font-weight:700;text-decoration:underline;}
+  .app-hidden-defaults{display:none;}
+  fieldset{border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem 1rem;margin:0 0 1rem;background:#faf9f7;}
+  fieldset legend{font-weight:700;color:var(--green);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;padding:0 0.4rem;}
+  .field{margin-bottom:0.7rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-weight:600;font-size:0.8rem;margin-bottom:0.25rem;}
+  .field input,.field select,.field textarea{width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;background:#fff;color:var(--text);}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,76,0.12);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;}
+  .hint{color:var(--muted);font-size:0.72rem;font-weight:400;}
+  .chk{display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;font-weight:600;}
+  .chk input{width:auto;}
+  .actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent 0%,var(--surface) 30%);padding:1rem 0 0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{flex:1 1 calc(50% - 0.2rem);min-width:0;padding:0.65rem 0.5rem;border:none;border-radius:6px;font-family:var(--font-body);font-weight:600;font-size:0.84rem;cursor:pointer;}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-secondary{background:#fff;border:1.5px solid var(--border);color:var(--text);}
+  .btn-secondary:hover{border-color:var(--green);color:var(--green);}
+  .live-result{background:var(--green-soft);border:1px solid rgba(26,92,76,0.2);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.8rem;font-family:var(--font-mono);font-size:0.74rem;line-height:1.6;}
+  .live-result strong{color:var(--green);}
+  .warn-banner{background:rgba(184,92,0,0.08);border:1px solid rgba(184,92,0,0.3);border-left:3px solid var(--warn);border-radius:6px;padding:0.45rem 0.6rem;margin-bottom:0.8rem;font-size:0.74rem;color:var(--warn);display:none;}
+  .warn-banner.active{display:block;}
+  .version-badge{display:inline-block;font-family:var(--font-mono);font-size:0.66rem;background:var(--green);color:#fff;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.4rem;}
+  .viz-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem 0.9rem;margin:0 auto 1.4rem;max-width:8.5in;box-shadow:0 4px 16px rgba(0,0,0,0.07);}
+  .viz-card h2{margin:0 0 0.2rem;font-size:0.95rem;color:var(--green);}
+  .viz-sub{font-size:0.72rem;color:var(--muted);font-family:var(--font-mono);margin:0 0 0.6rem;}
+  .viz-grid{display:grid;grid-template-columns:1.2fr 0.9fr 1.1fr;gap:0.6rem;align-items:start;}
+  .viz-box{border:1px solid #e6e2da;border-radius:6px;padding:0.4rem;background:#fcfcfa;}
+  .vlabel{font-size:0.7rem;font-weight:700;color:#234;text-align:center;margin-bottom:0.2rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .viz-readout{display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.72rem;color:#333;margin-top:0.6rem;}
+  .viz-readout b{color:var(--green);}
+  .results-host{max-width:10in;margin:0 auto;}
+  .results-shell{display:grid;gap:0.9rem;}
+  .web-hero,.result-panel,.result-card,.warning-panel,.ok-panel{background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.05);}
+  .web-hero{padding:0.9rem 1rem;border-left:5px solid var(--green);}
+  .web-hero h2{margin:0 0 0.25rem;color:var(--green);font-size:1.2rem;}
+  .web-hero p{margin:0;color:#333;font-size:0.9rem;}
+  .web-hero a{color:var(--green-dark);font-weight:700;}
+  .result-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.65rem;}
+  .result-card{padding:0.7rem;}
+  .result-card .label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);font-weight:700;}
+  .result-card .value{font-family:var(--font-mono);font-size:1.08rem;font-weight:700;color:#1a1714;margin-top:0.2rem;}
+  .result-card .sub{font-size:0.72rem;color:var(--muted);margin-top:0.15rem;}
+  .result-panel{padding:0.9rem 1rem;}
+  .result-panel h2{margin:0 0 0.45rem;color:var(--green);font-size:1.05rem;border-bottom:1px solid #ddd;padding-bottom:0.25rem;}
+  .result-panel h3{margin:0.75rem 0 0.3rem;color:var(--green);font-size:0.92rem;}
+  .warning-panel,.ok-panel{padding:0.7rem 0.85rem;font-size:0.84rem;}
+  .warning-panel{border-left:5px solid var(--warn);color:#5a3510;background:#fff7ea;}
+  .ok-panel{border-left:5px solid var(--pass);color:#173f24;background:#f1f8f3;}
+  .cta-link{display:inline-block;margin-top:0.45rem;padding:0.45rem 0.65rem;background:var(--green);color:#fff!important;border-radius:6px;text-decoration:none;font-weight:700;}
+  .data-grid{width:100%;border-collapse:collapse;font-size:9.6pt;margin:0.25rem 0 0.6rem;}
+  .data-grid td{padding:0.12rem 0.28rem;vertical-align:top;}
+  .data-grid td.lbl{font-weight:600;}
+  .data-grid td.sym{font-family:var(--font-mono);text-align:right;width:1.25in;color:#234;}
+  .data-grid td.eq{text-align:center;width:0.25in;color:#888;}
+  .data-grid td.val{font-family:var(--font-mono);text-align:right;width:1in;font-weight:700;}
+  .data-grid td.unit{font-style:italic;color:#555;width:0.8in;}
+  .data-grid tr.source-row td{padding-top:0.2rem;}
+  .data-grid td.source-note{font-family:var(--font-mono);font-weight:700;text-align:left;line-height:1.25;white-space:normal;overflow-wrap:anywhere;}
+  .calc-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:8.7pt;margin:0.35rem 0 0.7rem;}
+  .calc-table th,.calc-table td{border:1px solid #999;padding:0.2rem 0.3rem;text-align:center;}
+  .calc-table th{background:var(--green);color:#fff;font-weight:700;}
+  .calc-table td.left{text-align:left;font-weight:600;}
+  .check-line{font-family:var(--font-mono);font-size:9.2pt;display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem;padding:0.2rem 0.4rem;margin:0.2rem 0;border-left:3px solid var(--green);background:#f7f6f2;}
+  .check-line .formula{flex:1;}
+  .check-line .verdict{font-weight:700;white-space:nowrap;}
+  .pass{color:var(--pass);}
+  .fail{color:var(--fail);}
+  .note{font-size:9pt;font-style:italic;color:#555;margin:0.3rem 0;}
+  .code-snip{font-size:9pt;background:#f7f6f2;border-left:3px solid var(--green);padding:0.4rem 0.6rem;margin:0.4rem 0;}
+  .code-snip .ref{font-weight:700;color:var(--green-dark);font-family:var(--font-mono);}
+  .scope-warning{font-size:9.1pt;background:#f5f7f3;border:1px solid #d9e5df;border-left:4px solid var(--green);padding:0.45rem 0.55rem;margin:0.45rem 0;color:#273832;}
+  .cap-missing{font-weight:700;color:var(--fail);font-family:var(--font-mono);font-size:9.1pt;margin:0.45rem 0;}
+  .section-props{font-family:var(--font-mono);font-size:8.8pt;background:#eef3f1;border:1px solid #cdddd6;border-radius:4px;padding:0.3rem 0.5rem;margin:0.3rem 0;}
+  .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-style:italic;}
+  .dl{stroke:#444;stroke-width:0.8;}
+  .dtxt{font-family:var(--font-mono);font-size:10px;fill:#234;}
+  .dtxt.sm{font-size:8.5px;}
+  .glass{fill:rgba(144,190,210,0.25);stroke:#2c5f87;stroke-width:1.2;}
+  .alum{fill:#e8eeec;stroke:#1a5c4c;stroke-width:1.3;}
+  .conc{fill:#cfc9bb;stroke:#8a8470;stroke-width:1;}
+  .plate{fill:#9aa7a2;stroke:#46524e;stroke-width:1;}
+  .bolt{fill:#2b2b2b;stroke:#2b2b2b;}
+  .post{stroke:#1a5c4c;stroke-width:3;fill:#e8eeec;}
+  .loadarrow{stroke:#b1322a;stroke-width:1.5;fill:none;}
+  @media (max-width:980px){
+    .app{display:block;}
+    .form-panel{position:relative;max-height:none;border-right:none;border-bottom:1px solid var(--border);}
+    .viz-grid{grid-template-columns:1fr;}
+    .result-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="form-panel">
+  <h1>Glass Railing Preliminary Calculator <span class="version-badge">Public v1.0</span></h1>
+  <p class="subtitle">Educational screening only - glass load transfer + metal supports</p>
+  <p class="public-disclaimer"><strong>Public preliminary tool.</strong> This browser calculator is for education and early screening only. It is not a sealed engineering calculation, permit document, construction instruction, or substitute for a licensed professional engineer. For project-specific engineering, contact <a href="https://www.oasisengineering.com/contact" target="_blank" rel="noopener">Oasis Engineering</a>.</p>
+
+  <div class="live-result" id="liveResult">Fill in geometry, support mode, anchors, and wind to see live results.</div>
+  <div class="warn-banner" id="warnBanner"></div>
+
+  <fieldset class="app-hidden-defaults">
+    <legend>Example / Report Info</legend>
+      <div class="field"><label>Run date</label><input type="date" id="f_date"></div>
+    <div class="row-2">
+      <div class="field"><label>Reference ID</label><input type="text" id="f_projNo" value="PUBLIC-DEMO"></div>
+      <div class="field"><label>Calculation ID</label><input type="text" id="f_fileNo" value="PRELIM-CHECK"></div>
+    </div>
+    <div class="field"><label>Project label</label><input type="text" id="f_project" value="Example Glass Railing"></div>
+    <div class="field"><label>Location / note</label><input type="text" id="f_client" value="Public preliminary screening example"></div>
+    <div class="field"><label>System description</label><input type="text" id="f_product" value="Generic Glass Railing / Handrail"></div>
+    <div class="row-2">
+      <div class="field"><label>Revision</label><input type="text" id="f_rev" value="1.0"></div>
+      <div class="field"><label>Code reference</label><input type="text" id="f_code" value="FBC 2023; ASCE 7-22; ADM 2020; ACI 318-19"></div>
+    </div>
+  </fieldset>
+
+  <fieldset class="app-hidden-defaults">
+    <legend>Public Tool / Contact</legend>
+    <div class="field"><label>Publisher</label><input type="text" id="f_firm" value="Wing Calculations"></div>
+    <div class="row-2">
+      <div class="field"><label>Tool status</label><input type="text" id="f_engName" value="Preliminary screening only"></div>
+      <div class="field"><label>Engineering status</label><input type="text" id="f_engLic" value="Not sealed / not for permit"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Disclaimer label</label><input type="text" id="f_coaLabel" value="Public preliminary use only"></div>
+      <div class="field"><label>Custom engineering</label><input type="text" id="f_coa" value="oasisengineering.com/contact"></div>
+    </div>
+    <div class="field"><label>Website / contact</label><input type="text" id="f_web" value="https://www.oasisengineering.com/contact"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>System Preset</legend>
+    <div class="field"><label>Configuration</label>
+      <select id="f_type" onchange="applyTypePreset()">
+        <option value="beach" selected>Generic side-mounted stand-off glass rail</option>
+        <option value="presidential">Generic stand-off glass + handrail socket</option>
+        <option value="post">Generic post-supported glass guard / rail</option>
+        <option value="custom">Custom preliminary example</option>
+      </select>
+    </div>
+    <div class="field"><label>Support mode</label>
+      <select id="f_supportMode" onchange="applyModeVisibility(); render();">
+        <option value="standoff" selected>Stand-off mounting plates</option>
+        <option value="post">Post-framed glass</option>
+        <option value="hybrid">Hybrid stand-off + metal checks</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Glass Panel Geometry</legend>
+    <p class="hint" style="margin-top:0;">Glass strength is not checked. The glass is treated as impact-rated and able to transfer load into the metal supports and anchors.</p>
+    <div class="row-3">
+      <div class="field"><label>Glass height H (in)</label><input type="number" id="f_glassH" value="42" step="0.25"></div>
+      <div class="field"><label>Panel width B (in)</label><input type="number" id="f_panelW" value="36" step="0.25"></div>
+      <div class="field"><label>Glass thickness (in)</label><input type="number" id="f_glassT" value="0.6875" step="0.0625"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Supports per panel</label><input type="number" id="f_supports" value="2" min="1" step="1"></div>
+      <div class="field"><label>Load height h (in)</label><input type="number" id="f_loadH" value="42" step="0.25"></div>
+      <div class="field"><label>50 lb infill h (in)</label><input type="number" id="f_infillH" value="24" step="0.25"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>200 lb share to checked support</label><input type="number" id="f_pointShare" value="1.0" min="0.1" max="1" step="0.05"></div>
+      <div class="field"><label>50 lb infill share</label><input type="number" id="f_infillShare" value="1.0" min="0.1" max="1" step="0.05"></div>
+    </div>
+    <div class="field"><label>Glass impact note</label><textarea id="f_glassNote" rows="2">Glass panels are specified as Category II safety glazing per CPSC 16 CFR Part 1201 or Class A per ANSI Z97.1 and are treated as certified impact-rated safety glazing for this structural load-transfer review.</textarea></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Live Loads</legend>
+    <label class="chk"><input type="checkbox" id="f_useGuard" checked onchange="render()"> Apply guard live loads (200 lb concentrated, 50 plf top rail, 50 lb infill)</label>
+    <div class="row-3" style="margin-top:0.55rem;">
+      <div class="field"><label>Conc. P (lb)</label><input type="number" id="f_P200" value="200" step="10"></div>
+      <div class="field"><label>Uniform (plf)</label><input type="number" id="f_q50" value="50" step="5"></div>
+      <div class="field"><label>Infill (lb)</label><input type="number" id="f_P50" value="50" step="5"></div>
+    </div>
+    <div class="field"><label>Self weight / vertical dead load (psf)</label><input type="number" id="f_dl" value="9.0" step="0.1"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Wind Data</legend>
+    <div class="row-3">
+      <div class="field"><label>Vult (mph)</label><input type="number" id="f_V" value="160" step="1"></div>
+      <div class="field"><label>Risk Cat</label><select id="f_risk"><option>I</option><option selected>II</option><option>III</option><option>IV</option></select></div>
+      <div class="field"><label>Exposure</label><select id="f_exp"><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></div>
+    </div>
+    <div class="field"><label>Elevation above grade z (ft)</label><input type="number" id="f_z" value="15" step="1"></div>
+    <div class="row-3">
+      <div class="field"><label>Kd</label><input type="number" id="f_Kd" value="0.85" step="0.01"></div>
+      <div class="field"><label>G = Gf</label><input type="number" id="f_Gf" value="0.85" step="0.01"></div>
+      <div class="field"><label>Kzt</label><input type="number" id="f_Kzt" value="1.00" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Iw</label><input type="number" id="f_Iw" value="1.00" step="0.01"></div>
+      <div class="field"><label>Solid ratio epsilon</label><input type="number" id="f_eps" value="1.00" step="0.01"></div>
+      <div class="field"><label>Cf</label><input type="number" id="f_Cf" value="1.30" step="0.05"></div>
+    </div>
+    <p class="hint" style="margin:0;">Defaults are generic starting points for educational screening. Verify project design wind, exposure, height, and pressure method with a qualified professional before relying on results.</p>
+  </fieldset>
+
+  <fieldset id="grp_standoff">
+    <legend>Stand-off / Mounting Plate</legend>
+    <div class="row-3">
+      <div class="field"><label>Stand-off dia (in)</label><input type="number" id="f_so_d" value="2.0" step="0.125"></div>
+      <div class="field"><label>Projection e (in)</label><input type="number" id="f_so_e" value="2.1875" step="0.0625"></div>
+      <div class="field"><label>Stand-off Fy (ksi)</label><input type="number" id="f_so_Fy" value="30" step="1"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Vertical couple c (in)</label><input type="number" id="f_so_vsp" value="4.0" step="0.25"></div>
+      <div class="field"><label>Stand-offs in tension</label><input type="number" id="f_so_nt" value="1" min="1" step="1"></div>
+      <div class="field"><label>Stand-off bend factor</label><input type="number" id="f_so_fbCoeff" value="0.66" step="0.01"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Plate t (in)</label><input type="number" id="f_plate_t" value="0.375" step="0.0625"></div>
+      <div class="field"><label>Plate eff. width (in)</label><input type="number" id="f_plate_b" value="4.0" step="0.25"></div>
+      <div class="field"><label>Plate arm (in)</label><input type="number" id="f_plate_arm" value="1.50" step="0.125"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Plate Fy (ksi)</label><input type="number" id="f_plate_Fy" value="35" step="1"></div>
+      <div class="field"><label>Plate bend factor</label><input type="number" id="f_plate_fbCoeff" value="0.66" step="0.01"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Anchor Group</legend>
+    <div class="row-3">
+      <div class="field"><label>n anchors / support</label><input type="number" id="f_a_n" value="6" min="1" step="1"></div>
+      <div class="field"><label>Anchor dia (in)</label><input type="number" id="f_a_d" value="0.375" step="0.0625"></div>
+      <div class="field"><label>Embedment (in)</label><input type="number" id="f_a_L" value="4.0" step="0.25"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Tension row spacing a (in)</label><input type="number" id="f_a_sp" value="4.0" step="0.25"></div>
+      <div class="field"><label>n anchors in tension</label><input type="number" id="f_a_nt" value="2" min="1" step="1"></div>
+      <div class="field"><label>Anchor omega</label><input type="number" id="f_a_omega" value="2.0" step="0.1"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Nominal tension Rn (lb)</label><input type="number" id="f_a_T" value="1500" step="25"></div>
+      <div class="field"><label>Nominal shear Vn (lb)</label><input type="number" id="f_a_V" value="1200" step="25"></div>
+    </div>
+    <div class="field"><label>Anchor capacity source / reference</label><input type="text" id="f_anchorSource" value="" placeholder="Required for anchor capacity comparison"></div>
+    <p class="hint" style="margin:0 0 0.55rem;">Design allowables are Rn / omega and Vn / omega only when an anchor-capacity source is entered. Set omega = 1.0 if entering already-reduced allowable values.</p>
+    <div class="field"><label>Substrate / anchor note</label><textarea id="f_substrate" rows="2">3/8 in x 4 in SS HH wedge bolts into concrete wall (verify ESR, edge distance, and embedment)</textarea></div>
+  </fieldset>
+
+  <fieldset id="grp_post">
+    <legend>Optional Vertical Post</legend>
+    <label class="chk"><input type="checkbox" id="f_usePost" onchange="applyModeVisibility(); render()"> Include post check</label>
+    <div class="row-3" style="margin-top:0.55rem;">
+      <div class="field"><label>Post height H (in)</label><input type="number" id="f_postH" value="42" step="0.25"></div>
+      <div class="field"><label>Post spacing L (in)</label><input type="number" id="f_postL" value="48" step="0.5"></div>
+      <div class="field"><label>Deflection L/</label><input type="number" id="f_defl" value="180" step="10"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Post section</label><select id="f_post_sec"></select></div>
+      <div class="field"><label>Material</label><select id="f_material" onchange="applyMaterial()"><option value="6061" selected>6061-T6 aluminum</option><option value="6063">6063-T6 aluminum</option><option value="316">316 stainless</option><option value="A500">A500 steel</option><option value="custom">Custom</option></select></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>E (ksi)</label><input type="number" id="f_E" value="10100" step="100"></div>
+      <div class="field"><label>Fty (ksi)</label><input type="number" id="f_fty" value="35" step="1"></div>
+      <div class="field"><label>Fsy (ksi)</label><input type="number" id="f_fsy" value="20" step="1"></div>
+    </div>
+    <div class="field"><label>Post/crossbar bending factor</label><input type="number" id="f_fbCoeff" value="0.66" step="0.01"></div>
+    <div class="field"><label>Post wind distribution</label>
+      <select id="f_windk">
+        <option value="2" selected>Uniform load - M = q L H^2 / 2</option>
+        <option value="3">Triangular/reduced load - M = q L H^2 / 3</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset id="grp_crossbar">
+    <legend>Optional Crossbar / Grab Rail</legend>
+    <label class="chk"><input type="checkbox" id="f_useCrossbar" onchange="render()"> Include crossbar or grab rail check</label>
+    <div class="field" style="margin-top:0.55rem;"><label>Rail load path</label>
+      <select id="f_barMode" onchange="render()">
+        <option value="grab" selected>Independent grab / handrail - live loads only</option>
+        <option value="glass">Structural crossbar - include glass wind tributary</option>
+      </select>
+    </div>
+    <p class="hint" style="margin:0 0 0.55rem;">Use independent grab / handrail when the rail is not part of the glass wind load path. Use structural crossbar only when the rail supports glass pressure over the entered tributary height.</p>
+    <div class="row-3" style="margin-top:0.55rem;">
+      <div class="field"><label>Span L (in)</label><input type="number" id="f_barL" value="42" step="0.5"></div>
+      <div class="field"><label>Glass wind trib. height (in)</label><input type="number" id="f_barTrib" value="0" step="0.5"></div>
+      <div class="field"><label>Continuous spans</label><input type="number" id="f_barSpans" value="3" min="1" step="1"></div>
+    </div>
+    <div class="field"><label>Crossbar section</label><select id="f_bar_sec"></select></div>
+    <label class="chk"><input type="checkbox" id="f_useBarAnchors" onchange="render()"> Include rail support anchor check</label>
+    <div class="field" style="margin-top:0.55rem;"><label>Rail support condition</label>
+      <select id="f_barMount" onchange="render()">
+        <option value="wall" selected>Wall bracket / side mount</option>
+        <option value="base">Base/floor mounted support</option>
+        <option value="core">Core-drilled grouted post socket</option>
+      </select>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Support eccentricity e (in)</label><input type="number" id="f_barAnchor_e" value="2.5" step="0.25"></div>
+      <div class="field"><label>Anchor couple a (in)</label><input type="number" id="f_barAnchor_sp" value="3.0" step="0.25"></div>
+      <div class="field"><label>n anchors / support</label><input type="number" id="f_barAnchor_n" value="2" min="1" step="1"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>n anchors in tension</label><input type="number" id="f_barAnchor_nt" value="1" min="1" step="1"></div>
+      <div class="field"><label>Anchor omega</label><input type="number" id="f_barAnchor_omega" value="1.0" step="0.1"></div>
+      <div class="field"><label>Anchor dia (in)</label><input type="number" id="f_barAnchor_d" value="0.375" step="0.0625"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Nominal / allowable tension (lb)</label><input type="number" id="f_barAnchor_T" value="500" step="25"></div>
+      <div class="field"><label>Nominal / allowable shear (lb)</label><input type="number" id="f_barAnchor_V" value="500" step="25"></div>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Socket load height h (in)</label><input type="number" id="f_barSocket_h" value="36" step="0.5"></div>
+      <div class="field"><label>Core hole dia (in)</label><input type="number" id="f_barSocket_hole" value="3.0" step="0.25"></div>
+      <div class="field"><label>Socket embedment L (in)</label><input type="number" id="f_barSocket_L" value="4.0" step="0.25"></div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Post OD / bearing width d (in)</label><input type="number" id="f_barSocket_d" value="1.5" step="0.125"></div>
+      <div class="field"><label>Allowable socket bearing (psi)</label><input type="number" id="f_barSocket_fb" value="0" step="50"></div>
+    </div>
+    <div class="field"><label>Rail support source / note</label><input type="text" id="f_barAnchorSource" value="" placeholder="Manufacturer table, ESR, project detail, or grout/socket basis"></div>
+    <p class="hint" style="margin:0;">Bolt/bracket supports use R x e resisted by anchor couple a. Core-drilled sockets use R x h resisted by simplified grout/concrete bearing over embedment L when a bearing source and allowable are entered.</p>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('loadFileInput').click()">Load Inputs</button>
+    <input type="file" id="loadFileInput" accept=".json" style="display:none" onchange="if(this.files[0]) loadState(this.files[0]); this.value='';">
+    <button class="btn btn-primary" onclick="saveState()">Save Inputs</button>
+  </div>
+</aside>
+
+<main class="preview-panel">
+  <div class="viz-card">
+    <h2>Live Diagram</h2>
+    <p class="viz-sub">Verify glass panel width, stand-off plate layout, anchor lever arm, and optional rail geometry before relying on the screening output.</p>
+    <div class="viz-grid">
+      <div class="viz-box"><div class="vlabel">Elevation</div><div id="vizElev"></div></div>
+      <div class="viz-box"><div class="vlabel">Anchor / Stand-off Section</div><div id="vizSide"></div></div>
+      <div class="viz-box"><div class="vlabel">Grab Rail / Handrail</div><div id="vizRail"></div></div>
+    </div>
+    <div class="viz-readout" id="vizReadout"></div>
+  </div>
+  <div class="results-host" id="results"><div class="empty-state">Fill the form to see live preliminary results.</div></div>
+</main>
+</div>
+
+<script>
+function rectTube(B,H,t){
+  const A=B*H-(B-2*t)*(H-2*t);
+  const I=(B*Math.pow(H,3)-(B-2*t)*Math.pow(H-2*t,3))/12;
+  const Iy=(H*Math.pow(B,3)-(H-2*t)*Math.pow(B-2*t,3))/12;
+  const S=I/(H/2);
+  const r=Math.sqrt(I/A);
+  return {A:+A.toFixed(4),I:+I.toFixed(4),Iy:+Iy.toFixed(4),Sb:+S.toFixed(4),St:+S.toFixed(4),r:+r.toFixed(4),t,H,B};
+}
+function roundTube(D,t){
+  const d=D-2*t;
+  const A=Math.PI/4*(D*D-d*d);
+  const I=Math.PI/64*(Math.pow(D,4)-Math.pow(d,4));
+  const S=I/(D/2);
+  const r=Math.sqrt(I/A);
+  return {A:+A.toFixed(4),I:+I.toFixed(4),Iy:+I.toFixed(4),Sb:+S.toFixed(4),St:+S.toFixed(4),r:+r.toFixed(4),t,H:D,B:D};
+}
+function solidRound(D){
+  const A=Math.PI/4*D*D;
+  const I=Math.PI/64*Math.pow(D,4);
+  const S=I/(D/2);
+  const r=Math.sqrt(I/A);
+  return {A:+A.toFixed(4),I:+I.toFixed(4),Iy:+I.toFixed(4),Sb:+S.toFixed(4),St:+S.toFixed(4),r:+r.toFixed(4),t:D/2,H:D,B:D};
+}
+const SECTIONS=[
+  {name:'2 in x 2 in x 1/8 in square tube',...rectTube(2,2,0.125)},
+  {name:'2 in x 2 in x 3/16 in square tube',...rectTube(2,2,0.1875)},
+  {name:'2 in x 2 in x 1/4 in square tube',...rectTube(2,2,0.25)},
+  {name:'2 in x 3 in x 1/8 in rectangular tube',...rectTube(2,3,0.125)},
+  {name:'2 in x 4 in x 1/8 in rectangular tube',...rectTube(2,4,0.125)},
+  {name:'1-1/2 in x 1-1/2 in x 1/8 in square tube',...rectTube(1.5,1.5,0.125)},
+  {name:'1-1/2 in round tube x 1/8 in wall',...roundTube(1.5,0.125)},
+  {name:'1-1/4 in round tube x 1/8 in wall',...roundTube(1.25,0.125)},
+  {name:'2 in solid round stand-off',...solidRound(2.0)},
+  {name:'none',A:0,I:0,Iy:0,Sb:0,St:0,r:0,t:0,H:0,B:0}
+];
+const MATERIALS={
+  '6061':{E:10100,Fty:35,Fsy:20,Fu:38,fb:0.66},
+  '6063':{E:10100,Fty:25,Fsy:15,Fu:30,fb:0.66},
+  '316':{E:28000,Fty:30,Fsy:18,Fu:75,fb:0.66},
+  'A500':{E:29000,Fty:46,Fsy:28,Fu:58,fb:0.60},
+  'custom':{E:10100,Fty:35,Fsy:20,Fu:38,fb:0.66}
+};
+const EXP={B:{coef:2.01,alpha:7.0,zg:1200},C:{coef:2.01,alpha:9.5,zg:900},D:{coef:2.01,alpha:11.5,zg:700}};
+function secByName(n){return SECTIONS.find(s=>s.name===n)||SECTIONS[0];}
+function populateSectionSelect(id,def){
+  const sel=document.getElementById(id);
+  if(!sel)return;
+  sel.innerHTML=SECTIONS.map(s=>'<option value="'+s.name.replace(/"/g,'&quot;')+'"'+(s.name===def?' selected':'')+'>'+s.name+'</option>').join('');
+}
+function Kz(z,exp){
+  const e=EXP[exp]||EXP.C;
+  return e.coef*Math.pow(Math.max(z,15)/e.zg,2/e.alpha);
+}
+function computeWind(d){
+  const zft=d.z>0?d.z:d.glassH/12;
+  const kz=Kz(zft,d.exp);
+  const qh=0.00256*kz*d.Kzt*d.Kd*d.V*d.V;
+  const PA=0.6*Math.max(16,qh*d.Gf*d.Cf);
+  const qwind=d.eps*d.Iw*PA;
+  return {zft,kz,qh,PA,qwind};
+}
+function windSensitivityRows(d){
+  const Wft=(d.panelW/Math.max(1,d.supports))/12;
+  const Hft=d.glassH/12;
+  const pointM=d.useGuard?d.P200*d.pointShare*d.loadH:0;
+  return [d.Cf,1.8].filter((v,i,a)=>a.indexOf(v)===i).map(cf=>{
+    const w=computeWind({...d,Cf:cf});
+    const F=w.qwind*Hft*Wft;
+    const M=F*d.glassH/2;
+    const governs=pointM>0?M>pointM:false;
+    return {cf,qwind:w.qwind,F,M,pointM,governs};
+  });
+}
+function railCoef(spans){
+  if(spans>=3)return {cM:0.1012,cV:0.60};
+  if(spans===2)return {cM:0.125,cV:0.625};
+  return {cM:0.125,cV:0.5};
+}
+const NUM=['glassH','panelW','glassT','supports','loadH','infillH','pointShare','infillShare','P200','q50','P50','dl','V','z','Kd','Gf','Kzt','Iw','eps','Cf','so_d','so_e','so_vsp','so_nt','so_Fy','so_fbCoeff','plate_t','plate_b','plate_arm','plate_Fy','plate_fbCoeff','fbCoeff','a_n','a_d','a_L','a_sp','a_nt','a_omega','a_T','a_V','postH','postL','defl','E','fty','fsy','windk','barL','barTrib','barSpans','barAnchor_e','barAnchor_sp','barAnchor_n','barAnchor_nt','barAnchor_omega','barAnchor_d','barAnchor_T','barAnchor_V','barSocket_h','barSocket_hole','barSocket_L','barSocket_d','barSocket_fb'];
+const TXT=['projNo','fileNo','project','client','product','rev','code','firm','engName','engLic','coaLabel','coa','web','risk','exp','type','supportMode','glassNote','substrate','anchorSource','material','barMode','barMount','barAnchorSource'];
+const BOOL=['useGuard','usePost','useCrossbar','useBarAnchors'];
+const SECSEL=['post_sec','bar_sec'];
+function readForm(){
+  const d={};
+  NUM.forEach(k=>{const e=document.getElementById('f_'+k);d[k]=e?parseFloat(e.value)||0:0;});
+  TXT.forEach(k=>{const e=document.getElementById('f_'+k);d[k]=e?e.value:'';});
+  BOOL.forEach(k=>{const e=document.getElementById('f_'+k);d[k]=!!(e&&e.checked);});
+  d.date=document.getElementById('f_date').value;
+  d.post_sec=secByName(document.getElementById('f_post_sec').value);
+  d.bar_sec=secByName(document.getElementById('f_bar_sec').value);
+  return d;
+}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(x,dp){return (isFinite(x)?x:0).toFixed(dp==null?2:dp);}
+function numMaybe(x,dp){return isFinite(x)?Number(x).toFixed(dp==null?2:dp):'--';}
+function hasAnchorCapacity(d){return !!String(d.anchorSource||'').trim();}
+function fmtDateUpper(iso){
+  const d=iso?(()=>{const p=iso.split('-');return new Date(+p[0],+p[1]-1,+p[2]);})():new Date();
+  return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+}
+function setVal(id,v){const e=document.getElementById(id);if(e)e.value=v;}
+function setChk(id,v){const e=document.getElementById(id);if(e)e.checked=!!v;}
+function setSec(id,v){const e=document.getElementById(id);if(e)e.value=v;}
+function applyMaterial(){
+  const k=document.getElementById('f_material').value;
+  const m=MATERIALS[k]||MATERIALS.custom;
+  if(k!=='custom'){
+    setVal('f_E',m.E);
+    setVal('f_fty',m.Fty);
+    setVal('f_fsy',m.Fsy);
+    setVal('f_fbCoeff',m.fb);
+  }
+  render();
+}
+function applyTypePreset(){
+  const t=document.getElementById('f_type').value;
+  if(t==='beach'){
+    setVal('f_projNo','PUBLIC-DEMO'); setVal('f_fileNo','PRELIM-STANDOFF'); setVal('f_project','Example Glass Railing');
+    setVal('f_client','Public preliminary screening example');
+    setVal('f_product','Generic side-mounted stand-off glass rail');
+    setVal('f_supportMode','standoff'); setVal('f_glassH',42); setVal('f_panelW',36); setVal('f_glassT',0.6875);
+    setVal('f_supports',2); setVal('f_loadH',42); setVal('f_infillH',24); setVal('f_pointShare',1.0); setVal('f_infillShare',1.0); setVal('f_dl',9.0);
+    setVal('f_V',170); setVal('f_z',15); setVal('f_exp','D'); setVal('f_eps',1.0); setVal('f_Cf',1.30);
+    setVal('f_so_d',2.0); setVal('f_so_e',2.1875); setVal('f_so_vsp',4.0); setVal('f_so_nt',1); setVal('f_so_fbCoeff',0.66);
+    setVal('f_plate_t',0.375); setVal('f_plate_b',4.0); setVal('f_plate_arm',1.5); setVal('f_plate_Fy',35); setVal('f_plate_fbCoeff',0.66);
+    setVal('f_a_n',6); setVal('f_a_d',0.375); setVal('f_a_L',4.0); setVal('f_a_sp',4.0); setVal('f_a_nt',2); setVal('f_a_omega',2.0);
+    setVal('f_a_T',1500); setVal('f_a_V',1200);
+    setVal('f_anchorSource','');
+    setVal('f_substrate','Example wedge bolts into concrete wall; verify approved anchor data, substrate, edge distance, spacing, and embedment');
+    setChk('f_usePost',false); setChk('f_useCrossbar',false); setChk('f_useBarAnchors',false); setVal('f_barMode','grab'); setVal('f_barTrib',0); setVal('f_barMount','wall');
+    setVal('f_barSocket_h',36); setVal('f_barSocket_hole',3.0); setVal('f_barSocket_L',4.0); setVal('f_barSocket_d',1.5); setVal('f_barSocket_fb',0);
+  } else if(t==='presidential'){
+    setVal('f_projNo','PUBLIC-DEMO'); setVal('f_fileNo','PRELIM-HANDRAIL'); setVal('f_project','Example Glass Railing With Handrail');
+    setVal('f_client','Public preliminary screening example');
+    setVal('f_product','Generic stand-off glass rail with ground-mounted handrail');
+    setVal('f_supportMode','hybrid'); setVal('f_glassH',42.5); setVal('f_panelW',42.5); setVal('f_glassT',0.6875);
+    setVal('f_supports',2); setVal('f_loadH',42.5); setVal('f_infillH',24); setVal('f_dl',9.0); setVal('f_V',170); setVal('f_z',15); setVal('f_exp','D');
+    setVal('f_so_d',2.0); setVal('f_so_e',2.1875); setVal('f_so_vsp',4.0); setVal('f_so_nt',1); setVal('f_so_fbCoeff',0.66);
+    setVal('f_plate_t',0.375); setVal('f_plate_b',4.0); setVal('f_plate_arm',1.5); setVal('f_plate_Fy',35); setVal('f_plate_fbCoeff',0.66);
+    setVal('f_a_n',6); setVal('f_a_d',0.375); setVal('f_a_L',4.0); setVal('f_a_sp',4.0); setVal('f_a_nt',2); setVal('f_a_omega',2.0);
+    setVal('f_a_T',1500); setVal('f_a_V',1200);
+    setVal('f_anchorSource','');
+    setVal('f_substrate','Example wedge bolts into existing concrete or CMU wall; verify wall thickness, edge distance, spacing, and approved anchor data');
+    setChk('f_usePost',false); setChk('f_useCrossbar',true); setChk('f_useBarAnchors',false); setVal('f_barMode','grab'); setVal('f_barL',42.5); setVal('f_barTrib',0); setVal('f_barMount','core');
+    setVal('f_barSocket_h',36); setVal('f_barSocket_hole',3.0); setVal('f_barSocket_L',4.0); setVal('f_barSocket_d',1.5); setVal('f_barSocket_fb',0);
+    setSec('f_bar_sec','1-1/2 in round tube x 1/8 in wall');
+  } else if(t==='post'){
+    setVal('f_projNo','PUBLIC-DEMO'); setVal('f_fileNo','PRELIM-POST'); setVal('f_project','Example Post-Supported Glass Guard');
+    setVal('f_client','Public preliminary screening example');
+    setVal('f_supportMode','post'); setVal('f_product','Generic post-supported glass guard');
+    setVal('f_glassH',42); setVal('f_panelW',48); setVal('f_supports',1); setVal('f_loadH',42); setVal('f_infillH',24);
+    setVal('f_z',15);
+    setChk('f_usePost',true); setChk('f_useCrossbar',true); setChk('f_useBarAnchors',false); setVal('f_barMode','glass'); setVal('f_barMount','wall'); setVal('f_postH',42); setVal('f_postL',48);
+    setVal('f_barSocket_h',36); setVal('f_barSocket_hole',3.0); setVal('f_barSocket_L',4.0); setVal('f_barSocket_d',1.5); setVal('f_barSocket_fb',0);
+    setSec('f_post_sec','2 in x 2 in x 1/4 in square tube'); setSec('f_bar_sec','2 in x 2 in x 1/8 in square tube');
+    setVal('f_a_n',4); setVal('f_a_sp',4.0); setVal('f_a_nt',2); setVal('f_a_omega',2.0); setVal('f_a_T',1500); setVal('f_a_V',1200); setVal('f_anchorSource','');
+  }
+  applyModeVisibility();
+  render();
+}
+function applyModeVisibility(){
+  const mode=document.getElementById('f_supportMode').value;
+  const showStand=mode==='standoff'||mode==='hybrid';
+  const usePost=document.getElementById('f_usePost').checked || mode==='post';
+  document.getElementById('grp_standoff').style.display=showStand?'':'none';
+  document.getElementById('grp_post').style.display=(usePost||mode==='post'||mode==='hybrid')?'':'none';
+  if(mode==='post')setChk('f_usePost',true);
+}
+function saveState(){
+  const s={version:'GLASS-RAILING-PUBLIC-PRELIM-V1.0',timestamp:new Date().toISOString(),fields:{},bools:{},sections:{}};
+  NUM.concat(TXT).forEach(k=>{const e=document.getElementById('f_'+k);if(e)s.fields[k]=e.value;});
+  s.fields.date=document.getElementById('f_date').value;
+  BOOL.forEach(k=>{const e=document.getElementById('f_'+k);if(e)s.bools[k]=e.checked;});
+  SECSEL.forEach(k=>{const e=document.getElementById('f_'+k);if(e)s.sections[k]=e.value;});
+  const slug=(s.fields.projNo||'glass').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+  const b=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='glass_railing_prelim_'+slug+'_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function loadState(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const s=JSON.parse(e.target.result);
+      if(s.fields)Object.entries(s.fields).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.value=v;});
+      if(s.bools)Object.entries(s.bools).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.checked=!!v;});
+      if(s.sections)Object.entries(s.sections).forEach(([k,v])=>{const el=document.getElementById('f_'+k);if(el)el.value=v;});
+      applyModeVisibility(); render();
+    }catch(err){alert('Failed to load: '+err.message);}
+  };
+  r.readAsText(file);
+}
+function resetForm(){if(confirm('Reset to defaults?'))location.reload();}
+
+function anchorDemand(c,d){
+  const Pz=d.dl*(d.glassH/12)*(d.panelW/Math.max(1,d.supports)/12);
+  const nt=Math.max(1,Math.round(d.a_nt));
+  const omega=Math.max(1,d.a_omega||1);
+  const hasCap=hasAnchorCapacity(d);
+  const Tallow=hasCap?Math.max(1,d.a_T/omega):NaN;
+  const Vallow=hasCap?Math.max(1,d.a_V/omega):NaN;
+  const T=Math.max(0,c.M/(nt*Math.max(0.1,d.a_sp)));
+  const Vx=Math.abs(c.F)/Math.max(1,d.a_n);
+  const Vz=Math.abs(Pz)/Math.max(1,d.a_n);
+  const V=Math.sqrt(Vx*Vx+Vz*Vz);
+  const inter=hasCap?Math.pow(T/Tallow,2)+Math.pow(V/Vallow,2):NaN;
+  const demandScore=T+0.1*V;
+  return {Pz,T,V,Vx,Vz,Tallow,Vallow,omega,inter,hasCap,demandScore};
+}
+function standoffDemand(c,d){
+  const A=Math.PI/4*d.so_d*d.so_d;
+  const S=Math.PI*Math.pow(d.so_d,3)/32;
+  const M_ecc=Math.abs(c.F)*d.so_e;
+  const nt=Math.max(1,Math.round(d.so_nt||1));
+  const Pax=Math.abs(c.M)/(nt*Math.max(0.1,d.so_vsp));
+  const Fa=Pax/(Math.max(0.0001,A)*1000);
+  const Fb=M_ecc/(Math.max(0.0001,S)*1000);
+  const Fcomb=Fa+Fb;
+  const Fv=4*Math.abs(c.F)/(3*Math.max(0.0001,A)*1000);
+  const allowFb=Math.max(0.1,(d.so_fbCoeff||0.66)*d.so_Fy);
+  const allowFv=Math.max(0.1,0.6*d.so_Fy);
+  const inter=Math.pow(Fcomb/allowFb,2)+Math.pow(Fv/allowFv,2);
+  return {A,S,M:M_ecc,M_ecc,Pax,Fa,Fb,Fcomb,Fv,allowFb,allowFv,inter};
+}
+function plateDemand(anchor,d){
+  const allow=(d.plate_fbCoeff||0.66)*d.plate_Fy*1000;
+  const tReq=Math.sqrt(6*anchor.T*Math.max(0.01,d.plate_arm)/(Math.max(1,allow)*Math.max(0.1,d.plate_b)));
+  return {tReq,allow};
+}
+function computeGlassSupport(d,wind){
+  const Wtrib=d.panelW/Math.max(1,d.supports);
+  const Wft=Wtrib/12;
+  const Hft=d.glassH/12;
+  const cases=[];
+  const windF=wind.qwind*Hft*Wft;
+  cases.push({name:'Wind on tributary glass',F:windF,M:windF*d.glassH/2,loadH:d.glassH/2,kind:'wind'});
+  if(d.useGuard){
+    const lineF=d.q50*Wft;
+    cases.push({name:'50 plf top load on tributary width',F:lineF,M:lineF*d.loadH,loadH:d.loadH,kind:'guard'});
+    const pointF=d.P200*d.pointShare;
+    cases.push({name:'200 lb concentrated load to checked support',F:pointF,M:pointF*d.loadH,loadH:d.loadH,kind:'guard'});
+    const infillF=d.P50*d.infillShare;
+    cases.push({name:'50 lb infill load to checked support',F:infillF,M:infillF*d.infillH,loadH:d.infillH,kind:'infill'});
+  }
+  cases.forEach(c=>{
+    c.anchor=anchorDemand(c,d);
+    c.standoff=standoffDemand(c,d);
+    c.plate=plateDemand(c.anchor,d);
+  });
+  const govAnchor=cases.slice().sort((a,b)=>(b.anchor.hasCap?b.anchor.inter:b.anchor.demandScore)-(a.anchor.hasCap?a.anchor.inter:a.anchor.demandScore))[0];
+  const govMoment=cases.slice().sort((a,b)=>b.M-a.M)[0];
+  const govStand=cases.slice().sort((a,b)=>b.standoff.inter-a.standoff.inter)[0];
+  return {Wtrib,Wft,Hft,cases,govAnchor,govMoment,govStand};
+}
+function validSection(sec){
+  return !!(sec && sec.A>0 && sec.I>0 && sec.Sb>0);
+}
+function computePost(d,wind){
+  if(!d.usePost||!validSection(d.post_sec))return null;
+  const E=Math.max(1,d.E), allowFb=d.fbCoeff*d.fty, allowFv=0.6*d.fsy;
+  const q=wind.qwind;
+  const post={sec:d.post_sec};
+  const kdist=Math.max(2,Math.round(d.windk));
+  post.M_wind=(q/144)*d.postL*d.postH*d.postH/kdist;
+  post.V_wind=(q/144)*d.postL*d.postH;
+  if(d.useGuard){
+    const F50=d.q50*(d.postL/12);
+    post.M_50=F50*d.postH;
+    post.V_50=F50;
+    post.M_200=d.P200*d.postH;
+    post.V_200=d.P200;
+  }else{
+    post.M_50=0; post.V_50=0; post.M_200=0; post.V_200=0;
+  }
+  const opts=[
+    {name:'wind',M:post.M_wind,V:post.V_wind},
+    {name:'50 plf',M:post.M_50,V:post.V_50},
+    {name:'200 lb',M:post.M_200,V:post.V_200}
+  ];
+  const gov=opts.sort((a,b)=>b.M-a.M)[0];
+  post.gov=gov.name; post.M=gov.M; post.V=gov.V;
+  post.Fb=post.M/(Math.max(0.0001,post.sec.Sb)*1000);
+  post.Fv=post.V/(Math.max(0.0001,post.sec.A)*1000);
+  const F50=d.useGuard?d.q50*(d.postL/12):0;
+  const windDeflDen=kdist===3?30:8;
+  post.defl=post.V_wind*Math.pow(d.postH,3)/(windDeflDen*E*1000*Math.max(0.0001,post.sec.I))+
+    F50*Math.pow(d.postH,3)/(3*E*1000*Math.max(0.0001,post.sec.I));
+  post.deflAllow=2*d.postH/Math.max(1,d.defl);
+  post.allowFb=allowFb; post.allowFv=allowFv;
+  const c={F:post.V,M:post.M};
+  post.anchor=anchorDemand(c,{...d,glassH:d.postH,panelW:d.postL,supports:1});
+  post.plate=plateDemand(post.anchor,d);
+  return post;
+}
+function computeCrossbar(d,wind){
+  if(!d.useCrossbar||!validSection(d.bar_sec))return null;
+  const E=Math.max(1,d.E), allowFb=d.fbCoeff*d.fty, allowFv=0.6*d.fsy;
+  const rc=railCoef(Math.max(1,Math.round(d.barSpans)));
+  const bar={sec:d.bar_sec,mode:d.barMode||'grab'};
+  const includeWind=bar.mode==='glass';
+  const wWind=includeWind?(wind.qwind/144)*d.barTrib:0;
+  bar.M_wind=rc.cM*wWind*d.barL*d.barL;
+  bar.V_wind=rc.cV*wWind*d.barL;
+  if(d.useGuard){
+    const w50=d.q50/12;
+    bar.M_50=rc.cM*w50*d.barL*d.barL;
+    bar.V_50=rc.cV*w50*d.barL;
+    bar.M_200=d.P200*d.barL/4;
+    bar.V_200=d.P200/2;
+  }else{
+    bar.M_50=0; bar.V_50=0; bar.M_200=0; bar.V_200=0;
+  }
+  const opts=[
+    {name:includeWind?'glass wind tributary':'wind not applied to independent rail',M:bar.M_wind,V:bar.V_wind},
+    {name:'50 plf',M:bar.M_50,V:bar.V_50},
+    {name:'200 lb',M:bar.M_200,V:bar.V_200}
+  ];
+  bar.cases=opts.map(c=>({...c}));
+  const gov=opts.sort((a,b)=>b.M-a.M)[0];
+  bar.gov=gov.name; bar.M=gov.M; bar.V=gov.V;
+  bar.Fb=bar.M/(Math.max(0.0001,bar.sec.Sb)*1000);
+  bar.Fv=bar.V/(Math.max(0.0001,bar.sec.A)*1000);
+  const EI=E*1000*Math.max(0.0001,bar.sec.I);
+  const deflCases=[
+    {name:includeWind?'glass wind tributary':'wind not applied',d:5*wWind*Math.pow(d.barL,4)/(384*EI)},
+    {name:'50 plf',d:d.useGuard?5*(d.q50/12)*Math.pow(d.barL,4)/(384*EI):0},
+    {name:'200 lb',d:d.useGuard?d.P200*Math.pow(d.barL,3)/(48*EI):0}
+  ];
+  const deflGov=deflCases.sort((a,b)=>b.d-a.d)[0];
+  bar.defl=deflGov.d;
+  bar.deflGov=deflGov.name;
+  bar.wWind=wWind;
+  bar.includeWind=includeWind;
+  bar.trib=d.barTrib;
+  bar.deflAllow=d.barL/Math.max(1,d.defl);
+  bar.allowFb=allowFb; bar.allowFv=allowFv;
+  bar.anchor=computeRailSupportAnchor(bar,d);
+  return bar;
+}
+function computeRailSupportAnchor(bar,d){
+  if(!d.useBarAnchors)return null;
+  if(d.barMount==='core')return computeRailSocket(bar,d);
+  const omega=Math.max(1,d.barAnchor_omega||1);
+  const hasCap=!!String(d.barAnchorSource||'').trim();
+  const Tallow=hasCap?Math.max(1,d.barAnchor_T/omega):NaN;
+  const Vallow=hasCap?Math.max(1,d.barAnchor_V/omega):NaN;
+  const n=Math.max(1,Math.round(d.barAnchor_n||1));
+  const nt=Math.max(1,Math.round(d.barAnchor_nt||1));
+  const e=Math.max(0,d.barAnchor_e||0);
+  const a=Math.max(0.1,d.barAnchor_sp||0);
+  const cases=(bar.cases||[]).map(c=>{
+    const R=Math.abs(c.V||0);
+    const M=R*e;
+    const T=M/(nt*a);
+    const V=R/n;
+    const inter=hasCap?Math.pow(T/Tallow,2)+Math.pow(V/Vallow,2):NaN;
+    return {name:c.name,R,M,T,V,inter};
+  });
+  const gov=cases.slice().sort((x,y)=>(hasCap?y.inter-x.inter:(y.T+y.V)-(x.T+x.V)))[0]||{name:'',R:0,M:0,T:0,V:0,inter:NaN};
+  return {type:'anchor',hasCap,omega,Tallow,Vallow,n,nt,e,a,dia:d.barAnchor_d,source:d.barAnchorSource||'',mount:d.barMount||'wall',cases,gov};
+}
+function computeRailSocket(bar,d){
+  const source=String(d.barAnchorSource||'').trim();
+  const fb=Math.max(0,d.barSocket_fb||0);
+  const hasCap=!!source && fb>0;
+  const h=Math.max(0,d.barSocket_h||0);
+  const L=Math.max(0.1,d.barSocket_L||0);
+  const dia=Math.max(0.1,d.barSocket_d||0);
+  const hole=Math.max(dia,d.barSocket_hole||0);
+  const cases=(bar.cases||[]).map(c=>{
+    const R=Math.abs(c.V||0);
+    const M=R*h;
+    const pShear=R/(dia*L);
+    const pMoment=6*M/(dia*L*L);
+    const p=pShear+pMoment;
+    const Lreq=hasCap?(R+Math.sqrt(R*R+24*fb*dia*M))/(2*fb*dia):NaN;
+    const inter=hasCap?p/fb:NaN;
+    return {name:c.name,R,M,pShear,pMoment,p,Lreq,inter};
+  });
+  const gov=cases.slice().sort((x,y)=>(hasCap?y.inter-x.inter:y.p-x.p))[0]||{name:'',R:0,M:0,pShear:0,pMoment:0,p:0,Lreq:NaN,inter:NaN};
+  return {type:'socket',hasCap,fb,h,L,dia,hole,source,mount:'core',cases,gov};
+}
+function computeAll(d){
+  const wind=computeWind(d);
+  const support=computeGlassSupport(d,wind);
+  const post=computePost(d,wind);
+  const bar=computeCrossbar(d,wind);
+  return {wind,support,post,bar};
+}
+function dimV(x,y1,y2,label){
+  return '<line class="dl" x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'"/>'+
+    '<line class="dl" x1="'+(x-4)+'" y1="'+y1+'" x2="'+(x+4)+'" y2="'+y1+'"/>'+
+    '<line class="dl" x1="'+(x-4)+'" y1="'+y2+'" x2="'+(x+4)+'" y2="'+y2+'"/>'+
+    '<text class="dtxt sm" x="'+(x-6)+'" y="'+((y1+y2)/2)+'" text-anchor="end" transform="rotate(-90 '+(x-6)+' '+((y1+y2)/2)+')">'+label+'</text>';
+}
+function dimH(x1,y,x2,label){
+  return '<line class="dl" x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'"/>'+
+    '<line class="dl" x1="'+x1+'" y1="'+(y-4)+'" x2="'+x1+'" y2="'+(y+4)+'"/>'+
+    '<line class="dl" x1="'+x2+'" y1="'+(y-4)+'" x2="'+x2+'" y2="'+(y+4)+'"/>'+
+    '<text class="dtxt sm" x="'+((x1+x2)/2)+'" y="'+(y-4)+'" text-anchor="middle">'+label+'</text>';
+}
+function elevationSVG(d,R){
+  const W=450,H=270,base=214,top=48,x0=70,x2=370;
+  const supportN=Math.max(1,Math.round(d.supports));
+  let s='';
+  s+='<rect class="glass" x="'+x0+'" y="'+top+'" width="'+(x2-x0)+'" height="'+(base-top)+'" rx="1"/>';
+  s+='<line class="dl" x1="35" y1="'+base+'" x2="'+(W-35)+'" y2="'+base+'" stroke-width="1.4"/>';
+  for(let i=1;i<supportN;i++){const x=x0+(x2-x0)*i/supportN;s+='<line class="dl" x1="'+x+'" y1="'+top+'" x2="'+x+'" y2="'+base+'" stroke-dasharray="4 3"/>';}
+  for(let i=0;i<supportN;i++){
+    const x=x0+(x2-x0)*(i+0.5)/supportN;
+    s+='<rect class="plate" x="'+(x-14)+'" y="'+(base-35)+'" width="28" height="42" rx="2"/>';
+    for(let r=0;r<3;r++){s+='<circle class="bolt" cx="'+(x-7)+'" cy="'+(base-29+r*14)+'" r="2"/><circle class="bolt" cx="'+(x+7)+'" cy="'+(base-29+r*14)+'" r="2"/>';}
+    s+='<circle class="alum" cx="'+x+'" cy="'+(base-14)+'" r="6"/>';
+  }
+  if(d.usePost){
+    [x0,x2].forEach(x=>{s+='<rect class="post" x="'+(x-4)+'" y="'+top+'" width="8" height="'+(base-top)+'"/>';});
+  }
+  if(d.useCrossbar){
+    s+='<rect class="alum" x="'+x0+'" y="'+(top-8)+'" width="'+(x2-x0)+'" height="6"/>';
+  }
+  s+='<line class="loadarrow" x1="'+(x2+20)+'" y1="'+top+'" x2="'+(x2+20)+'" y2="'+(top+35)+'"/><path class="loadarrow" d="M'+(x2+17)+','+(top+29)+' L'+(x2+20)+','+(top+36)+' L'+(x2+23)+','+(top+29)+'"/>';
+  s+='<text class="dtxt sm" x="'+(x2+27)+'" y="'+(top+22)+'" fill="#b1322a">'+num(d.P200,0)+' lb</text>';
+  for(let i=0;i<3;i++){const y=top+45+i*42;s+='<line class="loadarrow" x1="38" y1="'+y+'" x2="'+(x0-10)+'" y2="'+y+'" stroke-dasharray="3 2"/><path class="loadarrow" d="M'+(x0-15)+','+(y-3)+' L'+(x0-9)+','+y+' L'+(x0-15)+','+(y+3)+'"/>';}
+  s+=dimV(W-28,top,base,'H = '+num(d.glassH,1)+' in');
+  s+=dimH(x0,base+26,x2,'B = '+num(d.panelW,1)+' in');
+  s+='<text class="dtxt sm" x="'+x0+'" y="'+(top-12)+'">impact-rated glass - strength not checked</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+}
+function sideSVG(d,R){
+  const W=280,H=300,wallX=142,top=42,bot=230;
+  let s='';
+  s+='<rect class="conc" x="'+wallX+'" y="36" width="82" height="220"/>';
+  for(let y=45;y<250;y+=14){s+='<line class="dl" x1="'+(wallX+6)+'" y1="'+y+'" x2="'+(wallX+18)+'" y2="'+(y+8)+'" stroke-width="0.5"/>';}
+  s+='<rect class="glass" x="75" y="'+top+'" width="10" height="'+(bot-top)+'"/>';
+  s+='<line class="alum" x1="85" y1="'+(bot-36)+'" x2="'+wallX+'" y2="'+(bot-36)+'" stroke-width="5"/>';
+  s+='<circle class="alum" cx="108" cy="'+(bot-36)+'" r="9"/>';
+  s+='<rect class="plate" x="'+(wallX-6)+'" y="'+(bot-84)+'" width="14" height="76"/>';
+  for(let r=0;r<3;r++){s+='<line class="bolt" x1="'+(wallX+1)+'" y1="'+(bot-76+r*25)+'" x2="'+(wallX+55)+'" y2="'+(bot-76+r*25)+'" stroke-width="2.5"/><circle class="bolt" cx="'+(wallX+1)+'" cy="'+(bot-76+r*25)+'" r="2"/>';}
+  s+=dimV(244,bot-76,bot-26,'a = '+num(d.a_sp,1)+' in');
+  s+=dimH(85,bot-55,wallX,'e = '+num(d.so_e,2)+' in');
+  s+=dimV(62,top,bot,'H = '+num(d.glassH,1)+' in');
+  s+='<text class="dtxt sm" x="'+(wallX+8)+'" y="32">concrete / CMU wall</text>';
+  s+='<text class="dtxt sm" x="31" y="'+(top+18)+'">glass</text>';
+  s+='<text class="dtxt sm" x="94" y="'+(bot-18)+'">stand-off</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+}
+function railSVG(d,R){
+  const W=340,H=220,x0=46,x1=294,y=88,base=158;
+  let s='';
+  if(!d.useCrossbar){
+    s+='<text class="dtxt sm" x="28" y="105">grab rail check disabled</text>';
+    return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+  }
+  const mode=d.barMode==='glass'?'structural crossbar':'independent grab / handrail';
+  const coreMount=d.useBarAnchors&&d.barMount==='core';
+  s+='<line class="dl" x1="'+x0+'" y1="'+base+'" x2="'+x1+'" y2="'+base+'" stroke-width="1.2"/>';
+  s+='<line class="alum" x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke-width="8" stroke-linecap="round"/>';
+  if(coreMount){
+    s+='<rect class="conc" x="'+(x0-28)+'" y="'+(base-3)+'" width="'+(x1-x0+56)+'" height="42" rx="2"/>';
+  }
+  [x0,x1].forEach((x,idx)=>{
+    s+='<line class="post" x1="'+x+'" y1="'+y+'" x2="'+x+'" y2="'+(coreMount?base+31:base)+'" stroke-width="6"/>';
+    if(coreMount){
+      s+='<rect class="glass" x="'+(x-10)+'" y="'+(base+1)+'" width="20" height="31" rx="2"/>';
+      s+='<line class="dl" x1="'+(x-16)+'" y1="'+(base+1)+'" x2="'+(x-16)+'" y2="'+(base+31)+'"/>';
+    }else{
+      s+='<rect class="plate" x="'+(x-13)+'" y="'+(base-8)+'" width="26" height="16" rx="2"/>';
+      s+='<circle class="bolt" cx="'+(x-6)+'" cy="'+base+'" r="2"/><circle class="bolt" cx="'+(x+6)+'" cy="'+base+'" r="2"/>';
+    }
+  });
+  const mid=(x0+x1)/2;
+  s+='<line class="loadarrow" x1="'+mid+'" y1="'+(y-42)+'" x2="'+mid+'" y2="'+(y-9)+'"/><path class="loadarrow" d="M'+(mid-4)+','+(y-15)+' L'+mid+','+(y-7)+' L'+(mid+4)+','+(y-15)+'"/>';
+  s+='<text class="dtxt sm" x="'+(mid+7)+'" y="'+(y-28)+'">'+num(d.P200,0)+' lb</text>';
+  for(let i=0;i<5;i++){
+    const x=x0+28+i*((x1-x0-56)/4);
+    s+='<line class="loadarrow" x1="'+x+'" y1="'+(y-28)+'" x2="'+x+'" y2="'+(y-10)+'" stroke-dasharray="3 2"/><path class="loadarrow" d="M'+(x-3)+','+(y-15)+' L'+x+','+(y-8)+' L'+(x+3)+','+(y-15)+'"/>';
+  }
+  s+=dimH(x0,base+30,x1,'L = '+num(d.barL,1)+' in');
+  s+='<text class="dtxt sm" x="'+x0+'" y="22">'+esc(mode)+'</text>';
+  s+='<text class="dtxt sm" x="'+x0+'" y="38">section: '+esc(d.bar_sec.name||'selected rail')+'</text>';
+  if(d.barMode==='glass'){
+    s+='<text class="dtxt sm" x="'+x0+'" y="54">glass wind trib. = '+num(d.barTrib,1)+' in</text>';
+  }
+  if(d.useBarAnchors){
+    if(coreMount){
+      s+=dimV(318,y,base,'h = '+num(d.barSocket_h,1)+' in');
+      s+='<text class="dtxt sm" x="'+x0+'" y="'+(base+54)+'">grouted socket: '+num(d.barSocket_hole,1)+' in core, L = '+num(d.barSocket_L,1)+' in</text>';
+    }else{
+      s+=dimV(318,y,base,'e = '+num(d.barAnchor_e,1)+' in');
+      s+='<text class="dtxt sm" x="'+x0+'" y="'+(base+54)+'">support anchors: '+num(d.barAnchor_n,0)+' x '+num(d.barAnchor_d,3)+' in, couple a = '+num(d.barAnchor_sp,1)+' in</text>';
+    }
+  }
+  if(R.bar){
+    s+='<text class="dtxt sm" x="'+x0+'" y="'+(H-13)+'">gov: '+esc(R.bar.gov)+'; defl: '+esc(R.bar.deflGov||'')+'</text>';
+  }
+  return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+}
+function checkLine(label,dem,allow,demDisp,allowDisp){
+  const ok=Math.abs(dem)<=Math.abs(allow)+1e-9;
+  return '<div class="check-line"><span class="formula">'+label+': <strong>'+demDisp+'</strong> &le; '+allowDisp+'</span><span class="verdict '+(ok?'pass':'fail')+'">'+(ok?'[Satisfactory]':'[CHECK]')+'</span></div>';
+}
+function demandLine(label,demDisp,note){
+  return '<div class="check-line"><span class="formula">'+label+': <strong>'+demDisp+'</strong>'+((note)?' - '+note:'')+'</span><span class="verdict fail">[DEMAND ONLY]</span></div>';
+}
+function caseRows(R){
+  return R.support.cases.map(c=>'<tr><td class="left">'+esc(c.name)+'</td><td>'+num(c.F,0)+'</td><td>'+num(c.loadH,1)+'</td><td>'+num(c.M,0)+'</td><td>'+num(c.anchor.T,0)+'</td><td>'+num(c.anchor.Vx,0)+'</td><td>'+num(c.anchor.Vz,0)+'</td><td>'+num(c.anchor.V,0)+'</td><td>'+numMaybe(c.anchor.inter,2)+'</td></tr>').join('');
+}
+function anchorCapacityRows(d,a){
+  const src=String(d.anchorSource||'').trim();
+  return '<tr><td class="lbl">Anchor capacity source</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">'+(src?esc(src):'<span class="fail">NOT ENTERED</span>')+'</td></tr>'+
+    '<tr><td class="lbl">Anchor safety factor</td><td class="sym">omega</td><td class="eq">=</td><td class="val">'+(a.hasCap?num(a.omega,2):'--')+'</td><td class="unit"></td></tr>'+
+    '<tr><td class="lbl">Design tension capacity</td><td class="sym">Rn/omega</td><td class="eq">=</td><td class="val">'+numMaybe(a.Tallow,0)+'</td><td class="unit">lb</td></tr>'+
+    '<tr><td class="lbl">Design shear capacity</td><td class="sym">Vn/omega</td><td class="eq">=</td><td class="val">'+numMaybe(a.Vallow,0)+'</td><td class="unit">lb</td></tr>';
+}
+function anchorCheckBlock(label,a){
+  if(!a.hasCap){
+    return '<p class="cap-missing">ANCHOR CAPACITY NOT VERIFIED BY THIS CALCULATION.</p>'+
+      demandLine(label+' tension demand',num(a.T,0)+' lb','compare by separate ACI 318-19 Ch. 17 / ESR / manufacturer anchor design')+
+      demandLine(label+' shear resultant demand',num(a.V,0)+' lb','includes horizontal shear and vertical glass dead load');
+  }
+  return checkLine(label+' tension',a.T,a.Tallow,num(a.T,0)+' lb','Rn/omega = '+num(a.Tallow,0)+' lb')+
+    checkLine(label+' shear resultant',a.V,a.Vallow,num(a.V,0)+' lb','Vn/omega = '+num(a.Vallow,0)+' lb')+
+    checkLine(label+' interaction (T/[T])^2 + (V/[V])^2',a.inter,1.0,num(a.inter,2),'1.0');
+}
+function railSocketBlock(a){
+  const src=String(a.source||'').trim();
+  const rows=a.cases.map(c=>'<tr><td class="left">'+esc(c.name)+'</td><td>'+num(c.R,0)+'</td><td>'+num(c.M,0)+'</td><td>'+num(c.pMoment,0)+'</td><td>'+num(c.pShear,0)+'</td><td>'+num(c.p,0)+'</td><td>'+numMaybe(c.Lreq,2)+'</td><td>'+numMaybe(c.inter,2)+'</td></tr>').join('');
+  const capRows='<tr><td class="lbl">Support condition</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">Core-drilled grouted post socket</td></tr>'+
+    '<tr><td class="lbl">Socket load height</td><td class="sym">h</td><td class="eq">=</td><td class="val">'+num(a.h,2)+'</td><td class="unit">in</td></tr>'+
+    '<tr><td class="lbl">Core hole diameter</td><td class="sym">D_core</td><td class="eq">=</td><td class="val">'+num(a.hole,2)+'</td><td class="unit">in</td></tr>'+
+    '<tr><td class="lbl">Post bearing width</td><td class="sym">d</td><td class="eq">=</td><td class="val">'+num(a.dia,2)+'</td><td class="unit">in</td></tr>'+
+    '<tr><td class="lbl">Socket embedment</td><td class="sym">L</td><td class="eq">=</td><td class="val">'+num(a.L,2)+'</td><td class="unit">in</td></tr>'+
+    '<tr class="source-row"><td class="lbl">Socket basis</td><td class="source-note" colspan="4">'+(src?esc(src):'<span class="fail">NOT ENTERED</span>')+'</td></tr>'+
+    '<tr><td class="lbl">Allowable bearing</td><td class="sym">F_brg</td><td class="eq">=</td><td class="val">'+(a.hasCap?num(a.fb,0):'--')+'</td><td class="unit">psi</td></tr>';
+  const checks=a.hasCap
+    ? checkLine('Grouted socket bearing pressure',a.gov.p,a.fb,num(a.gov.p,0)+' psi','F_brg = '+num(a.fb,0)+' psi')+
+      checkLine('Required socket embedment from entered bearing',a.gov.Lreq,a.L,num(a.gov.Lreq,2)+' in','provided '+num(a.L,2)+' in')
+    : '<p class="cap-missing">GROUTED SOCKET CAPACITY NOT VERIFIED BY THIS CALCULATION.</p>'+
+      demandLine('Grouted socket bearing pressure demand',num(a.gov.p,0)+' psi','enter approved grout/concrete bearing basis to compare')+
+      demandLine('Grouted socket moment demand',num(a.gov.M,0)+' in-lb','based on rail support reaction times socket load height');
+  return '<h3>Grab Rail Grouted Post Socket</h3>'+
+    '<table class="calc-table"><thead><tr><th>Case</th><th>End R (lb)</th><th>R h (in-lb)</th><th>p_m (psi)</th><th>p_v (psi)</th><th>p_total (psi)</th><th>L_req (in)</th><th>Ratio</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<table class="data-grid">'+capRows+'</table>'+
+    checks+
+    '<p class="note">Rail post socket is evaluated as a fixed grouted support using the entered post diameter, embedment, and allowable grout/concrete bearing pressure. Installation shall conform to the approved project detail and grout manufacturer requirements.</p>';
+}
+function railAnchorBlock(a){
+  if(!a)return '';
+  if(a.type==='socket')return railSocketBlock(a);
+  const mount=a.mount==='base'?'Base/floor mounted support':'Wall bracket / side mount';
+  const src=String(a.source||'').trim();
+  const rows=a.cases.map(c=>'<tr><td class="left">'+esc(c.name)+'</td><td>'+num(c.R,0)+'</td><td>'+num(c.M,0)+'</td><td>'+num(c.T,0)+'</td><td>'+num(c.V,0)+'</td><td>'+numMaybe(c.inter,2)+'</td></tr>').join('');
+  const capRows='<tr><td class="lbl">Support condition</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">'+mount+'</td></tr>'+
+    '<tr><td class="lbl">Anchor group</td><td class="sym">n x dia</td><td class="eq">=</td><td class="val">'+num(a.n,0)+' x '+num(a.dia,3)+'</td><td class="unit">in</td></tr>'+
+    '<tr><td class="lbl">Support eccentricity</td><td class="sym">e</td><td class="eq">=</td><td class="val">'+num(a.e,2)+'</td><td class="unit">in</td></tr>'+
+    '<tr><td class="lbl">Anchor couple</td><td class="sym">a</td><td class="eq">=</td><td class="val">'+num(a.a,2)+'</td><td class="unit">in</td></tr>'+
+    '<tr><td class="lbl">Anchor source</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">'+(src?esc(src):'<span class="fail">NOT ENTERED</span>')+'</td></tr>'+
+    '<tr><td class="lbl">Anchor safety factor</td><td class="sym">omega</td><td class="eq">=</td><td class="val">'+(a.hasCap?num(a.omega,2):'--')+'</td><td class="unit"></td></tr>'+
+    '<tr><td class="lbl">Design tension capacity</td><td class="sym">Rn/omega</td><td class="eq">=</td><td class="val">'+numMaybe(a.Tallow,0)+'</td><td class="unit">lb</td></tr>'+
+    '<tr><td class="lbl">Design shear capacity</td><td class="sym">Vn/omega</td><td class="eq">=</td><td class="val">'+numMaybe(a.Vallow,0)+'</td><td class="unit">lb</td></tr>';
+  const checks=a.hasCap
+    ? checkLine('Rail support anchor tension',a.gov.T,a.Tallow,num(a.gov.T,0)+' lb','Rn/omega = '+num(a.Tallow,0)+' lb')+
+      checkLine('Rail support anchor shear',a.gov.V,a.Vallow,num(a.gov.V,0)+' lb','Vn/omega = '+num(a.Vallow,0)+' lb')+
+      checkLine('Rail support anchor interaction',a.gov.inter,1.0,num(a.gov.inter,2),'1.0')
+    : '<p class="cap-missing">RAIL SUPPORT ANCHOR CAPACITY NOT VERIFIED BY THIS CALCULATION.</p>'+
+      demandLine('Rail support anchor tension demand',num(a.gov.T,0)+' lb','enter manufacturer/ESR/project capacity to compare')+
+      demandLine('Rail support anchor shear demand',num(a.gov.V,0)+' lb','per anchor at governing rail support');
+  return '<h3>Grab Rail Support Anchors</h3>'+
+    '<table class="calc-table"><thead><tr><th>Case</th><th>End R (lb)</th><th>R e (in-lb)</th><th>T (lb)</th><th>V (lb)</th><th>Interaction</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<table class="data-grid">'+capRows+'</table>'+
+    checks+
+    '<p class="note">Rail support anchor check uses the rail end reaction at each support. Moment demand is R x e and is resisted by the entered anchor couple a. Use e as wall bracket projection for side-mounted rails or rail height/base eccentricity for base-mounted supports.</p>';
+}
+function windSensitivityTable(rows){
+  return '<table class="calc-table"><thead><tr><th>Cf</th><th>qwind (psf)</th><th>F (lb)</th><th>Mwind (in-lb)</th><th>200 lb M (in-lb)</th><th>Wind governs?</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td>'+num(r.cf,2)+'</td><td>'+num(r.qwind,1)+'</td><td>'+num(r.F,0)+'</td><td>'+num(r.M,0)+'</td><td>'+num(r.pointM,0)+'</td><td>'+(r.governs?'YES':'NO')+'</td></tr>').join('')+
+    '</tbody></table>';
+}
+function metalBlock(label,m){
+  if(!m)return '<p class="note">'+label+' check is disabled or no valid section is selected.</p>';
+  const modeRows=m.mode
+    ? '<tr><td class="lbl">Load path</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">'+(m.mode==='glass'?'Structural crossbar - includes glass wind tributary':'Independent grab / handrail - glass wind not applied')+'</td></tr>'+
+      '<tr><td class="lbl">Glass wind line load</td><td class="sym">w_w</td><td class="eq">=</td><td class="val">'+num(m.wWind||0,2)+'</td><td class="unit">lb/in</td></tr>'
+    : '';
+  return '<h3>'+label+'</h3>'+
+    '<div class="section-props">'+esc(m.sec.name)+' - A='+num(m.sec.A,3)+' in^2, I='+num(m.sec.I,3)+' in^4, S='+num(m.sec.Sb,3)+' in^3</div>'+
+    '<table class="data-grid">'+
+    modeRows+
+    '<tr><td class="lbl">Governing case</td><td class="sym"></td><td class="eq">=</td><td class="val">'+esc(m.gov)+'</td><td class="unit"></td></tr>'+
+    '<tr><td class="lbl">Moment</td><td class="sym">M</td><td class="eq">=</td><td class="val">'+num(m.M,0)+'</td><td class="unit">in-lb</td></tr>'+
+    '<tr><td class="lbl">Shear</td><td class="sym">V</td><td class="eq">=</td><td class="val">'+num(m.V,0)+'</td><td class="unit">lb</td></tr>'+
+    '</table>'+
+    checkLine('Bending stress F_b = M/S',m.Fb,m.allowFb,num(m.Fb,2)+' ksi',num(m.allowFb,1)+' ksi')+
+    checkLine('Shear stress F_v = V/A',m.Fv,m.allowFv,num(m.Fv,2)+' ksi',num(m.allowFv,1)+' ksi')+
+    checkLine('Deflection'+(m.deflGov?' ('+esc(m.deflGov)+')':''),m.defl,m.deflAllow,num(m.defl,3)+' in',num(m.deflAllow,3)+' in');
+}
+function render(){
+  const d=readForm();
+  const R=computeAll(d);
+  const w=R.wind, s=R.support, g=s.govAnchor, st=s.govStand;
+  const ws=windSensitivityRows(d);
+  const anchorStatus=g.anchor.hasCap?'Interaction: <b>'+num(g.anchor.inter,2)+'</b>':'Capacity: <b>not verified</b>';
+  const anchorLive=g.anchor.hasCap?'interaction='+num(g.anchor.inter,2):'capacity not verified';
+  document.getElementById('vizElev').innerHTML=elevationSVG(d,R);
+  document.getElementById('vizSide').innerHTML=sideSVG(d,R);
+  document.getElementById('vizRail').innerHTML=railSVG(d,R);
+  document.getElementById('vizReadout').innerHTML=
+    '<span>Mode: <b>'+esc(d.supportMode)+'</b></span><span>Glass: <b>'+num(d.panelW,1)+' x '+num(d.glassH,1)+' in</b></span>'+
+    '<span>Trib. support width: <b>'+num(s.Wtrib,1)+' in</b></span><span>qwind: <b>'+num(w.qwind,1)+' psf</b></span>'+
+    '<span>Anchor gov: <b>'+esc(g.name)+'</b></span><span>'+anchorStatus+'</span>';
+  const standLive = d.supportMode==='post'
+    ? ''
+    : 'Stand-off gov: <strong>'+esc(st.name)+'</strong> - Fa+Fb='+num(st.standoff.Fcomb,2)+' ksi, Fv='+num(st.standoff.Fv,2)+' ksi<br>';
+  document.getElementById('liveResult').innerHTML=
+    '<strong>qwind</strong>='+num(w.qwind,1)+' psf - checked support tributary width <strong>'+num(s.Wtrib,1)+' in</strong><br>'+
+    'Anchor gov: <strong>'+esc(g.name)+'</strong> - T='+num(g.anchor.T,0)+' lb, V='+num(g.anchor.V,0)+' lb, '+anchorLive+'<br>'+
+    standLive+
+    (R.post?'Post M='+num(R.post.M,0)+' in-lb ('+R.post.gov+') Fb='+num(R.post.Fb,2)+' ksi<br>':'')+
+    (R.bar?'Crossbar M='+num(R.bar.M,0)+' in-lb ('+R.bar.gov+') Fb='+num(R.bar.Fb,2)+' ksi':'');
+  const warns=[];
+  if(!g.anchor.hasCap)warns.push('ANCHOR CAPACITY NOT VERIFIED BY THIS CALCULATION. Enter an external ESR/ACI/manufacturer anchor-capacity source to enable capacity comparison.');
+  if(g.anchor.hasCap&&g.anchor.inter>1)warns.push('Anchor interaction exceeds 1.0 for '+g.name+'. Increase anchor capacity/count/lever arm or reduce tributary width.');
+  if(g.plate.tReq>d.plate_t)warns.push('Mounting plate thickness is below calculated demand for the governing anchor tension.');
+  if(d.supportMode!=='post' && (st.standoff.Fcomb>st.standoff.allowFb || st.standoff.Fv>st.standoff.allowFv))warns.push('Stand-off simplified combined axial/bending or shear check exceeds allowable. Use manufacturer capacity or revise stand-off geometry.');
+  if(d.usePost&&!validSection(d.post_sec))warns.push('Post check is enabled, but no valid post section is selected.');
+  if(d.useCrossbar&&!validSection(d.bar_sec))warns.push('Crossbar check is enabled, but no valid crossbar section is selected.');
+  if(R.bar&&(R.bar.Fb>R.bar.allowFb||R.bar.Fv>R.bar.allowFv||R.bar.defl>R.bar.deflAllow))warns.push('Crossbar / grab rail check exceeds allowable stress or deflection for '+R.bar.gov+'. Revise span, support spacing, or section.');
+  if(R.bar&&R.bar.anchor&&R.bar.anchor.type==='socket'&&!R.bar.anchor.hasCap)warns.push('Rail grouted socket demand is shown without capacity comparison. Enter a socket bearing source and allowable to enable checks.');
+  if(R.bar&&R.bar.anchor&&R.bar.anchor.type==='socket'&&R.bar.anchor.hasCap&&R.bar.anchor.gov.inter>1)warns.push('Rail grouted socket bearing demand exceeds the entered allowable for '+R.bar.anchor.gov.name+'. Revise embedment, support spacing, post size, or bearing basis.');
+  if(R.bar&&R.bar.anchor&&R.bar.anchor.type!=='socket'&&!R.bar.anchor.hasCap)warns.push('Rail support anchor demand is shown without capacity comparison. Enter a rail anchor source and capacities to enable checks.');
+  if(R.bar&&R.bar.anchor&&R.bar.anchor.type!=='socket'&&R.bar.anchor.hasCap&&R.bar.anchor.gov.inter>1)warns.push('Rail support anchor interaction exceeds 1.0 for '+R.bar.anchor.gov.name+'. Revise support anchor capacity, bracket eccentricity, or anchor couple.');
+  if(g.anchor.hasCap&&(d.a_T===1500 || d.a_V===1200))warns.push('Anchor nominal capacities appear to be editable placeholders. Verify 3/8 in x 4 in wedge bolt ESR values for concrete/CMU, edge distance, spacing, embedment, and omega.');
+  if(d.z<=15)warns.push('Wind elevation z is at the ASCE minimum/floor of 15 ft. For elevated balconies, enter the balcony elevation above grade.');
+  if(d.V===160)warns.push('Design wind speed is a default value. Verify the project-specific Vult and exposure before final use.');
+  const wb=document.getElementById('warnBanner');
+  if(warns.length){wb.classList.add('active');wb.innerHTML='<strong>Note:</strong> '+warns.join('<br>');}
+  else{wb.classList.remove('active');wb.innerHTML='';}
+  const anchorSummary=g.anchor.hasCap
+    ? 'The governing checked support condition is <strong>'+esc(g.name)+'</strong> with anchor interaction <strong>'+num(g.anchor.inter,2)+'</strong>.'
+    : 'The governing checked support condition is <strong>'+esc(g.name)+'</strong> with anchor demand <strong>T='+num(g.anchor.T,0)+' lb</strong> and <strong>V='+num(g.anchor.V,0)+' lb</strong>. Enter a referenced anchor capacity basis before using the anchor comparison for screening.';
+  const reviewHtml=warns.length
+    ? '<div class="warning-panel"><strong>Review flags:</strong><ul>'+warns.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'
+    : '<div class="ok-panel"><strong>No calculator flags are currently active.</strong> This is still a preliminary screening result and is not a sealed engineering design.</div>';
+  const standPanel=d.supportMode==='post'
+    ? '<p class="note">Post-framed mode is selected. Stand-off barrel and mounting plate checks are not shown for this load path.</p>'
+    : '<table class="data-grid">'+
+      '<tr><td class="lbl">Governing support case</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">'+esc(st.name)+'</td></tr>'+
+      '<tr><td class="lbl">Axial from overturning</td><td class="sym">P=M/c</td><td class="eq">=</td><td class="val">'+num(st.standoff.Pax,0)+'</td><td class="unit">lb</td></tr>'+
+      '<tr><td class="lbl">Stand-off moment</td><td class="sym">V e</td><td class="eq">=</td><td class="val">'+num(st.standoff.M,0)+'</td><td class="unit">in-lb</td></tr>'+
+      '</table>'+
+      checkLine('Stand-off combined normal F_a + F_b',st.standoff.Fcomb,st.standoff.allowFb,num(st.standoff.Fcomb,2)+' ksi',num(st.standoff.allowFb,1)+' ksi')+
+      checkLine('Stand-off shear',st.standoff.Fv,st.standoff.allowFv,num(st.standoff.Fv,2)+' ksi',num(st.standoff.allowFv,1)+' ksi')+
+      checkLine('Mounting plate thickness',g.plate.tReq,d.plate_t,num(g.plate.tReq,3)+' in','provided '+num(d.plate_t,3)+' in');
+  document.getElementById('results').innerHTML=
+    '<div class="results-shell">'+
+      '<div class="web-hero"><h2>Preliminary Glass Railing Results</h2>'+
+        '<p>This online calculator is for education and early screening only. It is not a sealed engineering calculation, permit document, construction instruction, or warranty. For project-specific engineering, use the contact link below.</p>'+
+        '<a class="cta-link" href="https://www.oasisengineering.com/contact" target="_blank" rel="noopener">Order Custom Engineering</a></div>'+
+      '<div class="result-grid">'+
+        '<div class="result-card"><div class="label">Wind Pressure</div><div class="value">'+num(w.qwind,1)+' psf</div><div class="sub">z = '+num(w.zft,0)+' ft, Kz = '+num(w.kz,3)+'</div></div>'+
+        '<div class="result-card"><div class="label">Governing Support</div><div class="value">'+esc(g.name)+'</div><div class="sub">T = '+num(g.anchor.T,0)+' lb, V = '+num(g.anchor.V,0)+' lb</div></div>'+
+        '<div class="result-card"><div class="label">Anchor Status</div><div class="value">'+(g.anchor.hasCap?'Interaction '+num(g.anchor.inter,2):'Demand only')+'</div><div class="sub">'+(g.anchor.hasCap?'Compared to entered capacity':'Enter source/capacity to compare')+'</div></div>'+
+        '<div class="result-card"><div class="label">Grab Rail</div><div class="value">'+(R.bar?esc(R.bar.gov):'Disabled')+'</div><div class="sub">'+(R.bar?'M = '+num(R.bar.M,0)+' in-lb, defl = '+num(R.bar.defl,3)+' in':'Enable optional rail check')+'</div></div>'+
+      '</div>'+
+      reviewHtml+
+      '<section class="result-panel"><h2>Wind + Geometry</h2>'+
+        '<table class="data-grid">'+
+        '<tr><td class="lbl">Velocity pressure coefficient</td><td class="sym">Kz</td><td class="eq">=</td><td class="val">'+num(w.kz,3)+'</td><td class="unit"></td></tr>'+
+        '<tr><td class="lbl">Velocity pressure</td><td class="sym">qh</td><td class="eq">=</td><td class="val">'+num(w.qh,1)+'</td><td class="unit">psf</td></tr>'+
+        '<tr><td class="lbl">Design glass pressure</td><td class="sym">epsilon Iw P_A</td><td class="eq">=</td><td class="val">'+num(w.qwind,1)+'</td><td class="unit">psf</td></tr>'+
+        '<tr><td class="lbl">Checked support tributary width</td><td class="sym">B_t</td><td class="eq">=</td><td class="val">'+num(s.Wtrib,2)+'</td><td class="unit">in</td></tr>'+
+        '</table><h3>Wind Sensitivity</h3>'+windSensitivityTable(ws)+'</section>'+
+      '<section class="result-panel"><h2>Glass Support Load Transfer</h2>'+
+        '<table class="calc-table"><thead><tr><th>Case</th><th>F (lb)</th><th>h (in)</th><th>M (in-lb)</th><th>T</th><th>Vx</th><th>Vz</th><th>Vres</th><th>Interaction</th></tr></thead><tbody>'+caseRows(R)+'</tbody></table>'+
+        '<h3>Anchor Demand / Entered External Capacity</h3><table class="data-grid">'+
+        '<tr><td class="lbl">Governing case</td><td class="sym"></td><td class="eq">=</td><td class="val" colspan="2">'+esc(g.name)+'</td></tr>'+
+        '<tr><td class="lbl">Anchor group</td><td class="sym">n x dia</td><td class="eq">=</td><td class="val">'+num(d.a_n,0)+' x '+num(d.a_d,3)+'</td><td class="unit">in</td></tr>'+
+        '<tr><td class="lbl">Tension lever arm</td><td class="sym">a</td><td class="eq">=</td><td class="val">'+num(d.a_sp,2)+'</td><td class="unit">in</td></tr>'+
+        anchorCapacityRows(d,g.anchor)+
+        '</table>'+anchorCheckBlock('Anchor',g.anchor)+
+        '<p class="note">Anchor tension is calculated from overturning only. Glass dead load is included as vertical shear, not as tension relief.</p></section>'+
+      '<section class="result-panel"><h2>Stand-off / Mounting Plate</h2>'+standPanel+'</section>'+
+      '<section class="result-panel"><h2>Metal Post / Grab Rail</h2>'+metalBlock('Vertical Post',R.post)+metalBlock('Crossbar / Grab Rail',R.bar)+(R.bar?railAnchorBlock(R.bar.anchor):'')+'</section>'+
+      '<section class="result-panel"><h2>Scope Notes</h2>'+
+        '<p class="note">Glass panels are assumed to be certified impact-rated safety glazing per the entered glazing note. Glass flexural stress, hole stress concentration, laminated-glass behavior, glass deflection, glass breakage, concrete/CMU anchorage capacity, edge distance, spacing, embedment, and substrate suitability are outside this public calculator.</p>'+
+        '<p class="note">'+anchorSummary+' Any real project should be reviewed by a qualified licensed professional before construction, procurement, or permitting.</p></section>'+
+    '</div>';
+  return;
+}
+document.querySelectorAll('input,select,textarea').forEach(el=>{
+  if(!['file','button'].includes(el.type))el.addEventListener('input',render);
+  if(el.tagName==='SELECT')el.addEventListener('change',render);
+});
+populateSectionSelect('f_post_sec','2 in x 2 in x 1/4 in square tube');
+populateSectionSelect('f_bar_sec','1-1/2 in round tube x 1/8 in wall');
+applyModeVisibility();
+render();
+</script>
+</body>
+</html>
