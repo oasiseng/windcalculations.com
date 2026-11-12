@@ -33,6 +33,12 @@ This repository is a static-site toolset focused on transparent wind-design work
 - `METHODOLOGY.md` — equations, assumptions, and transparency notes
 - `SERVICES.md` — engineering services context
 
+### Project playbooks
+
+- `playbooks/` — intake, calculation logic and deliverables for each wind-calculation subcategory
+  (`WC-DOOR`, `WC-WINDOW`, `WC-RAILING`, roof, solar and miscellaneous C&C). See `playbooks/README.md`.
+  Moved here from `oasiseng/Oasis-Blueprints`, where they had been kept under `WindCalculations/`.
+
 ## Repository structure
 
 ```text
@@ -42,6 +48,7 @@ This repository is a static-site toolset focused on transparent wind-design work
 ├── ABOUT-US.md                        # About page content
 ├── METHODOLOGY.md                     # Methodology page content
 ├── SERVICES.md                        # Services page content
+├── playbooks/                         # Wind-calculation subcategory playbooks (WC-*)
 ├── wind-speed-tool/
 │   ├── public/nationwide-wind-tool.html      # Deployable generated nationwide tool
 │   └── source/
