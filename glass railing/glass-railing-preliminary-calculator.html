@@ -427,7 +427,8 @@ const MATERIALS={
   'A500':{E:29000,Fty:46,Fsy:28,Fu:58,fb:0.60},
   'custom':{E:10100,Fty:35,Fsy:20,Fu:38,fb:0.66}
 };
-const EXP={B:{coef:2.01,alpha:7.0,zg:1200},C:{coef:2.01,alpha:9.5,zg:900},D:{coef:2.01,alpha:11.5,zg:700}};
+// ASCE 7-22 Table 26.11-1 constants; Kz = 2.41 (z/zg)^(2/alpha), z not less than 15 ft (Table 26.10-1)
+const EXP={B:{coef:2.41,alpha:7.5,zg:3280},C:{coef:2.41,alpha:9.8,zg:2460},D:{coef:2.41,alpha:11.5,zg:1935}};
 function secByName(n){return SECTIONS.find(s=>s.name===n)||SECTIONS[0];}
 function populateSectionSelect(id,def){
   const sel=document.getElementById(id);

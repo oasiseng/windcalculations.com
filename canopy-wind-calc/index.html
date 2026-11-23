@@ -565,10 +565,11 @@ function populateSectionSelect(id, defaultName){
 }
 
 // WIND ENGINE  (ASCE 7-22 Directional Design Method)
+// ASCE 7-22 Table 26.11-1 constants; Kz = 2.41 (z/zg)^(2/alpha), z not less than 15 ft (Table 26.10-1)
 const EXP = {
-  B:{coef:2.01, alpha:7.0,  zg:1200},
-  C:{coef:2.01, alpha:9.5,  zg:900},
-  D:{coef:2.01, alpha:11.5, zg:700}
+  B:{coef:2.41,alpha:7.5,zg:3280},
+  C:{coef:2.41,alpha:9.8,zg:2460},
+  D:{coef:2.41,alpha:11.5,zg:1935}
 };
 function Kz(z, exp){ const e=EXP[exp]||EXP.C; return e.coef*Math.pow(Math.max(z, 15)/e.zg, 2/e.alpha); }
 function computeWind(d){

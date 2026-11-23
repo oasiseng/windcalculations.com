@@ -447,7 +447,7 @@
         <div class="citation">
           <strong>Applicable scope:</strong> Low-rise enclosed / partially enclosed / partially open / open
           buildings with h &le; 60 ft. Wall GC<sub>p</sub> values from Fig. 30.3-1 (Zones 4 &amp; 5). Roof
-          GC<sub>p</sub> values from Fig. 30.3-2A&ndash;D per ASCE 7-16/7-22 (Zones 1&#39;, 1, 2, 3 &mdash;
+          GC<sub>p</sub> presets from Fig. 30.3-2A (&theta; &le; 7&deg;) per ASCE 7-16/7-22 (Zones 1&#39;, 1, 2, 3 &mdash;
           substantially higher than ASCE 7-10, with zone geometry now based on building-height offsets
           (0.6h) and L-shaped Zone 3 corners). GC<sub>p</sub> depends on effective wind area and zone;
           users must verify the applicable figure, zone layout, and effective wind area for their project.
@@ -489,8 +489,8 @@
     //       old value used the Zone 4 endpoint delta by mistake).
     //     - Sec. 30.2.2 minimum design pressure (16 psf each direction)
     //       enforced as a reported design envelope.
-    //     - Exposure B Kz floor of 0.70 (Table 26.10-1, C&C of buildings with
-    //       h <= 60 ft) applied in both editions.
+    //     - (2026-11) Exposure B Kz floor of 0.70 REMOVED. It is a Chapter 28 rule; Chapter 30 uses
+    //       z = 15 ft in every exposure (Kz = 0.57 in Exposure B, both editions).
     //     - theta <= 10 deg wall reduction now keyed to an explicit
     //       surface-type selection instead of being inferred from the preset.
     // =====================================================================
@@ -498,22 +498,23 @@
     var EXPOSURE_CONSTANTS = {
       "7-16": {
         mult: 2.01,
-        B: { alpha: 7.0,  zg: 1200, zmin: 30 },
+        B: { alpha: 7.0,  zg: 1200, zmin: 15 },
         C: { alpha: 9.5,  zg: 900,  zmin: 15 },
         D: { alpha: 11.5, zg: 700,  zmin: 15 }
       },
       "7-22": {
         mult: 2.41,
-        B: { alpha: 7.5,  zg: 3280, zmin: 30 },
+        B: { alpha: 7.5,  zg: 3280, zmin: 15 },
         C: { alpha: 9.8,  zg: 2460, zmin: 15 },
         D: { alpha: 11.5, zg: 1935, zmin: 15 }
       }
     };
 
-    // Tabulated minimum for Exposure B, Case 1 (C&C of buildings with
-    // h <= 60 ft), per Table 26.10-1. The 7-22 power-law value at the 30 ft
-    // clamp computes to 0.689; the published tabulated 0.70 governs.
-    var KZ_FLOOR_EXPOSURE_B = 0.70;
+    // Exposure B has no separate floor in Chapter 30. Table 26.10-1 (ASCE 7-16 and 7-22) gives Kz at z = 15 ft
+    // for any lower height, in every exposure (0.57 in Exposure B). Its footnote value of 0.70 below 30 ft is for
+    // Chapter 28 (envelope MWFRS) only. Earlier revisions of this tool applied 0.70 to C&C, which overstated
+    // Exposure B pressures by about 20% below 30 ft; that rule was the ASCE 7-10 "Case 1" and is not in 7-16 or 7-22.
+    var KZ_FLOOR_EXPOSURE_B = 0;
 
     var GCPI_STANDARD = {
       enclosed: 0.18,
@@ -556,7 +557,7 @@
       { id: "roof_zone2_neg_10",  label: "Roof Zone 2 (neg, A\u226410 sf) GCp = \u22122.3",                gcp: -2.3, zoneType: "roof" },
       { id: "roof_zone3_neg_10",  label: "Roof Zone 3 (neg, A\u226410 sf) GCp = \u22123.2",                gcp: -3.2, zoneType: "roof" },
       { id: "roof_pos_10",        label: "Roof all zones (pos, A\u226410 sf) GCp = +0.3",                  gcp:  0.3, zoneType: "roof" },
-      { id: "roof_pos_500",       label: "Roof all zones (pos, A\u2265500 sf) GCp = +0.2",                 gcp:  0.2, zoneType: "roof" }
+      { id: "roof_pos_500",       label: "Roof all zones (pos, A\u2265100 sf) GCp = +0.2",                 gcp:  0.2, zoneType: "roof" }
     ];
 
     var DEFAULTS = {
@@ -931,8 +932,7 @@
       var c = T[exposure];
       var effectiveHeight = clamp(heightFt, c.zmin, c.zg);
       var raw = T.mult * Math.pow(effectiveHeight / c.zg, 2 / c.alpha);
-      // Case 1 (C&C of buildings with h <= 60 ft): Kz shall not be taken
-      // less than 0.70 in Exposure B per Table 26.10-1.
+      // No tabulated floor applies in Chapter 30 (see KZ_FLOOR_EXPOSURE_B above); the z = 15 ft clamp is the only limit.
       var minimum = (exposure === "B") ? KZ_FLOOR_EXPOSURE_B : 0;
       var coefficient = Math.max(raw, minimum);
       return {
