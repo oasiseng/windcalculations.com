@@ -19,17 +19,35 @@ Wind speed is expressed in miles per hour (mph).
 
 ## 2. Velocity Pressure (qz)
 
-Velocity pressure is calculated using the ASCE 7 equation:
+**ASCE 7-22** (Eq. 26.10-1). The directionality factor is not part of the velocity pressure; it is applied in the
+pressure equation:
+
+qz = 0.00256 × Kz × Kzt × Ke × V²
+
+**ASCE 7-16** (Eq. 26.10-1). The directionality factor is inside the velocity pressure:
 
 qz = 0.00256 × Kz × Kzt × Kd × Ke × V²
 
-Where:
+The two forms give the same net pressure. Where:
 
-- Kz = Velocity pressure exposure coefficient (ASCE 7 Section 26.10)
-- Kzt = Topographic factor
-- Kd = Wind directionality factor
-- Ke = Ground elevation factor (if applicable)
+- Kz = Velocity pressure exposure coefficient (Section 26.10, Table 26.10-1)
+- Kzt = Topographic factor (Section 26.8)
+- Kd = Wind directionality factor (Section 26.6): 0.85 for buildings
+- Ke = Ground elevation factor (Section 26.9); 1.0 is always permitted
 - V = Basic wind speed (mph)
+
+Kz follows the Table 26.10-1 formula, Kz = 2.41 (z / zg)^(2/α) in ASCE 7-22 (2.01 in ASCE 7-16), with the
+exposure constants of Table 26.11-1:
+
+| Exposure | α (7-22) | zg, ft (7-22) | α (7-16) | zg, ft (7-16) |
+|---|---|---|---|---|
+| B | 7.5 | 3280 | 7.0 | 1200 |
+| C | 9.8 | 2460 | 9.5 | 900 |
+| D | 11.5 | 1935 | 11.5 | 700 |
+
+For any height below 15 ft, z is taken as 15 ft, in every exposure. The value of 0.70 for Exposure B below 30 ft in
+the table's footnote applies to Chapter 28 (the envelope procedure for main wind force resisting systems) only. It is
+not used for components and cladding: Kz at 15 ft in Exposure B is 0.57.
 
 The calculator displays intermediate factors to ensure transparency and traceability.
 
@@ -51,18 +69,38 @@ User selection must reflect site conditions.
 
 ## 4. Components & Cladding Pressures
 
-Net design pressures for components and cladding are calculated using:
+Buildings with mean roof height h ≤ 60 ft (ASCE 7-22 Chapter 30, Part 1, Eq. 30.3-1):
 
-p = qz × G × (GCp) − qi × (GCpi)
+p = qh × Kd × [(GCp) − (GCpi)]
+
+Buildings with h > 60 ft (Part 2, Eq. 30.4-1):
+
+p = q × Kd × (GCp) − qi × Kd × (GCpi)
 
 Where:
 
-- G = Gust effect factor
-- GCp = External pressure coefficient
-- qi = Internal velocity pressure (often qh)
-- GCpi = Internal pressure coefficient
+- qh = Velocity pressure at mean roof height
+- q = qz at the height of the component for positive (windward) pressure, qh otherwise
+- qi = qh
+- GCp = External pressure coefficient, which already includes the gust effect. There is no separate G in Chapter 30.
+- GCpi = Internal pressure coefficient (Table 26.13-1): ±0.18 enclosed and partially open, ±0.55 partially enclosed
 
-Pressure coefficients are selected per ASCE 7 Chapter 30 tables and figures.
+Both signs of GCpi are checked and the worse one governs each direction. Under ASCE 7-16, Kd is inside q and
+does not appear again in these equations.
+
+External pressure coefficients come from these ASCE 7-22 figures, by log-linear interpolation on effective wind area:
+
+- Walls, h ≤ 60 ft: Figure 30.3-1 (reduced 10% when the roof slope is 10° or less)
+- Walls, h > 60 ft: Figure 30.4-1
+- Roofs at 7° or less: Figure 30.3-2A. Its zones are set by h: edge strip 0.6h, corner 0.6h by 0.2h, Zone 1′ beyond 1.2h
+- Gable roofs above 7°: Figures 30.3-2B, 2C and 2D
+- Hip roofs above 7°: Figures 30.3-2E, 2F and 2G
+
+The area range of the interpolation differs by figure and by zone (for example 10 to 500 sq ft for walls, 10 to 100,
+200 or 300 sq ft for gable and hip roof zones, and 100 to 1000 sq ft for roof Zone 1′).
+
+Net design pressures are not taken less than 16 psf in either direction at strength level (Section 30.2.2).
+Allowable stress design values are 0.6 times the strength-level values.
 
 ---
 
